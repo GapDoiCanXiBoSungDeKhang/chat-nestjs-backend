@@ -1,6 +1,6 @@
 import {Injectable} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
-import {Model} from "mongoose";
+import {Model, Types} from "mongoose";
 
 import {User, UserDocument} from "./schema/user.schema";
 import {registerDto} from "../auth/dto/register.dto";
@@ -25,7 +25,17 @@ export class UserService {
         return !!(await this.userModel.findOne({email}));
     }
 
+    async getInfoByEmail(email: string) {
+        return this.userModel.findOne({email}).lean();
+    }
+
     async findByPhoneNumber(phoneNumber: string) {
         return !!(await this.userModel.findOne({phoneNumber}));
+    }
+
+    async updateRefreshToken(userId: Types.ObjectId, token: string) {
+        await this.userModel.findByIdAndUpdate(userId, {
+            refreshToken: token,
+        })
     }
 }
