@@ -52,6 +52,3 @@ UserSchema.set("toJSON", {
     },
 });
 
-UserSchema.index({ email: 1 });
-UserSchema.index({ isOnline: 1 });
-

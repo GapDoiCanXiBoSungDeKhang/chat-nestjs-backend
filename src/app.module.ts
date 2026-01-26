@@ -4,6 +4,7 @@ import {MongooseModule} from "@nestjs/mongoose";
 
 import {mongooseConfig} from "./config/db.config";
 import {UsersModule} from "./module/user/user.module";
+import {AuthModule} from "./module/auth/auth.module";
 
 @Module({
     imports: [
@@ -13,7 +14,8 @@ import {UsersModule} from "./module/user/user.module";
         MongooseModule.forRootAsync({
             useFactory: mongooseConfig
         }),
-        UsersModule,
+        AuthModule,
+        UsersModule
     ]
 })
 export class AppModule {}
