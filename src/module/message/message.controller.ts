@@ -2,7 +2,10 @@ import {Types} from "mongoose";
 import {Body, Controller, Param, Post, UseGuards} from "@nestjs/common";
 
 import {MessageService} from "./message.service";
+
 import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
+import {ConversationParticipantGuard} from "../conversation/guard/conversation-participant.guard";
+
 import {IdConversationDto} from "./dto/id_conversation.dto";
 import {CreateMessageDto} from "./dto/body-create.dto";
 
@@ -15,7 +18,7 @@ export class MessageController {
         private readonly messageService: MessageService
     ) {}
 
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, ConversationParticipantGuard)
     @Post(":id")
     async message(
         @Param("id") room: IdConversationDto['id'],

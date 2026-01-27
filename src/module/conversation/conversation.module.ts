@@ -2,9 +2,13 @@ import {Module} from "@nestjs/common";
 import {MongooseModule} from "@nestjs/mongoose";
 
 import {Conversation, ConversationSchema} from "./schema/conversation.schema";
+
 import {UsersModule} from "../user/user.module";
+
 import {ConversationService} from "./conversation.service";
 import {ConversationController} from "./conversation.controller";
+
+import {ConversationParticipantGuard} from "./guard/conversation-participant.guard";
 
 @Module({
     imports: [
@@ -15,8 +19,14 @@ import {ConversationController} from "./conversation.controller";
             collection: "conversations"
         }]),
     ],
-    providers: [ConversationService],
+    providers: [
+        ConversationService,
+        ConversationParticipantGuard
+    ],
     controllers: [ConversationController],
-    exports: [ConversationService],
+    exports: [
+        ConversationService,
+        ConversationParticipantGuard
+    ],
 })
 export class ConversationModule {}

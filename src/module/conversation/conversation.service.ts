@@ -71,4 +71,15 @@ export class ConversationService {
             {lastMessage: messageId}
         )
     }
+
+    public async findUserParticipants(
+        userId: Types.ObjectId,
+        conversationId: Types.ObjectId,
+    ) {
+        return !!(await this.conversationModel
+            .findOne({
+                _id: conversationId,
+                "participants.userId": userId
+            }));
+    }
 }
