@@ -54,11 +54,21 @@ export class ConversationService {
         return this.conversationModel
             .find({"participants.userId": myUserId})
             .populate("participants.userId", "name avatar status")
-            .sort({createdAt: -1})
+            .sort({updateAt: -1})
             .lean();
     }
 
     public async users(userId: Types.ObjectId) {
         return this.userService.listUser(userId);
+    }
+
+    public async updateConversation(
+        conversationId: Types.ObjectId,
+        messageId: Types.ObjectId,
+    ) {
+        await this.conversationModel.findByIdAndUpdate(
+            conversationId,
+            {lastMessage: messageId}
+        )
     }
 }

@@ -6,6 +6,7 @@ import {mongooseConfig} from "./config/db.config";
 import {UsersModule} from "./module/user/user.module";
 import {AuthModule} from "./module/auth/auth.module";
 import {ConversationModule} from "./module/conversation/conversation.module";
+import {MessageModule} from "./module/message/message.module";
 
 @Module({
     imports: [
@@ -17,7 +18,8 @@ import {ConversationModule} from "./module/conversation/conversation.module";
         }),
         AuthModule,
         UsersModule,
-        ConversationModule
+        ConversationModule,
+        MessageModule
     ]
 })
 export class AppModule {}
