@@ -8,6 +8,7 @@ import {UserService} from "../user/user.service";
 import {InputRegisterUserDto} from "./dto/inputRegister.dto";
 import {registerDto} from "./dto/register.dto";
 import {UserDocument} from "../user/schema/user.schema";
+import {Types} from "mongoose";
 
 @Injectable()
 export class AuthService {
@@ -111,5 +112,12 @@ export class AuthService {
 
     getConfigSecretRefresh() {
         return this.configService.get<string>("JWT_SECRET_REFRESH")
+    }
+
+    async logout(userId: Types.ObjectId) {
+        await this.userService.updateRefreshToken(userId, null);
+        return {
+            "message": "Logout successfully",
+        };
     }
 }

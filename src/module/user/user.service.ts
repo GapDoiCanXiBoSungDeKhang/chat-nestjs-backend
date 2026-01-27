@@ -38,7 +38,7 @@ export class UserService {
         return !!(await this.userModel.findOne({phoneNumber}));
     }
 
-    async updateRefreshToken(userId: Types.ObjectId, token: string) {
+    async updateRefreshToken(userId: Types.ObjectId, token: string | null) {
         await this.userModel.findByIdAndUpdate(
             userId,
             {refreshToken: token}
