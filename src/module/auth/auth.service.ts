@@ -18,7 +18,7 @@ export class AuthService {
         private readonly configService: ConfigService,
     ) {}
 
-    async register(dto: InputRegisterUserDto) {
+    public async register(dto: InputRegisterUserDto) {
         const existEmail = await this.userService.findByEmail(dto.email);
         const existPhoneNumber = await this.userService.findByPhoneNumber(dto.phoneNumber);
         if (existEmail) {
@@ -39,7 +39,7 @@ export class AuthService {
         return this.userService.create(data);
     }
 
-    async validateUser(email: string, password: string) {
+    public async validateUser(email: string, password: string) {
         const user = await this.userService.getInfoByEmail(email);
         if (!user) return null;
         const isMatch = await bcrypt.compare(password, user.password);
@@ -47,7 +47,7 @@ export class AuthService {
         return user;
     }
 
-    async login(user: UserDocument) {
+    public async login(user: UserDocument) {
         const payload = {sub: user._id, name: user.name, email: user.email};
 
         const accessToken = this.jwtService.sign(payload, {

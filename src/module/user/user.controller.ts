@@ -10,7 +10,7 @@ export class UserController {
 
     @Get()
     @HttpCode(200)
-    async getUsers() {
+    public async getUsers() {
         return this.userService.users();
     }
 }

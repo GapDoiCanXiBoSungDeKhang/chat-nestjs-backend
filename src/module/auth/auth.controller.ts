@@ -19,27 +19,27 @@ export class AuthController {
 
     @Post("register")
     @HttpCode(201)
-    async register(@Body() body: InputRegisterUserDto) {
+    public async register(@Body() body: InputRegisterUserDto) {
         return this.authService.register(body);
     }
 
     @UseGuards(LocalAuthGuard)
     @Post("login")
     @HttpCode(200)
-    async login(@User() user: UserDocument) {
+    public async login(@User() user: UserDocument) {
         return this.authService.login(user);
     }
 
     @Post("refresh")
     @HttpCode(200)
-    async refresh(@Body("refreshToken") refreshToken: string) {
+    public async refresh(@Body("refreshToken") refreshToken: string) {
         return this.authService.refresh(refreshToken);
     }
 
     @UseGuards(JwtAuthGuard)
     @Post("logout")
     @HttpCode(200)
-    async logout(@JwtDecode() user: JwtType) {
+    public async logout(@JwtDecode() user: JwtType) {
         return this.authService.logout(user.userId);
     }
 }

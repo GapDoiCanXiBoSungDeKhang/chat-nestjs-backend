@@ -12,33 +12,37 @@ export class UserService {
         private readonly userModel: Model<UserDocument>
     ) {}
 
-    async users() {
+    public async users() {
         return this.userModel.find({}).lean();
     }
 
-    async create(dto: registerDto) {
+    public async create(dto: registerDto) {
         const user = new this.userModel(dto);
         return user.save();
     }
 
-    async findById(userId: string) {
+    public async findById(userId: string) {
         const id = new Types.ObjectId(userId);
         return this.userModel.findById(id).lean();
     }
 
-    async findByEmail(email: string) {
+    public async findByEmail(email: string) {
         return !!(await this.userModel.findOne({email}));
     }
 
-    async getInfoByEmail(email: string) {
+    async findByObjectId(id: Types.ObjectId) {
+        return !!(await this.userModel.findById(id));
+    }
+
+    public async getInfoByEmail(email: string) {
         return this.userModel.findOne({email}).lean();
     }
 
-    async findByPhoneNumber(phoneNumber: string) {
+    public async findByPhoneNumber(phoneNumber: string) {
         return !!(await this.userModel.findOne({phoneNumber}));
     }
 
-    async updateRefreshToken(userId: Types.ObjectId, token: string | null) {
+    public async updateRefreshToken(userId: Types.ObjectId, token: string | null) {
         await this.userModel.findByIdAndUpdate(
             userId,
             {refreshToken: token}
