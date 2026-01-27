@@ -19,7 +19,7 @@ import {MessageModule} from "./module/message/message.module";
         AuthModule,
         UsersModule,
         ConversationModule,
-        MessageModule
+        MessageModule,
     ]
 })
 export class AppModule {}

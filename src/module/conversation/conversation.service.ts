@@ -1,9 +1,11 @@
 import {Model, Types} from "mongoose";
 import {InjectModel} from "@nestjs/mongoose";
-import {ConflictException, Injectable} from "@nestjs/common";
+import {ConflictException, forwardRef, Inject, Injectable} from "@nestjs/common";
 
 import {Conversation, ConversationDocument} from "./schema/conversation.schema";
+
 import {UserService} from "../user/user.service";
+import {MessageService} from "../message/message.service";
 
 @Injectable()
 export class ConversationService {
@@ -11,6 +13,9 @@ export class ConversationService {
         @InjectModel(Conversation.name)
         private readonly conversationModel: Model<ConversationDocument>,
         private readonly userService: UserService,
+
+        @Inject(forwardRef(() => MessageService))
+        private readonly messageService: MessageService
     ) {}
 
     private convertIdStringToObjectId(id: string) {
@@ -50,12 +55,37 @@ export class ConversationService {
         return create;
     }
 
-    async getAllConversations(myUserId: Types.ObjectId) {
-        return this.conversationModel
+    public async getAllConversations(myUserId: Types.ObjectId) {
+        const conversations = await this.conversationModel
             .find({"participants.userId": myUserId})
             .populate("participants.userId", "name avatar status")
+            .populate({
+                path: "lastMessage",
+                select: "senderId content createdAt",
+                populate: {
+                    path: "senderId",
+                    select: "name avatar"
+                }
+            })
             .sort({updateAt: -1})
             .lean();
+
+        const conversationIds = conversations.map(conv => conv._id);
+        const mgsIds = await this.messageService
+            .filterMessageConversationNotSeen(
+                conversationIds,
+                myUserId
+            );
+
+        const hashMap = new Map<string, number>();
+        for (const convMgs of mgsIds) {
+            const id = convMgs.toString();
+            hashMap.set(id, (hashMap.get(id) || 0) + 1);
+        }
+        return conversations.map(conv => ({
+            ...conv,
+            unreadCount: hashMap.get(conv._id.toString()) || 0,
+        }))
     }
 
     public async users(userId: Types.ObjectId) {

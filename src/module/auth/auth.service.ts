@@ -71,7 +71,7 @@ export class AuthService {
         };
     }
 
-    async refresh(refreshToken: string) {
+    public async refresh(refreshToken: string) {
         try {
             const payload = this.jwtService.verify(refreshToken, {
                 secret: this.getConfigSecretRefresh(),
@@ -110,11 +110,11 @@ export class AuthService {
         }
     }
 
-    getConfigSecretRefresh() {
+    private getConfigSecretRefresh() {
         return this.configService.get<string>("JWT_SECRET_REFRESH")
     }
 
-    async logout(userId: Types.ObjectId) {
+    public async logout(userId: Types.ObjectId) {
         await this.userService.updateRefreshToken(userId, null);
         return {
             "message": "Logout successfully",
