@@ -31,4 +31,11 @@ export class MessageService {
             );
         return message;
     }
+
+    public async messages(conversationId: Types.ObjectId) {
+        return this.messageModel.find({conversationId: conversationId})
+            .populate("senderId", "name avatar status")
+            .sort({createdAt: 1})
+            .lean();
+    }
 }

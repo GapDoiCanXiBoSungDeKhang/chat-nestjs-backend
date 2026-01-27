@@ -1,12 +1,12 @@
 import {Types} from "mongoose";
-import {Body, Controller, Param, Post, UseGuards} from "@nestjs/common";
+import {Body, Controller, Get, Param, Post, UseGuards} from "@nestjs/common";
 
 import {MessageService} from "./message.service";
 
 import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
 import {ConversationParticipantGuard} from "../conversation/guard/conversation-participant.guard";
 
-import {IdConversationDto} from "./dto/id_conversation.dto";
+import {IdConversationDto} from "./dto/id-conversation.dto";
 import {CreateMessageDto} from "./dto/body-create.dto";
 
 import {JwtDecode} from "../../common/decorators/jwt.decorator";
@@ -21,7 +21,7 @@ export class MessageController {
     @UseGuards(JwtAuthGuard, ConversationParticipantGuard)
     @Post(":id")
     async message(
-        @Param("id") room: IdConversationDto['id'],
+        @Param("id") room: IdConversationDto["id"],
         @Body() body: CreateMessageDto,
         @JwtDecode() user: JwtType
     ) {
@@ -31,5 +31,14 @@ export class MessageController {
             conversationId,
             body.content
         );
+    }
+
+    @UseGuards(JwtAuthGuard, ConversationParticipantGuard)
+    @Get(":id")
+    async getMessages(
+        @Param("id") room: IdConversationDto["id"],
+    ) {
+        const conversationId = new Types.ObjectId(room);
+        return this.messageService.messages(conversationId);
     }
 }
