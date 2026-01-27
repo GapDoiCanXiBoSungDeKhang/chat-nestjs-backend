@@ -21,6 +21,11 @@ export class UserService {
         return user.save();
     }
 
+    async findById(userId: string) {
+        const id = new Types.ObjectId(userId);
+        return this.userModel.findById(id).lean();
+    }
+
     async findByEmail(email: string) {
         return !!(await this.userModel.findOne({email}));
     }
@@ -34,8 +39,9 @@ export class UserService {
     }
 
     async updateRefreshToken(userId: Types.ObjectId, token: string) {
-        await this.userModel.findByIdAndUpdate(userId, {
-            refreshToken: token,
-        })
+        await this.userModel.findByIdAndUpdate(
+            userId,
+            {refreshToken: token}
+        );
     }
 }

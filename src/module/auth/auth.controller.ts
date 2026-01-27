@@ -25,4 +25,10 @@ export class AuthController {
     async login(@User() user: UserDocument) {
         return this.authService.login(user);
     }
+
+    @Post("refresh")
+    @HttpCode(200)
+    async refresh(@Body("refreshToken") refreshToken: string) {
+        return this.authService.refresh(refreshToken);
+    }
 }
