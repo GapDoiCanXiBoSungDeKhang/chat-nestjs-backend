@@ -1,3 +1,4 @@
+import {Types} from "mongoose";
 import {ConflictException, Injectable, UnauthorizedException} from "@nestjs/common";
 import * as bcrypt from "bcrypt";
 import {JwtService} from "@nestjs/jwt";
@@ -8,7 +9,6 @@ import {UserService} from "../user/user.service";
 import {InputRegisterUserDto} from "./dto/inputRegister.dto";
 import {registerDto} from "./dto/register.dto";
 import {UserDocument} from "../user/schema/user.schema";
-import {Types} from "mongoose";
 
 @Injectable()
 export class AuthService {
