@@ -8,7 +8,6 @@ import {UserService} from "../user/user.service";
 import {InputRegisterUserDto} from "./dto/inputRegister.dto";
 import {registerDto} from "./dto/register.dto";
 import {UserDocument} from "../user/schema/user.schema";
-import {compareToken, hashToken} from "../../shared/helpers/token.helper";
 
 @Injectable()
 export class AuthService {
@@ -61,12 +60,10 @@ export class AuthService {
             }
         );
 
-        const hashRefreshToken = await hashToken(refreshToken);
         await this.userService.updateRefreshToken(
             payload.sub,
-            hashRefreshToken
+            refreshToken
         );
-
         return {
             accessToken,
             refreshToken
@@ -83,8 +80,7 @@ export class AuthService {
             if (!user || !user.refreshToken) {
                 throw new UnauthorizedException();
             }
-            const isValid = await compareToken(refreshToken, user.refreshToken);
-            if (!isValid) {
+            if (refreshToken !== user.refreshToken) {
                 throw new UnauthorizedException("Refresh token reused");
             }
 
@@ -100,10 +96,9 @@ export class AuthService {
                 }
             );
 
-            const hashRefreshToken = await hashToken(newRefreshToken);
             await this.userService.updateRefreshToken(
                 user._id,
-                hashRefreshToken
+                newRefreshToken
             );
             return {
                 accessToken: newAccessToken,
