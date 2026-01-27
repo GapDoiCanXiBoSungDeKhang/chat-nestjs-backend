@@ -57,4 +57,8 @@ export class ConversationService {
             .sort({createdAt: -1})
             .lean();
     }
+
+    public async users(userId: Types.ObjectId) {
+        return this.userService.listUser(userId);
+    }
 }

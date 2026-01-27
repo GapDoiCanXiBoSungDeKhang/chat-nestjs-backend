@@ -28,4 +28,11 @@ export class ConversationController {
     public async conversations(@JwtDecode() user: JwtType) {
         return this.conversationService.getAllConversations(user.userId);
     }
+
+    @UseGuards(JwtAuthGuard)
+    @Get("list-user")
+    @HttpCode(201)
+    public async users(@JwtDecode() user: JwtType) {
+        return this.conversationService.users(user.userId);
+    }
 }

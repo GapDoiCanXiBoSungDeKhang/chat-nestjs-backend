@@ -48,4 +48,14 @@ export class UserService {
             {refreshToken: token}
         );
     }
+
+    public async listUser(userId: Types.ObjectId) {
+        return this.userModel.find(
+            { _id: {$ne: userId}},
+            {
+                _id: 1,
+                name: 1
+            }
+        ).lean();
+    }
 }
