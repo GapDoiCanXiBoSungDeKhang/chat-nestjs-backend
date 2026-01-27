@@ -49,4 +49,12 @@ export class ConversationService {
         });
         return create;
     }
+
+    async getAllConversations(myUserId: Types.ObjectId) {
+        return this.conversationModel
+            .find({"participants.userId": myUserId})
+            .populate("participants.userId", "name avatar status")
+            .sort({createdAt: -1})
+            .lean();
+    }
 }
