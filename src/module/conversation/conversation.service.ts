@@ -48,8 +48,8 @@ export class ConversationService {
             type: "private",
             createdBy: myUserId,
             participants: [
-                {userId: myUserId},
-                {userId: id}
+                {userId: myUserId, role: "owner"},
+                {userId: id, role: "member"}
             ]
         });
         return create;
