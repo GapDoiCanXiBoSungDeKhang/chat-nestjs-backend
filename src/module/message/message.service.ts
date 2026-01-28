@@ -53,4 +53,17 @@ export class MessageService {
         });
         return filter.map(mgs => mgs.conversationId);
     }
+
+    public async markAsSeen(
+        conversationId: Types.ObjectId,
+        userId: Types.ObjectId,
+    ) {
+        await this.messageModel.updateMany({
+            conversationId: conversationId,
+            seenBy: {$ne: userId}
+        }, {
+            $addToSet: {seenBy: userId}
+        });
+        return {success: true};
+    }
 }

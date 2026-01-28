@@ -1,5 +1,5 @@
 import {Types} from "mongoose";
-import {Body, Controller, Get, Param, Post, UseGuards} from "@nestjs/common";
+import {Body, Controller, Get, Param, Patch, Post, UseGuards} from "@nestjs/common";
 
 import {MessageService} from "./message.service";
 
@@ -40,5 +40,18 @@ export class MessageController {
     ) {
         const conversationId = new Types.ObjectId(room);
         return this.messageService.messages(conversationId);
+    }
+
+    @UseGuards(JwtAuthGuard, ConversationParticipantGuard)
+    @Patch(":id/seen")
+    async markAsSeen(
+        @Param("id") room: IdConversationDto["id"],
+        @JwtDecode() user: JwtType
+    ) {
+        const conversationId = new Types.ObjectId(room);
+        return this.messageService.markAsSeen(
+            conversationId,
+            user.userId
+        );
     }
 }
