@@ -26,6 +26,7 @@ export class MessageService {
             seenBy: [userId],
             content
         });
+        await message.populate("senderId", "name avatar");
         await this.conversationService
             .updateConversation(
                 conversationId,

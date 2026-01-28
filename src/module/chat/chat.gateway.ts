@@ -11,6 +11,10 @@ import {JwtService} from "@nestjs/jwt";
 
 import {Socket, Server} from "socket.io";
 
+import {ConversationService} from "../conversation/conversation.service";
+
+import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
+
 @WebSocketGateway({
     cors: {
         origin: "*",
@@ -22,7 +26,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     server!: Server;
 
     constructor(
-        private readonly jwtService: JwtService
+        private readonly jwtService: JwtService,
+        public readonly conversationService: ConversationService,
     ) {}
 
     private onlineUsers = new Map<string, Set<string>>();
@@ -47,7 +52,30 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.onlineUsers.get(userId)?.add(client.id);
 
         console.log(`Client connected: ${client.id}`);
-        // console.log(this.onlineUsers);
+        console.log(this.onlineUsers);
+    }
+
+    @SubscribeMessage("join_conversation")
+    async handleJoinConversation(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() data: {conversationId: string}
+    ) {
+        const userId = convertStringToObjectId(client.data.userId);
+        const conversationId = convertStringToObjectId(data.conversationId);
+
+        const checkParticipants = await this.conversationService
+            .findUserParticipants(
+                userId,
+                conversationId
+            );
+        if (!checkParticipants) {
+            client.emit("error", {message: "user not in conversation!"});
+        }
+
+        const room = `room:${data.conversationId}`;
+        client.join(room);
+        console.log(`userId ${userId} have join room ${conversationId}`);
+        console.log(client.rooms);
     }
 
     handleDisconnect(client: any): any {
