@@ -43,18 +43,44 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             client.disconnect(true);
             return;
         }
-        const payload = this.jwtService.verify(token);
-        const userId = payload.sub;
-        client.data.userId = userId;
 
-        if (!this.onlineUsers.has(userId)) {
-            this.onlineUsers.set(userId, new Set());
-            this.server.emit("user_online", {userId});
+        try {
+            const payload = this.jwtService.verify(token);
+            const userId = payload.sub;
+            client.data.userId = userId;
+
+            if (!this.onlineUsers.has(userId)) {
+                this.onlineUsers.set(userId, new Set());
+                this.server.emit("user_online", {userId});
+            }
+            this.onlineUsers.get(userId)?.add(client.id);
+
+            console.log(`Client connected: ${client.id}`);
+        } catch (error) {
+            client.emit("error", {message: "Invalid token!"});
+            client.disconnect(true);
         }
-        this.onlineUsers.get(userId)?.add(client.id);
+    }
 
-        console.log(`Client connected: ${client.id}`);
-        console.log(this.onlineUsers);
+    handleDisconnect(client: Socket): any {
+        const userId = client.data.userId;
+
+        if (!userId) {
+            console.log(`Client ${client.id} disconnected without userId`);
+            return;
+        }
+
+        const sockets = this.onlineUsers.get(userId);
+        if (!sockets) {
+            return; // User đã offline rồi
+        }
+
+        sockets.delete(client.id);
+        if (sockets.size === 0) {
+            this.onlineUsers.delete(userId);
+            this.server.emit("user_offline", {userId});
+            console.log(`User ${userId} is now offline`);
+        }
     }
 
     @SubscribeMessage("join_conversation")
@@ -90,22 +116,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         client.leave(room);
     }
 
-    handleDisconnect(client: Socket): any {
-        const userId = client.data.userId;
-        const sockets = this.onlineUsers.get(userId);
-        if (!sockets) {
-            client.emit("error", {message: "user not found!"});
-            client.disconnect(true);
-            return;
-        }
-        sockets?.delete(client.id);
-        if (!sockets?.size) {
-            this.onlineUsers.delete(userId);
-            this.server.emit("user_offline", {userId});
-            console.log(`userId: ${userId} disconnected!`);
-        }
-        console.log(this.onlineUsers);
-    }
 
     @SubscribeMessage("send_message")
     async handleSendMessage(
@@ -115,31 +125,32 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             content: string
         }
     ) {
-        const userId = convertStringToObjectId(client.data.userId);
-        const conversationId = convertStringToObjectId(data.conversationId);
+        try {
+            const userId = convertStringToObjectId(client.data.userId);
+            const conversationId = convertStringToObjectId(data.conversationId);
 
-        const checkParticipants = await this.conversationService
-            .findUserParticipants(
-                userId,
-                conversationId
-            );
-        if (!checkParticipants) {
-            client.emit("error", {message: "user not in conversation!"});
-            return;
-        }
+            const checkParticipants = await this.conversationService
+                .findUserParticipants(userId, conversationId);
 
-        const message = await this.messageService
-            .create(
-                userId,
-                conversationId,
-                data.content
-            );
-        if (!message) {
-            client.emit("error", {message: "error when sending message!"});
-            return;
+            if (!checkParticipants) {
+                client.emit("error", {message: "user not in conversation!"});
+                return;
+            }
+
+            const message = await this.messageService
+                .create(userId, conversationId, data.content);
+
+            if (!message) {
+                client.emit("error", {message: "error when sending message!"});
+                return;
+            }
+
+            const room = `room:${data.conversationId}`;
+            this.server.to(room).emit("new_message", message);
+        } catch (error) {
+            console.error("Error in send_message:", error);
+            client.emit("error", {message: "Failed to send message"});
         }
-        const room = `room:${data.conversationId}`;
-        this.server.to(room).emit("new_message", message);
     }
 
     @SubscribeMessage("typing_start")
