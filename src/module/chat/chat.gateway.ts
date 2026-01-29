@@ -12,6 +12,7 @@ import {JwtService} from "@nestjs/jwt";
 import {Socket, Server} from "socket.io";
 
 import {ConversationService} from "../conversation/conversation.service";
+import {MessageService} from "../message/message.service";
 
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 
@@ -27,7 +28,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     constructor(
         private readonly jwtService: JwtService,
-        public readonly conversationService: ConversationService,
+        private readonly messageService: MessageService,
+        private readonly conversationService: ConversationService,
     ) {}
 
     private onlineUsers = new Map<string, Set<string>>();
@@ -82,13 +84,52 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     handleDisconnect(client: Socket): any {
         const userId = client.data.userId;
         const sockets = this.onlineUsers.get(userId);
+        if (!sockets) {
+            client.emit("error", {message: "user not found!"});
+            client.disconnect(true);
+            return;
+        }
         sockets?.delete(client.id);
-
         if (!sockets?.size) {
             this.onlineUsers.delete(userId);
             this.server.emit("user_offline", {userId});
             console.log(`userId: ${userId} disconnected!`);
         }
         console.log(this.onlineUsers);
+    }
+
+    @SubscribeMessage("send_message")
+    async handleSendMessage(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() data: {
+            conversationId: string,
+            content: string
+        }
+    ) {
+        const userId = convertStringToObjectId(client.data.userId);
+        const conversationId = convertStringToObjectId(data.conversationId);
+
+        const checkParticipants = await this.conversationService
+            .findUserParticipants(
+                userId,
+                conversationId
+            );
+        if (!checkParticipants) {
+            client.emit("error", {message: "user not in conversation!"});
+            return;
+        }
+
+        const message = await this.messageService
+            .create(
+                userId,
+                conversationId,
+                data.content
+            );
+        if (!message) {
+            client.emit("error", {message: "error when sending message!"});
+            return;
+        }
+        const room = `room:${data.conversationId}`;
+        this.server.to(room).emit("new_message", message);
     }
 }
