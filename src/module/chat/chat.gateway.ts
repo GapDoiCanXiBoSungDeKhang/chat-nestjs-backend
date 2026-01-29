@@ -70,6 +70,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             );
         if (!checkParticipants) {
             client.emit("error", {message: "user not in conversation!"});
+            return;
         }
 
         const room = `room:${data.conversationId}`;
@@ -78,10 +79,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         console.log(client.rooms);
     }
 
-    handleDisconnect(client: any): any {
+    handleDisconnect(client: Socket): any {
         const userId = client.data.userId;
-        this.onlineUsers.delete(userId);
-        console.log(`Client disconnected: ${client.id}`);
+        const sockets = this.onlineUsers.get(userId);
+        sockets?.delete(client.id);
+
+        if (!sockets?.size) {
+            this.onlineUsers.delete(userId);
+            this.server.emit("user_offline", {userId});
+            console.log(`userId: ${userId} disconnected!`);
+        }
         console.log(this.onlineUsers);
     }
 }
