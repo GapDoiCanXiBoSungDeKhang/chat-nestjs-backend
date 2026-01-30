@@ -1,4 +1,4 @@
-import {Injectable} from "@nestjs/common";
+import {BadRequestException, ForbiddenException, Injectable, UnauthorizedException} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import {Model, Types} from "mongoose";
 
@@ -11,18 +11,33 @@ export class FriendService {
         private readonly friendRequestModel: Model<FriendRequestDocument>,
     ) {}
 
-    async makeFriend(
-        userId: Types.ObjectId,
-        userIdSend: Types.ObjectId
+    async friendExits(
+        fromId: Types.ObjectId,
+        toId: Types.ObjectId
     ) {
+        return !!(await this.friendRequestModel.findOne({
+            from: fromId,
+            to: toId
+        }))
+    }
+
+    async makeFriend(
+        fromId: Types.ObjectId,
+        toId: Types.ObjectId,
+        message: string,
+    ) {
+        if (fromId === toId) {
+            throw new ForbiddenException("User not is a user");
+        }
+        const exits = await this.friendExits(fromId, toId);
+        if (exits) {
+            throw new BadRequestException("User already exists");
+        }
         const req = await this.friendRequestModel.create({
-            from: userId,
-            to: userIdSend,
+            from: fromId,
+            to: toId,
+            message
         });
-        await req.populate([
-            {path: "from", select: "name avatar"},
-            {path: "to", select: "name avatar"},
-        ]);
 
         return req;
     }

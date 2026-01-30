@@ -13,7 +13,6 @@ export class FriendRequest {
 
     @Prop({
         type: String,
-        default: "Kết bạn với mình nhé!",
         required: true,
         max: 300
     })
