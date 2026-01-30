@@ -2,7 +2,7 @@ import {Injectable} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import {Model, Types} from "mongoose";
 
-import {FriendRequest, FriendRequestDocument} from "./schema/friend.schema";
+import {FriendRequest, FriendRequestDocument} from "./schema/friendRequest.schema";
 
 @Injectable()
 export class FriendService {

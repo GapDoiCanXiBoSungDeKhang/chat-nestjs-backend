@@ -8,7 +8,7 @@ import {JwtType} from "../../common/types/jwtTypes.type";
 
 import {JwtDecode} from "../../common/decorators/jwt.decorator";
 
-@Controller("friend-request")
+@Controller("friend")
 export class FriendController {
     constructor(
         private readonly friendRequestService: FriendService

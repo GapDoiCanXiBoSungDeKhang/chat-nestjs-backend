@@ -1,7 +1,7 @@
 import {Module} from "@nestjs/common";
 import {MongooseModule} from "@nestjs/mongoose";
 
-import {FriendRequest, FriendRequestSchema} from "./schema/friend.schema";
+import {FriendRequest, FriendRequestSchema} from "./schema/friendRequest.schema";
 import {FriendService} from "./friend.service";
 import {FriendController} from "./friend.controller";
 
