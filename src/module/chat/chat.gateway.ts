@@ -72,7 +72,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
         const sockets = this.onlineUsers.get(userId);
         if (!sockets) {
-            return; // User đã offline rồi
+            return;
         }
 
         sockets.delete(client.id);
