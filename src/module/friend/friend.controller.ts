@@ -1,4 +1,4 @@
-import {Controller, Post, HttpCode, UseGuards, Req, Body, Patch, Param} from "@nestjs/common";
+import {Controller, Post, HttpCode, UseGuards, Req, Body, Patch, Param, Get} from "@nestjs/common";
 import {Types} from "mongoose";
 
 import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
@@ -41,5 +41,12 @@ export class FriendController {
         return data.action === "accepted"
             ? this.friendRequestService.acceptedRequest(id, user.userId)
             : this.friendRequestService.rejectedRequest(id, user.userId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(200)
+    @Get("requests")
+    async requests(@JwtDecode() user: JwtType) {
+        return this.friendRequestService.request(user.userId);
     }
 }

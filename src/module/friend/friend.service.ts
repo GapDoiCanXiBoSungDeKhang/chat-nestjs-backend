@@ -103,4 +103,15 @@ export class FriendService {
 
         return req;
     }
+
+    async request(userId: string) {
+        return this.friendRequestModel
+            .find({
+                to: convertStringToObjectId(userId),
+                status: "pending"
+            })
+                .populate("from", "name avatar")
+                .sort({ createdAt: -1 })
+                .lean();
+    }
 }
