@@ -13,12 +13,12 @@ import {JwtDecode} from "../../common/decorators/jwt.decorator";
 import {JwtType} from "../../common/types/jwtTypes.type";
 
 @Controller("messages")
+@UseGuards(JwtAuthGuard, ConversationParticipantGuard)
 export class MessageController {
     constructor(
         private readonly messageService: MessageService
     ) {}
 
-    @UseGuards(JwtAuthGuard, ConversationParticipantGuard)
     @Post(":id")
     async message(
         @Param("id") room: IdConversationDto["id"],
@@ -32,7 +32,6 @@ export class MessageController {
         );
     }
 
-    @UseGuards(JwtAuthGuard, ConversationParticipantGuard)
     @Get(":id")
     async getMessages(
         @Param("id") room: IdConversationDto["id"],
@@ -40,7 +39,6 @@ export class MessageController {
         return this.messageService.messages(room);
     }
 
-    @UseGuards(JwtAuthGuard, ConversationParticipantGuard)
     @Patch(":id/seen")
     async markAsSeen(
         @Param("id") room: IdConversationDto["id"],

@@ -11,12 +11,12 @@ import {ResRequestIdDto, ResResponseActionDto} from "./dto/responeRequest.dto";
 import {UnfriendDto} from "./dto/unfriend.dto";
 
 @Controller("friends")
+@UseGuards(JwtAuthGuard)
 export class FriendController {
     constructor(
         private readonly friendRequestService: FriendService
     ) {}
 
-    @UseGuards(JwtAuthGuard)
     @HttpCode(201)
     @Post("request")
     async sendRequest(
@@ -30,7 +30,6 @@ export class FriendController {
         );
     }
 
-    @UseGuards(JwtAuthGuard)
     @HttpCode(200)
     @Patch("request/:id")
     async resRequest(
@@ -43,21 +42,18 @@ export class FriendController {
             : this.friendRequestService.rejectedRequest(id, user.userId);
     }
 
-    @UseGuards(JwtAuthGuard)
     @HttpCode(200)
     @Get("requests")
     async requests(@JwtDecode() user: JwtType) {
         return this.friendRequestService.request(user.userId);
     }
 
-    @UseGuards(JwtAuthGuard)
     @HttpCode(200)
     @Get()
     async friends(@JwtDecode() user: JwtType) {
         return this.friendRequestService.friends(user.userId);
     }
 
-    @UseGuards(JwtAuthGuard)
     @HttpCode(200)
     @Delete(":id")
     async unfriend(

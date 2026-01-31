@@ -7,12 +7,12 @@ import {ConversationService} from "./conversation.service";
 import {CreatePrivateConversationDto} from "./dto/create-private.dto";
 
 @Controller("conversations")
+@UseGuards(JwtAuthGuard)
 export class ConversationController {
     constructor(
         private conversationService: ConversationService
     ) {}
 
-    @UseGuards(JwtAuthGuard)
     @Post("private")
     @HttpCode(201)
     public async createConversation(
@@ -22,14 +22,12 @@ export class ConversationController {
         return this.conversationService.create(user.userId, dto.userId);
     }
 
-    @UseGuards(JwtAuthGuard)
     @Get("")
     @HttpCode(201)
     public async conversations(@JwtDecode() user: JwtType) {
         return this.conversationService.getAllConversations(user.userId);
     }
 
-    @UseGuards(JwtAuthGuard)
     @Get("list-user")
     @HttpCode(201)
     public async users(@JwtDecode() user: JwtType) {
