@@ -1,11 +1,20 @@
-import {IsNotEmpty, IsMongoId, IsString} from "class-validator";
+import {IsNotEmpty, IsMongoId, IsString, IsEnum} from "class-validator";
 
-export class ResRequestDto {
+enum action {
+    "accepted" = "accepted",
+    "rejected" = "rejected",
+    "pending" = "pending",
+}
+
+export class ResRequestIdDto {
     @IsNotEmpty()
     @IsMongoId()
     id!: string;
+}
 
+export class ResResponseActionDto {
     @IsNotEmpty()
     @IsString()
-    action!: string;
+    @IsEnum(action)
+    readonly action!: action;
 }

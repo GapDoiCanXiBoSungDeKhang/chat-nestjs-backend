@@ -8,7 +8,7 @@ import {JwtType} from "../../common/types/jwtTypes.type";
 
 import {JwtDecode} from "../../common/decorators/jwt.decorator";
 import {SendRequestDto} from "./dto/sendRequest.dto";
-import {ResRequestDto} from "./dto/responeRequest.dto";
+import {ResRequestIdDto, ResResponseActionDto} from "./dto/responeRequest.dto";
 
 @Controller("friends")
 export class FriendController {
@@ -29,5 +29,22 @@ export class FriendController {
             userIdSend,
             dto.message
         );
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(200)
+    @Patch("request/:id")
+    async resRequest(
+        @JwtDecode() user: JwtType,
+        @Param("id") id: ResRequestIdDto["id"],
+        @Body() data: ResResponseActionDto,
+    ) {
+        const requestId  = new Types.ObjectId(id);
+        if (data.action === "accepted") {
+            return this.friendRequestService.acceptedRequest(requestId, user.userId);
+        }
+        return {
+            "test": true
+        }
     }
 }
