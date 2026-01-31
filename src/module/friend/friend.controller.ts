@@ -1,4 +1,4 @@
-import {Controller, Post, HttpCode, UseGuards, Req, Body} from "@nestjs/common";
+import {Controller, Post, HttpCode, UseGuards, Req, Body, Patch, Param} from "@nestjs/common";
 import {Types} from "mongoose";
 
 import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
@@ -8,6 +8,7 @@ import {JwtType} from "../../common/types/jwtTypes.type";
 
 import {JwtDecode} from "../../common/decorators/jwt.decorator";
 import {SendRequestDto} from "./dto/sendRequest.dto";
+import {ResRequestDto} from "./dto/responeRequest.dto";
 
 @Controller("friends")
 export class FriendController {
@@ -18,7 +19,7 @@ export class FriendController {
     @UseGuards(JwtAuthGuard)
     @HttpCode(201)
     @Post("request")
-    async makeFriend(
+    async sendRequest(
         @JwtDecode() user: JwtType,
         @Body() dto: SendRequestDto,
     ) {

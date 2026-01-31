@@ -15,10 +15,12 @@ export class FriendService {
         fromId: Types.ObjectId,
         toId: Types.ObjectId
     ) {
-        return !!(await this.friendRequestModel.findOne({
-            from: fromId,
-            to: toId
-        }))
+        return this.friendRequestModel.findOne({
+            $or: [
+                {from: fromId, to: toId},
+                {from: toId, to: fromId},
+            ],
+        });
     }
 
     async makeFriend(
@@ -31,14 +33,16 @@ export class FriendService {
         }
         const exits = await this.friendExits(fromId, toId);
         if (exits) {
-            throw new BadRequestException("User already exists");
+            if (exits.status === "accepted")
+                throw new BadRequestException("Already friend");
+            if (exits.status === "pending")
+                throw new BadRequestException("Request already pending");
         }
-        const req = await this.friendRequestModel.create({
+
+        return this.friendRequestModel.create({
             from: fromId,
             to: toId,
             message
         });
-
-        return req;
     }
 }
