@@ -114,4 +114,22 @@ export class FriendService {
                 .sort({ createdAt: -1 })
                 .lean();
     }
+
+    async friends(userId: string) {
+        const friends = await this.friendRequestModel
+            .find({
+                status: "accepted",
+                $or: [
+                    {from: convertStringToObjectId(userId)},
+                    {to: convertStringToObjectId(userId)}
+                ]
+            })
+                .populate("from to", "name avatar status")
+
+        return friends.map(
+            r => r.from._id.toString() === userId
+                ? r.to
+                : r.from
+        );
+    }
 }

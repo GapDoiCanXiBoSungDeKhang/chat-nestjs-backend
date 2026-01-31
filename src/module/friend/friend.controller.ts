@@ -49,4 +49,11 @@ export class FriendController {
     async requests(@JwtDecode() user: JwtType) {
         return this.friendRequestService.request(user.userId);
     }
+
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(200)
+    @Get()
+    async friends(@JwtDecode() user: JwtType) {
+        return this.friendRequestService.friends(user.userId);
+    }
 }
