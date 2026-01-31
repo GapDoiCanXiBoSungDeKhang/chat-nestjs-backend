@@ -25,10 +25,9 @@ export class MessageController {
         @Body() body: CreateMessageDto,
         @JwtDecode() user: JwtType
     ) {
-        const conversationId = new Types.ObjectId(room);
         return this.messageService.create(
             user.userId,
-            conversationId,
+            room,
             body.content
         );
     }
@@ -38,8 +37,7 @@ export class MessageController {
     async getMessages(
         @Param("id") room: IdConversationDto["id"],
     ) {
-        const conversationId = new Types.ObjectId(room);
-        return this.messageService.messages(conversationId);
+        return this.messageService.messages(room);
     }
 
     @UseGuards(JwtAuthGuard, ConversationParticipantGuard)
@@ -48,9 +46,8 @@ export class MessageController {
         @Param("id") room: IdConversationDto["id"],
         @JwtDecode() user: JwtType
     ) {
-        const conversationId = new Types.ObjectId(room);
         return this.messageService.markAsSeen(
-            conversationId,
+            room,
             user.userId
         );
     }

@@ -6,6 +6,7 @@ import {Conversation, ConversationDocument} from "./schema/conversation.schema";
 
 import {UserService} from "../user/user.service";
 import {MessageService} from "../message/message.service";
+import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 
 @Injectable()
 export class ConversationService {
@@ -18,26 +19,21 @@ export class ConversationService {
         private readonly messageService: MessageService
     ) {}
 
-    private convertIdStringToObjectId(id: string) {
-        return new Types.ObjectId(id);
-    }
+    public async create(myUserId: string, userId: string) {
+        const findUser = await this.userService.findByObjectId(userId);
 
-    public async create(myUserId: Types.ObjectId, userId: string) {
-        const id = this.convertIdStringToObjectId(userId);
-
-        const findUser = await this.userService.findByObjectId(id);
         if (!findUser) {
             throw new ConflictException("User not found");
         }
-        if (myUserId.equals(id)) {
+        if (myUserId === userId) {
             throw new ConflictException("Cannot chat with yourself");
         }
         const existConversation = await this.conversationModel.findOne({
             type: "private",
             participants: {
                 $all: [
-                    {$elemMatch: {userId: myUserId}},
-                    {$elemMatch: {userId: id}}
+                    {$elemMatch: {userId: convertStringToObjectId(myUserId)}},
+                    {$elemMatch: {userId: convertStringToObjectId(userId)}}
                 ]
             }
         });
@@ -48,16 +44,16 @@ export class ConversationService {
             type: "private",
             createdBy: myUserId,
             participants: [
-                {userId: myUserId, role: "owner"},
-                {userId: id, role: "member"}
+                {userId: convertStringToObjectId(myUserId), role: "owner"},
+                {userId: convertStringToObjectId(userId), role: "member"}
             ]
         });
         return create;
     }
 
-    public async getAllConversations(myUserId: Types.ObjectId) {
+    public async getAllConversations(myUserId: string) {
         const conversations = await this.conversationModel
-            .find({"participants.userId": myUserId})
+            .find({"participants.userId": convertStringToObjectId(myUserId)})
             .populate("participants.userId", "name avatar status")
             .populate({
                 path: "lastMessage",
@@ -88,28 +84,28 @@ export class ConversationService {
         }))
     }
 
-    public async users(userId: Types.ObjectId) {
+    public async users(userId: string) {
         return this.userService.listUser(userId);
     }
 
     public async updateConversation(
-        conversationId: Types.ObjectId,
-        messageId: Types.ObjectId,
+        conversationId: string,
+        messageId: string,
     ) {
         await this.conversationModel.findByIdAndUpdate(
-            conversationId,
-            {lastMessage: messageId}
+            convertStringToObjectId(conversationId),
+            {lastMessage: convertStringToObjectId(messageId)}
         )
     }
 
     public async findUserParticipants(
-        userId: Types.ObjectId,
-        conversationId: Types.ObjectId,
+        userId: string,
+        conversationId: string,
     ) {
         return !!(await this.conversationModel
             .findOne({
-                _id: conversationId,
-                "participants.userId": userId
+                _id: convertStringToObjectId(conversationId),
+                "participants.userId": convertStringToObjectId(userId)
             }));
     }
 }

@@ -23,10 +23,9 @@ export class FriendController {
         @JwtDecode() user: JwtType,
         @Body() dto: SendRequestDto,
     ) {
-        const userIdSend  = new Types.ObjectId(dto.userId);
         return this.friendRequestService.makeFriend(
             user.userId,
-            userIdSend,
+            dto.userId,
             dto.message
         );
     }
@@ -39,12 +38,8 @@ export class FriendController {
         @Param("id") id: ResRequestIdDto["id"],
         @Body() data: ResResponseActionDto,
     ) {
-        const requestId  = new Types.ObjectId(id);
-        if (data.action === "accepted") {
-            return this.friendRequestService.acceptedRequest(requestId, user.userId);
-        }
-        return {
-            "test": true
-        }
+        return data.action === "accepted"
+            ? this.friendRequestService.acceptedRequest(id, user.userId)
+            : this.friendRequestService.rejectedRequest(id, user.userId);
     }
 }

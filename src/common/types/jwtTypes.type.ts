@@ -1,7 +1,5 @@
-import {Types} from "mongoose";
-
 export type JwtType = {
-    userId: Types.ObjectId;
+    userId: string;
     name: string;
     email: string;
 }

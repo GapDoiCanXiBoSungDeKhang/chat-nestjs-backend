@@ -11,8 +11,8 @@ export class ConversationParticipantGuard implements CanActivate {
 
     async canActivate(context: ExecutionContext) {
         const req = context.switchToHttp().getRequest();
-        const userId = new Types.ObjectId(req.user.userId);
-        const conversationId = new Types.ObjectId(req.params.id);
+        const userId = req.user.userId;
+        const conversationId = req.params.id;
 
         const findUser = await this.conversationService
             .findUserParticipants(

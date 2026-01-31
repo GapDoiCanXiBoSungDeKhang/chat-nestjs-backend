@@ -48,7 +48,11 @@ export class AuthService {
     }
 
     public async login(user: UserDocument) {
-        const payload = {sub: user._id, name: user.name, email: user.email};
+        const payload = {
+            sub: user._id.toString(),
+            name: user.name,
+            email: user.email
+        };
 
         const accessToken = this.jwtService.sign(payload, {
             expiresIn: "15m"
@@ -85,7 +89,11 @@ export class AuthService {
                 throw new UnauthorizedException("Refresh token reused");
             }
 
-            const newPayload = {sub: user._id, name: user.name, email: user.email};
+            const newPayload = {
+                sub: user._id.toString(),
+                name: user.name,
+                email: user.email
+            };
             const newAccessToken = this.jwtService.sign(newPayload, {
                 expiresIn: "15m",
             });
@@ -98,7 +106,7 @@ export class AuthService {
             );
 
             await this.userService.updateRefreshToken(
-                user._id,
+                newPayload.sub,
                 newRefreshToken
             );
             return {
@@ -114,7 +122,7 @@ export class AuthService {
         return this.configService.get<string>("JWT_SECRET_REFRESH")
     }
 
-    public async logout(userId: Types.ObjectId) {
+    public async logout(userId: string) {
         await this.userService.updateRefreshToken(userId, null);
         return {
             "message": "Logout successfully",

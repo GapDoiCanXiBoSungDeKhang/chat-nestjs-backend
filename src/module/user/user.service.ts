@@ -4,6 +4,7 @@ import {Model, Types} from "mongoose";
 
 import {User, UserDocument} from "./schema/user.schema";
 import {registerDto} from "../auth/dto/register.dto";
+import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 
 @Injectable()
 export class UserService {
@@ -22,16 +23,15 @@ export class UserService {
     }
 
     public async findById(userId: string) {
-        const id = new Types.ObjectId(userId);
-        return this.userModel.findById(id).lean();
+        return this.userModel.findById(convertStringToObjectId(userId)).lean();
     }
 
     public async findByEmail(email: string) {
         return !!(await this.userModel.findOne({email}));
     }
 
-    async findByObjectId(id: Types.ObjectId) {
-        return !!(await this.userModel.findById(id));
+    async findByObjectId(id: string) {
+        return !!(await this.userModel.findById(convertStringToObjectId(id)));
     }
 
     public async getInfoByEmail(email: string) {
@@ -42,16 +42,16 @@ export class UserService {
         return !!(await this.userModel.findOne({phoneNumber}));
     }
 
-    public async updateRefreshToken(userId: Types.ObjectId, token: string | null) {
+    public async updateRefreshToken(userId: string, token: string | null) {
         await this.userModel.findByIdAndUpdate(
-            userId,
+            convertStringToObjectId(userId),
             {refreshToken: token}
         );
     }
 
-    public async listUser(userId: Types.ObjectId) {
+    public async listUser(userId: string) {
         return this.userModel.find(
-            { _id: {$ne: userId}},
+            { _id: {$ne: convertStringToObjectId(userId)}},
             {
                 _id: 1,
                 name: 1

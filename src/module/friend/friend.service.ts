@@ -1,9 +1,10 @@
 import {BadRequestException, ForbiddenException, Injectable, UnauthorizedException} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
-import {Model, Types} from "mongoose";
+import {Model} from "mongoose";
 
 import {FriendRequest, FriendRequestDocument} from "./schema/friendRequest.schema";
 import {ConversationService} from "../conversation/conversation.service";
+import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 
 @Injectable()
 export class FriendService {
@@ -14,20 +15,26 @@ export class FriendService {
     ) {}
 
     async friendExits(
-        fromId: Types.ObjectId,
-        toId: Types.ObjectId
+        fromId: string,
+        toId: string
     ) {
         return this.friendRequestModel.findOne({
             $or: [
-                {from: fromId, to: toId},
-                {from: toId, to: fromId},
+                {
+                    from: convertStringToObjectId(fromId),
+                    to: convertStringToObjectId(toId)
+                },
+                {
+                    from: convertStringToObjectId(toId),
+                    to: convertStringToObjectId(fromId)
+                },
             ],
         });
     }
 
     async makeFriend(
-        fromId: Types.ObjectId,
-        toId: Types.ObjectId,
+        fromId: string,
+        toId: string,
         message: string,
     ) {
         if (fromId === toId) {
@@ -42,22 +49,23 @@ export class FriendService {
         }
 
         return this.friendRequestModel.create({
-            from: fromId,
-            to: toId,
+            from: convertStringToObjectId(fromId),
+            to: convertStringToObjectId(toId),
             message
         });
     }
 
-    async findRequestId(id: Types.ObjectId) {
-        return this.friendRequestModel.findById(id);
+    async findRequestId(id: string) {
+        return this.friendRequestModel.findById(convertStringToObjectId(id));
     }
 
     async acceptedRequest(
-        requestId: Types.ObjectId,
-        userId: Types.ObjectId
+        requestId: string,
+        userId: string
     ) {
         const req = await this.findRequestId(requestId);
-        if (!req || req.to === userId) {
+
+        if (!req || req.to.toString() !== userId) {
             throw new ForbiddenException("User get request not for you!");
         }
         if (req.status !== "pending") {
@@ -65,9 +73,10 @@ export class FriendService {
         }
         req.status = "accepted";
         await req.save();
+
         const conversation = await this.conversationService
             .create(
-                req.from,
+                req.from.toString(),
                 req.to.toString()
             );
 
@@ -75,5 +84,23 @@ export class FriendService {
             req,
             conversation
         };
+    }
+
+    async rejectedRequest(
+        requestId: string,
+        userId: string
+    ) {
+        const req = await this.findRequestId(requestId);
+
+        if (!req || req.to.toString() !== userId) {
+            throw new ForbiddenException("User get request not for you!");
+        }
+        if (req.status !== "pending") {
+            throw new BadRequestException("Request already handled");
+        }
+        req.status = "rejected";
+        await req.save();
+
+        return req;
     }
 }

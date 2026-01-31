@@ -4,6 +4,7 @@ import {Model, Types} from "mongoose";
 
 import {Message, MessageDocument} from "./schema/message.schema";
 import {ConversationService} from "../conversation/conversation.service";
+import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 
 @Injectable()
 export class MessageService {
@@ -16,8 +17,8 @@ export class MessageService {
     ) {}
 
     public async create(
-        userId: Types.ObjectId,
-        conversationId: Types.ObjectId,
+        userId: string,
+        conversationId: string,
         content: string,
     ) {
         const message = await this.messageModel.create({
@@ -30,13 +31,13 @@ export class MessageService {
         await this.conversationService
             .updateConversation(
                 conversationId,
-                message._id
+                message._id.toString()
             );
         return message;
     }
 
-    public async messages(conversationId: Types.ObjectId) {
-        return this.messageModel.find({conversationId: conversationId})
+    public async messages(conversationId: string) {
+        return this.messageModel.find({conversationId: convertStringToObjectId(conversationId)})
             .populate("senderId", "name avatar status")
             .sort({createdAt: 1})
             .lean();
@@ -44,11 +45,11 @@ export class MessageService {
 
     public async filterMessageConversationNotSeen(
         conversationIds: Types.ObjectId[],
-        userId: Types.ObjectId,
+        userId: string,
     ) {
         const filter = await this.messageModel.find({
             conversationId: {$in: conversationIds},
-            seenBy: {$ne: userId}
+            seenBy: {$ne: convertStringToObjectId(userId)}
         }, {
             conversationId: 1,
         });
@@ -56,14 +57,14 @@ export class MessageService {
     }
 
     public async markAsSeen(
-        conversationId: Types.ObjectId,
-        userId: Types.ObjectId,
+        conversationId: string,
+        userId: string,
     ) {
         await this.messageModel.updateMany({
-            conversationId: conversationId,
-            seenBy: {$ne: userId}
+            conversationId: convertStringToObjectId(conversationId),
+            seenBy: {$ne: convertStringToObjectId(userId)}
         }, {
-            $addToSet: {seenBy: userId}
+            $addToSet: {seenBy: convertStringToObjectId(userId)}
         });
         return {success: true};
     }
