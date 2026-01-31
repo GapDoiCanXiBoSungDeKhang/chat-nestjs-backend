@@ -1,5 +1,4 @@
-import {Controller, Post, HttpCode, UseGuards, Req, Body, Patch, Param, Get} from "@nestjs/common";
-import {Types} from "mongoose";
+import {Controller, Post, HttpCode, UseGuards, Body, Patch, Param, Get, Delete} from "@nestjs/common";
 
 import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
 
@@ -9,6 +8,7 @@ import {JwtType} from "../../common/types/jwtTypes.type";
 import {JwtDecode} from "../../common/decorators/jwt.decorator";
 import {SendRequestDto} from "./dto/sendRequest.dto";
 import {ResRequestIdDto, ResResponseActionDto} from "./dto/responeRequest.dto";
+import {UnfriendDto} from "./dto/unfriend.dto";
 
 @Controller("friends")
 export class FriendController {
@@ -55,5 +55,15 @@ export class FriendController {
     @Get()
     async friends(@JwtDecode() user: JwtType) {
         return this.friendRequestService.friends(user.userId);
+    }
+
+    @UseGuards(JwtAuthGuard)
+    @HttpCode(200)
+    @Delete(":id")
+    async unfriend(
+        @Param("id") userId: UnfriendDto["id"],
+        @JwtDecode() user: JwtType
+    ) {
+        return this.friendRequestService.unfriend(user.userId, userId);
     }
 }

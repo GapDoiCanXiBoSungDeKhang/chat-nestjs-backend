@@ -1,4 +1,10 @@
-import {BadRequestException, ForbiddenException, Injectable, UnauthorizedException} from "@nestjs/common";
+import {
+    BadRequestException,
+    ForbiddenException,
+    Injectable,
+    NotFoundException,
+    UnauthorizedException
+} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import {Model} from "mongoose";
 
@@ -131,5 +137,30 @@ export class FriendService {
                 ? r.to
                 : r.from
         );
+    }
+
+    async unfriend(userId: string, targetUserId: string) {
+        const relation = await this.friendRequestModel
+            .findOne({
+                status: "accepted",
+                $or: [
+                    {
+                        from: convertStringToObjectId(userId),
+                        to: convertStringToObjectId(targetUserId)
+                    },
+                    {
+                        from: convertStringToObjectId(targetUserId),
+                        to: convertStringToObjectId(userId)
+                    }
+                ]
+            });
+
+        if (!relation) {
+            throw new NotFoundException("Not friend");
+        }
+        await relation.deleteOne();
+        return {
+            success: true
+        }
     }
 }
