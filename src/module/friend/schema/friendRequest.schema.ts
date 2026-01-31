@@ -28,5 +28,5 @@ export class FriendRequest {
 export const FriendRequestSchema = SchemaFactory.createForClass(FriendRequest);
 
 FriendRequestSchema.index({from: 1, to: 1}, {unique: true});
-FriendRequestSchema.index({to: 1, status: 1});
-FriendRequestSchema.index({from: 1, status: 1});
+FriendRequestSchema.index({to: 1, status: 1, updatedAt: -1});
+FriendRequestSchema.index({from: 1, status: 1, updatedAt: -1});
