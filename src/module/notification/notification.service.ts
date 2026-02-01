@@ -41,4 +41,17 @@ export class NotificationService {
             { new: true }
         );
     }
+
+    async markReadAll(userId: string) {
+        await this.notificationModel.updateMany(
+            {
+                userId: convertStringToObjectId(userId),
+                isRead: false
+            },
+            {isRead: true}
+        );
+        return {
+            message: "success"
+        }
+    }
 }

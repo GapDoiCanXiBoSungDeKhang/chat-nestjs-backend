@@ -34,4 +34,9 @@ export class NotificationController {
     ) {
         return this.notificationService.markRead(id, user.userId);
     }
+
+    @Patch("read-all")
+    async markReadAll(@JwtDecode() user: JwtType) {
+        return this.notificationService.markReadAll(user.userId);
+    }
 }
