@@ -5,9 +5,11 @@ import {Message, MessageSchema} from "./schema/message.schema";
 import {ConversationModule} from "../conversation/conversation.module";
 import {MessageService} from "./message.service";
 import {MessageController} from "./message.controller";
+import {NotificationModule} from "../notification/notification.module";
 
 @Module({
     imports: [
+        NotificationModule,
         forwardRef(() => ConversationModule),
         MongooseModule.forFeature([{
             name: Message.name,

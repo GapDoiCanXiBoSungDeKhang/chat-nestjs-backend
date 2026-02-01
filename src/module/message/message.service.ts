@@ -4,6 +4,8 @@ import {Model, Types} from "mongoose";
 
 import {Message, MessageDocument} from "./schema/message.schema";
 import {ConversationService} from "../conversation/conversation.service";
+import {NotificationService} from "../notification/notification.service";
+
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 
 @Injectable()
@@ -14,6 +16,7 @@ export class MessageService {
 
         @Inject(forwardRef(() => ConversationService))
         private readonly conversationService: ConversationService,
+        private readonly notificationService: NotificationService,
     ) {}
 
     public async create(
@@ -33,6 +36,22 @@ export class MessageService {
                 conversationId,
                 message._id.toString()
             );
+
+        const receiverId = await this.conversationService
+            .getUserParticipant(
+                conversationId,
+                userId
+            );
+        await this.notificationService.create({
+            userId: receiverId,
+            type: "message",
+            refId: convertStringToObjectId(conversationId),
+            payload: {
+                conversationId: convertStringToObjectId(conversationId),
+                senderId: convertStringToObjectId(userId),
+                contend: message.content.slice(0, 30)
+            }
+        })
         return message;
     }
 

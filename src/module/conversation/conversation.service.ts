@@ -1,6 +1,13 @@
 import {Model, Types} from "mongoose";
 import {InjectModel} from "@nestjs/mongoose";
-import {ConflictException, forwardRef, Inject, Injectable} from "@nestjs/common";
+import {
+    BadRequestException,
+    ConflictException,
+    forwardRef,
+    Inject,
+    Injectable,
+    NotFoundException
+} from "@nestjs/common";
 
 import {Conversation, ConversationDocument} from "./schema/conversation.schema";
 
@@ -97,6 +104,30 @@ export class ConversationService {
             {lastMessage: convertStringToObjectId(messageId)}
         )
     }
+
+    public async getUserParticipant(
+        conversationId: string,
+        userId: string
+    ) {
+        const conversation = await this.conversationModel
+            .findById(
+                convertStringToObjectId(conversationId)
+            );
+
+        if (!conversation) {
+            throw new NotFoundException("Conversation not found");
+        }
+        const other = conversation
+            .participants.find(
+                p => p.userId.toString() !== userId
+            );
+        if (!other) {
+            throw new BadRequestException("Invalid private conversation");
+        }
+
+        return other.userId;
+    }
+
 
     public async findUserParticipants(
         userId: string,
