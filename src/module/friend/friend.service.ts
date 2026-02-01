@@ -3,7 +3,6 @@ import {
     ForbiddenException,
     Injectable,
     NotFoundException,
-    UnauthorizedException
 } from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import {Model} from "mongoose";
@@ -23,7 +22,7 @@ export class FriendService {
         private readonly notificationService: NotificationService,
     ) {}
 
-    async friendExits(
+    public async friendExits(
         fromId: string,
         toId: string
     ) {
@@ -41,7 +40,7 @@ export class FriendService {
         });
     }
 
-    async makeFriend(
+    public async makeFriend(
         fromId: string,
         toId: string,
         message: string,
@@ -62,23 +61,32 @@ export class FriendService {
             to: convertStringToObjectId(toId),
             message
         });
+        await request.populate("from", "name avatar");
+
         await this.notificationService.create({
             userId: convertStringToObjectId(toId),
             type: "friend_request",
             refId: request._id,
             payload: {
-                fromId: convertStringToObjectId(fromId),
+                _id: request._id,
+                from: {
+                    _id: request.from._id,
+                    name: request.from.name,
+                    avatar: request.from.avatar,
+                },
+                message: request.message,
+                createdAt: request.createdAt,
             }
         });
 
         return request;
     }
 
-    async findRequestId(id: string) {
+    public async findRequestId(id: string) {
         return this.friendRequestModel.findById(convertStringToObjectId(id));
     }
 
-    async acceptedRequest(
+    public async acceptedRequest(
         requestId: string,
         userId: string
     ) {
@@ -113,7 +121,7 @@ export class FriendService {
         };
     }
 
-    async rejectedRequest(
+    public async rejectedRequest(
         requestId: string,
         userId: string
     ) {
@@ -131,7 +139,7 @@ export class FriendService {
         return req;
     }
 
-    async request(userId: string) {
+    public async request(userId: string) {
         return this.friendRequestModel
             .find({
                 to: convertStringToObjectId(userId),
@@ -142,7 +150,7 @@ export class FriendService {
                 .lean();
     }
 
-    async friends(userId: string) {
+    public async friends(userId: string) {
         const friends = await this.friendRequestModel
             .find({
                 status: "accepted",
@@ -160,7 +168,7 @@ export class FriendService {
         );
     }
 
-    async unfriend(userId: string, targetUserId: string) {
+    public async unfriend(userId: string, targetUserId: string) {
         const relation = await this.friendRequestModel
             .findOne({
                 status: "accepted",

@@ -20,7 +20,7 @@ export class MessageController {
     ) {}
 
     @Post(":id")
-    async message(
+    public async message(
         @Param("id") room: IdConversationDto["id"],
         @Body() body: CreateMessageDto,
         @JwtDecode() user: JwtType
@@ -33,14 +33,14 @@ export class MessageController {
     }
 
     @Get(":id")
-    async getMessages(
+    public async getMessages(
         @Param("id") room: IdConversationDto["id"],
     ) {
         return this.messageService.messages(room);
     }
 
     @Patch(":id/seen")
-    async markAsSeen(
+    public async markAsSeen(
         @Param("id") room: IdConversationDto["id"],
         @JwtDecode() user: JwtType
     ) {

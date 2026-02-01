@@ -19,7 +19,7 @@ export class FriendController {
 
     @HttpCode(201)
     @Post("request")
-    async sendRequest(
+    public async sendRequest(
         @JwtDecode() user: JwtType,
         @Body() dto: SendRequestDto,
     ) {
@@ -32,7 +32,7 @@ export class FriendController {
 
     @HttpCode(200)
     @Patch("request/:id")
-    async resRequest(
+    public async resRequest(
         @JwtDecode() user: JwtType,
         @Param("id") id: ResRequestIdDto["id"],
         @Body() data: ResResponseActionDto,
@@ -44,19 +44,19 @@ export class FriendController {
 
     @HttpCode(200)
     @Get("requests")
-    async requests(@JwtDecode() user: JwtType) {
+    public async requests(@JwtDecode() user: JwtType) {
         return this.friendRequestService.request(user.userId);
     }
 
     @HttpCode(200)
     @Get()
-    async friends(@JwtDecode() user: JwtType) {
+    public async friends(@JwtDecode() user: JwtType) {
         return this.friendRequestService.friends(user.userId);
     }
 
     @HttpCode(200)
     @Delete(":id")
-    async unfriend(
+    public async unfriend(
         @Param("id") userId: UnfriendDto["id"],
         @JwtDecode() user: JwtType
     ) {
