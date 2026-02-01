@@ -1,4 +1,4 @@
-import {Injectable} from "@nestjs/common";
+import {Injectable, NotFoundException} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import {Model} from "mongoose";
 
@@ -29,5 +29,20 @@ export class NotificationService {
                 userId: convertStringToObjectId(userId),
                 isRead: false,
             })
+    }
+
+    async findById(id: string) {
+        return this.notificationModel.findById(convertStringToObjectId(id));
+    }
+
+    async markRead(id: string,  userId: string) {
+        const notification = await this.findById(id);
+        if (!notification) {
+            throw new NotFoundException("the notification not found!");
+        }
+        notification.isRead = true;
+        await notification.save();
+
+        return notification;
     }
 }
