@@ -9,6 +9,7 @@ import {ConversationModule} from "./module/conversation/conversation.module";
 import {MessageModule} from "./module/message/message.module";
 import {ChatModule} from "./module/chat/chat.module";
 import {FriendModule} from "./module/friend/friend.module";
+import {NotificationModule} from "./module/notification/notification.module";
 
 @Module({
     imports: [
@@ -23,7 +24,8 @@ import {FriendModule} from "./module/friend/friend.module";
         ConversationModule,
         MessageModule,
         FriendModule,
-        ChatModule
+        ChatModule,
+        NotificationModule
     ]
 })
 export class AppModule {}
