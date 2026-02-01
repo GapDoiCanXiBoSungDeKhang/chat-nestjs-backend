@@ -101,19 +101,29 @@ export class FriendService {
         req.status = "accepted";
         await req.save();
 
-        await this.notificationService.create({
-            userId: req.from,
-            type: "friend_accepted",
-            refId: req._id,
-            payload: {
-                fromId: req.to,
-            }
-        })
         const conversation = await this.conversationService
             .create(
                 req.from.toString(),
                 req.to.toString()
             );
+
+        await req.populate("to", "name avatar status");
+
+        await this.notificationService.create({
+            userId: req.from,
+            type: "friend_accepted",
+            refId: req._id,
+            payload: {
+                requestId: req._id,
+                user: {
+                    _id: req.to._id,
+                    name: req.to.name,
+                    avatar: req.to.avatar,
+                    status: req.to.status,
+                },
+                conversation
+            }
+        })
 
         return {
             req,
