@@ -16,4 +16,9 @@ export class NotificationController {
     async getNotifications(@JwtDecode() user: JwtType) {
         return this.notificationService.getAll(user.userId);
     }
+
+    @Get("unread-count")
+    async getUnreadCount(@JwtDecode() user: JwtType) {
+        return this.notificationService.getCountUnread(user.userId);
+    }
 }

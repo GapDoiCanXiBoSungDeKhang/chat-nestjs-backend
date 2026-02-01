@@ -22,4 +22,12 @@ export class NotificationService {
             .limit(50)
             .lean();
     }
+
+    async getCountUnread(userId: string) {
+        return this.notificationModel
+            .countDocuments({
+                userId: convertStringToObjectId(userId),
+                isRead: false,
+            })
+    }
 }
