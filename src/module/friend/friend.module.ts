@@ -5,9 +5,11 @@ import {FriendRequest, FriendRequestSchema} from "./schema/friendRequest.schema"
 import {FriendService} from "./friend.service";
 import {FriendController} from "./friend.controller";
 import {ConversationModule} from "../conversation/conversation.module";
+import {NotificationModule} from "../notification/notification.module";
 
 @Module({
     imports: [
+        NotificationModule,
         ConversationModule,
         MongooseModule.forFeature([{
             name: FriendRequest.name,

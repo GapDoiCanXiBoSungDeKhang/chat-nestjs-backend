@@ -10,6 +10,8 @@ import {Model} from "mongoose";
 
 import {FriendRequest, FriendRequestDocument} from "./schema/friendRequest.schema";
 import {ConversationService} from "../conversation/conversation.service";
+import {NotificationService} from "../notification/notification.service";
+
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 
 @Injectable()
@@ -18,6 +20,7 @@ export class FriendService {
         @InjectModel(FriendRequest.name)
         private readonly friendRequestModel: Model<FriendRequestDocument>,
         private readonly conversationService: ConversationService,
+        private readonly notificationService: NotificationService,
     ) {}
 
     async friendExits(
@@ -54,11 +57,21 @@ export class FriendService {
                 throw new BadRequestException("Request already pending");
         }
 
-        return this.friendRequestModel.create({
+        const request = await this.friendRequestModel.create({
             from: convertStringToObjectId(fromId),
             to: convertStringToObjectId(toId),
             message
         });
+        await this.notificationService.create({
+            userId: convertStringToObjectId(toId),
+            type: "friend_request",
+            refId: request._id,
+            payload: {
+                fromId: convertStringToObjectId(fromId),
+            }
+        });
+
+        return request;
     }
 
     async findRequestId(id: string) {
@@ -80,6 +93,14 @@ export class FriendService {
         req.status = "accepted";
         await req.save();
 
+        await this.notificationService.create({
+            userId: req.from,
+            type: "friend_accepted",
+            refId: req._id,
+            payload: {
+                fromId: req.to,
+            }
+        })
         const conversation = await this.conversationService
             .create(
                 req.from.toString(),

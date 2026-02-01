@@ -1,16 +1,20 @@
-import {Injectable, NotFoundException} from "@nestjs/common";
+import {Injectable} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import {Model} from "mongoose";
 
-import {NotificationDocument} from "./schema/notification.schema";
+import {Notification, NotificationDocument} from "./schema/notification.schema";
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 
 @Injectable()
 export class NotificationService {
     constructor(
-        @InjectModel("Notification")
+        @InjectModel(Notification.name)
         private readonly notificationModel: Model<NotificationDocument>
     ) {}
+
+    async create(data: Partial<Notification>) {
+        return this.notificationModel.create(data);
+    }
 
     async getAll(userId: string) {
         return this.notificationModel
