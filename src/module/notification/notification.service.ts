@@ -31,18 +31,14 @@ export class NotificationService {
             })
     }
 
-    async findById(id: string) {
-        return this.notificationModel.findById(convertStringToObjectId(id));
-    }
-
     async markRead(id: string,  userId: string) {
-        const notification = await this.findById(id);
-        if (!notification) {
-            throw new NotFoundException("the notification not found!");
-        }
-        notification.isRead = true;
-        await notification.save();
-
-        return notification;
+        return this.notificationModel.findOneAndUpdate(
+            {
+                _id: convertStringToObjectId(id),
+                userId: convertStringToObjectId(userId)
+            },
+            { isRead: true },
+            { new: true }
+        );
     }
 }
