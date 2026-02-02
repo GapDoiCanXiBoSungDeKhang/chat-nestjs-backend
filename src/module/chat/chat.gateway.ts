@@ -14,8 +14,6 @@ import {Socket, Server} from "socket.io";
 import {ConversationService} from "../conversation/conversation.service";
 import {MessageService} from "../message/message.service";
 
-import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
-
 @WebSocketGateway({
     cors: {
         origin: "*",
@@ -62,6 +60,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
     }
 
+    emitToUser(userId: string, event: string, data: any) {
+        const socketIds = this.onlineUsers.get(userId);
+        if (socketIds?.size) {
+            for (const socketId of socketIds) {
+                this.server.to(socketId).emit(event, data);
+            }
+        }
+    }
+
     handleDisconnect(client: Socket): any {
         const userId = client.data.userId;
 
@@ -88,8 +95,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         @ConnectedSocket() client: Socket,
         @MessageBody() data: {conversationId: string}
     ) {
-        const userId = convertStringToObjectId(client.data.userId);
-        const conversationId = convertStringToObjectId(data.conversationId);
+        const userId = client.data.userId;
+        const conversationId = data.conversationId;
 
         const checkParticipants = await this.conversationService
             .findUserParticipants(
@@ -126,8 +133,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
     ) {
         try {
-            const userId = convertStringToObjectId(client.data.userId);
-            const conversationId = convertStringToObjectId(data.conversationId);
+            const userId = client.data.userId;
+            const conversationId = data.conversationId;
 
             const checkParticipants = await this.conversationService
                 .findUserParticipants(userId, conversationId);

@@ -10,6 +10,7 @@ import {Model} from "mongoose";
 import {FriendRequest, FriendRequestDocument} from "./schema/friendRequest.schema";
 import {ConversationService} from "../conversation/conversation.service";
 import {NotificationService} from "../notification/notification.service";
+import {ChatGateway} from "../chat/chat.gateway";
 
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 
@@ -20,6 +21,7 @@ export class FriendService {
         private readonly friendRequestModel: Model<FriendRequestDocument>,
         private readonly conversationService: ConversationService,
         private readonly notificationService: NotificationService,
+        private readonly chatGateway: ChatGateway,
     ) {}
 
     public async friendExits(
@@ -63,7 +65,7 @@ export class FriendService {
         });
         await request.populate("from", "name avatar");
 
-        await this.notificationService.create({
+        const notification = await this.notificationService.create({
             userId: convertStringToObjectId(toId),
             type: "friend_request",
             refId: request._id,
@@ -78,6 +80,8 @@ export class FriendService {
                 createdAt: request.createdAt,
             }
         });
+
+        this.chatGateway.emitToUser(toId, "friend_request_received", notification.payload);
 
         return request;
     }
@@ -109,7 +113,7 @@ export class FriendService {
 
         await req.populate("to", "name avatar status");
 
-        await this.notificationService.create({
+        const notification = await this.notificationService.create({
             userId: req.from,
             type: "friend_accepted",
             refId: req._id,
@@ -123,7 +127,9 @@ export class FriendService {
                 },
                 conversation
             }
-        })
+        });
+
+        this.chatGateway.emitToUser(req.from.toString(), "friend_request_accepted", notification.payload);
 
         return {
             req,
