@@ -67,29 +67,40 @@ export class MessageService {
     }
 
     public async react(
-        idMessage: string,
+        messageId: string,
         userId: string,
         emoji: string,
     ) {
-        const findMessage = await this.findById(idMessage);
-        if (!findMessage) {
-            throw new NotFoundException("Not found message!");
-        }
-        const posReact = findMessage.reactions.findIndex(
-            obj => obj.userId.toString() === userId
+        const messageObjectId = convertStringToObjectId(messageId);
+        const userObjectId = convertStringToObjectId(userId);
+
+        const updated = await this.messageModel.updateOne(
+            {
+                _id: messageObjectId,
+                "reactions.userId": userObjectId
+            },
+            {
+                $set: {
+                    "reactions.$.emoji": emoji
+                },
+            }
         );
-        const objReact = {
-            userId: convertStringToObjectId(userId),
-            emoji,
-        };
-        if (posReact === -1) {
-            findMessage.reactions.push(objReact);
-        } else {
-            findMessage.reactions[posReact].emoji = emoji;
+
+        if (updated.matchedCount === 0) {
+            await this.messageModel.findByIdAndUpdate(
+                messageObjectId,
+                {
+                    $addToSet: {
+                        reactions: {
+                            userId: userObjectId,
+                            emoji
+                        },
+                    },
+                },
+            );
         }
 
-        await findMessage.save();
-        return findMessage;
+        return this.findById(messageId);
     }
 
 

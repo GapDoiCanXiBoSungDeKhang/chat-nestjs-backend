@@ -50,5 +50,6 @@ export class Message {
 export const MessageSchema = SchemaFactory.createForClass(Message);
 
 MessageSchema.index({conversationId: 1, createdAt: 1});
+MessageSchema.index({"reactions.userId": 1})
 MessageSchema.index({conversationId: 1, seenBy: 1});
 
