@@ -29,7 +29,8 @@ export class MessageController {
         return this.messageService.create(
             user.userId,
             room,
-            body.content
+            body.content,
+            body?.replyTo
         );
     }
 

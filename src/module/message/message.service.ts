@@ -1,4 +1,4 @@
-import {forwardRef, Inject, Injectable, NotFoundException} from "@nestjs/common";
+import {forwardRef, HttpException, Inject, Injectable, NotFoundException} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import {Model, Types} from "mongoose";
 
@@ -23,13 +23,26 @@ export class MessageService {
         userId: string,
         conversationId: string,
         content: string,
+        replyTo?: string,
     ) {
-        const message = await this.messageModel.create({
-            conversationId: convertStringToObjectId(conversationId),
-            senderId: convertStringToObjectId(userId),
-            seenBy: [convertStringToObjectId(userId)],
+        const convObjectId = convertStringToObjectId(conversationId);
+        const userObjectId = convertStringToObjectId(userId);
+
+        const data: MessageDocument = {
+            conversationId: convObjectId,
+            senderId: userObjectId,
+            seenBy: [userObjectId],
             content
-        });
+        }
+        if (replyTo) {
+            const findMessage = await this.findById(replyTo);
+            if (!findMessage) {
+                throw new NotFoundException("Reply not fount message");
+            }
+            data.replyTo = convertStringToObjectId(replyTo);
+        }
+
+        const message = await this.messageModel.create(data);
         await message.populate("senderId", "name avatar");
         await this.conversationService
             .updateConversation(

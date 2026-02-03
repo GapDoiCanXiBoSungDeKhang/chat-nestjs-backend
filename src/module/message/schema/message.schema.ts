@@ -32,7 +32,10 @@ export class Message {
     reactions!: [
         userId: Types.ObjectId,
         emoji: string,
-    ]
+    ];
+
+    @Prop({ type: Types.ObjectId, ref: "Message", default: null })
+    replyTo?: Types.ObjectId;
 
     @Prop({
         type: [{type: Types.ObjectId, ref: "User"}],
@@ -50,6 +53,6 @@ export class Message {
 export const MessageSchema = SchemaFactory.createForClass(Message);
 
 MessageSchema.index({conversationId: 1, createdAt: 1});
-MessageSchema.index({"reactions.userId": 1})
+MessageSchema.index({"reactions.userId": 1});
 MessageSchema.index({conversationId: 1, seenBy: 1});
 
