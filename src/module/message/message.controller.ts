@@ -11,7 +11,7 @@ import {CreateMessageDto} from "./dto/body-create.dto";
 import {JwtDecode} from "../../common/decorators/jwt.decorator";
 import {JwtType} from "../../common/types/jwtTypes.type";
 import {ReactEmojiDto} from "./dto/reactEmoji.dto";
-import {IdMessageDto} from "./dto/id-message.dto";
+import {EditMessageDto} from "./dto/editMessage.dto";
 
 @Controller("messages")
 @UseGuards(JwtAuthGuard, ConversationParticipantGuard)
@@ -32,6 +32,18 @@ export class MessageController {
             body.content,
             body?.replyTo
         );
+    }
+
+    @Patch(":id")
+    public async editMessage(
+        @JwtDecode() user: JwtType,
+        @Body() body: EditMessageDto
+    ) {
+        return this.messageService.edit(
+            user.userId,
+            body.content,
+            body.id
+        )
     }
 
     @Get(":id")

@@ -37,6 +37,12 @@ export class Message {
     @Prop({ type: Types.ObjectId, ref: "Message", default: null })
     replyTo?: Types.ObjectId;
 
+    @Prop({ default: false })
+    isEdited!: boolean;
+
+    @Prop({ default: null })
+    editedAt?: Date;
+
     @Prop({
         type: [{type: Types.ObjectId, ref: "User"}],
         default: []

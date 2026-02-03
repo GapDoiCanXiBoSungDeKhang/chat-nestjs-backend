@@ -1,4 +1,4 @@
-import {forwardRef, HttpException, Inject, Injectable, NotFoundException} from "@nestjs/common";
+import {ForbiddenException, forwardRef, HttpException, Inject, Injectable, NotFoundException} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import {Model, Types} from "mongoose";
 
@@ -66,6 +66,26 @@ export class MessageService {
             }
         })
         return message;
+    }
+
+    public async edit(
+        userId: string,
+        content: string,
+        id: string
+    ) {
+        const findUser = await this.findById(id);
+        if (!findUser) {
+            throw new NotFoundException("message not found!");
+        }
+        if (findUser.senderId.toString() !== userId) {
+            throw new ForbiddenException("Can't edit message");
+        }
+        findUser.content = content
+        findUser.editedAt = new Date();
+        findUser.isEdited = true;
+        await findUser.save();
+
+        return findUser;
     }
 
     public async messages(conversationId: string) {
