@@ -1,5 +1,4 @@
 import {CanActivate, ConflictException, ExecutionContext, Injectable} from "@nestjs/common";
-import {Types} from "mongoose";
 
 import {ConversationService} from "../conversation.service";
 

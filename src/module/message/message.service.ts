@@ -1,4 +1,4 @@
-import {forwardRef, Inject, Injectable} from "@nestjs/common";
+import {forwardRef, Inject, Injectable, NotFoundException} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import {Model, Types} from "mongoose";
 
@@ -25,9 +25,9 @@ export class MessageService {
         content: string,
     ) {
         const message = await this.messageModel.create({
-            conversationId: conversationId,
-            senderId: userId,
-            seenBy: [userId],
+            conversationId: convertStringToObjectId(conversationId),
+            senderId: convertStringToObjectId(userId),
+            seenBy: [convertStringToObjectId(userId)],
             content
         });
         await message.populate("senderId", "name avatar");
@@ -61,6 +61,37 @@ export class MessageService {
             .sort({createdAt: 1})
             .lean();
     }
+
+    public async findById(messageId: string) {
+        return this.messageModel.findById(convertStringToObjectId(messageId));
+    }
+
+    public async react(
+        idMessage: string,
+        userId: string,
+        emoji: string,
+    ) {
+        const findMessage = await this.findById(idMessage);
+        if (!findMessage) {
+            throw new NotFoundException("Not found message!");
+        }
+        const posReact = findMessage.reactions.findIndex(
+            obj => obj.userId.toString() === userId
+        );
+        const objReact = {
+            userId: convertStringToObjectId(userId),
+            emoji,
+        };
+        if (posReact === -1) {
+            findMessage.reactions.push(objReact);
+        } else {
+            findMessage.reactions[posReact].emoji = emoji;
+        }
+
+        await findMessage.save();
+        return findMessage;
+    }
+
 
     public async filterMessageConversationNotSeen(
         conversationIds: Types.ObjectId[],

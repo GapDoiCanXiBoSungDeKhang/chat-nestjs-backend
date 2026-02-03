@@ -49,7 +49,7 @@ export class ConversationService {
         }
         const create = await this.conversationModel.create({
             type: "private",
-            createdBy: myUserId,
+            createdBy: convertStringToObjectId(myUserId),
             participants: [
                 {userId: convertStringToObjectId(myUserId), role: "owner"},
                 {userId: convertStringToObjectId(userId), role: "member"}

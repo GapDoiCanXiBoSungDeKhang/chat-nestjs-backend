@@ -1,4 +1,3 @@
-import {Types} from "mongoose";
 import {Body, Controller, Get, Param, Patch, Post, UseGuards} from "@nestjs/common";
 
 import {MessageService} from "./message.service";
@@ -11,6 +10,8 @@ import {CreateMessageDto} from "./dto/body-create.dto";
 
 import {JwtDecode} from "../../common/decorators/jwt.decorator";
 import {JwtType} from "../../common/types/jwtTypes.type";
+import {ReactEmojiDto} from "./dto/reactEmoji.dto";
+import {IdMessageDto} from "./dto/id-message.dto";
 
 @Controller("messages")
 @UseGuards(JwtAuthGuard, ConversationParticipantGuard)
@@ -37,6 +38,14 @@ export class MessageController {
         @Param("id") room: IdConversationDto["id"],
     ) {
         return this.messageService.messages(room);
+    }
+
+    @Patch("/:id/react")
+    public async reactMessage(
+        @JwtDecode() user: JwtType,
+        @Body() dto: ReactEmojiDto
+    ) {
+        return this.messageService.react(dto.id, user.userId, dto.emoji);
     }
 
     @Patch(":id/seen")

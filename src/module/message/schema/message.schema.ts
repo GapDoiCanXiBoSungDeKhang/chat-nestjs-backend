@@ -21,6 +21,20 @@ export class Message {
     type!: "text" | "file" | "image";
 
     @Prop({
+        type: [
+            {
+                userId: {type: Types.ObjectId, ref: "User"},
+                emoji: String,
+            }
+        ],
+        default: [],
+    })
+    reactions!: [
+        userId: Types.ObjectId,
+        emoji: string,
+    ]
+
+    @Prop({
         type: [{type: Types.ObjectId, ref: "User"}],
         default: []
     })
