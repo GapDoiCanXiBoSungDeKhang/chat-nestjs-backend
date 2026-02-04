@@ -23,6 +23,7 @@ export class MessageService {
         userId: string,
         conversationId: string,
         content: string,
+        type: "text" | "file" | "image" | "forward",
         replyTo?: string,
     ) {
         const convObjectId = convertStringToObjectId(conversationId);
@@ -32,6 +33,7 @@ export class MessageService {
             conversationId: convObjectId,
             senderId: userObjectId,
             seenBy: [userObjectId],
+            type,
             content
         }
         if (replyTo) {
@@ -44,6 +46,14 @@ export class MessageService {
 
         const message = await this.messageModel.create(data);
         await message.populate("senderId", "name avatar");
+        await message.populate({
+            path: "replyTo",
+            select: "content senderId",
+            populate: {
+                path: "senderId",
+                select: "name avatar"
+            }
+        });
         await this.conversationService
             .updateConversation(
                 conversationId,
@@ -214,4 +224,32 @@ export class MessageService {
         }
     }
 
+    public async forwardMessage(
+        userId: string,
+        id: string,
+        conversationIds: string[],
+    ) {
+        const findMessage = await this.findById(id);
+        if (!findMessage) {
+            throw new NotFoundException("message not found!");
+        }
+        const res = [];
+        for (const conv of conversationIds) {
+            const checkConv = await this.conversationService.checkConversationId(conv);
+            if (!checkConv) continue;
+            const type: "text" | "file" | "image" | "forward" = "forward";
+            const message = await this.create(
+                userId,
+                conv,
+                findMessage.content,
+                type
+            );
+            res.push(message);
+        }
+        if (!res.length) {
+            throw new ForbiddenException("Nothing conversation active!");
+        }
+
+        return res;
+    }
 }

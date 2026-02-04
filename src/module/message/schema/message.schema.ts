@@ -15,10 +15,10 @@ export class Message {
     content!: string;
 
     @Prop({
-        enum: ["text", "file", "image"],
+        enum: ["text", "file", "image", "forward"],
         default: "text",
     })
-    type!: "text" | "file" | "image";
+    type!: "text" | "file" | "image" | "forward";
 
     @Prop({
         type: [
@@ -57,6 +57,9 @@ export class Message {
         default: []
     })
     deletedFor!: Types.ObjectId[];
+
+    @Prop({ type: Types.ObjectId, ref: "Message", default: null })
+    forwardedFrom?: Types.ObjectId;
 
     @Prop({
         type: [{type: Types.ObjectId, ref: "User"}],

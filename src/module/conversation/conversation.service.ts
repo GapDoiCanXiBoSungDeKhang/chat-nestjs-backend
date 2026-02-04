@@ -139,4 +139,10 @@ export class ConversationService {
                 "participants.userId": convertStringToObjectId(userId)
             }));
     }
+
+    public async checkConversationId(conversationId: string) {
+        return !!(await this.conversationModel.findById(
+            convertStringToObjectId(conversationId)
+        ));
+    }
 }

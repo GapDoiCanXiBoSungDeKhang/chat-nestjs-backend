@@ -14,6 +14,7 @@ import {ReactEmojiDto} from "./dto/reactEmoji.dto";
 import {EditMessageDto} from "./dto/editMessage.dto";
 import {DeleteMessageDto} from "./dto/deleteMessage.dto";
 import {QueryDeleteMessageDto} from "./dto/queryDeleteMessage.dto";
+import {ForwardMessageDto} from "./dto/forwardMessage.dto";
 
 @Controller("messages")
 @UseGuards(JwtAuthGuard, ConversationParticipantGuard)
@@ -28,10 +29,12 @@ export class MessageController {
         @Body() body: CreateMessageDto,
         @JwtDecode() user: JwtType
     ) {
+        const type: "text" | "file" | "image" | "forward" = "text";
         return this.messageService.create(
             user.userId,
             room,
             body.content,
+            type,
             body?.replyTo
         );
     }
@@ -85,5 +88,17 @@ export class MessageController {
             user.userId,
             query.scope
         );
+    }
+
+    @Post(":id/forward")
+    public async forwardMessage(
+        @JwtDecode() user: JwtType,
+        @Body() body: ForwardMessageDto
+    ) {
+        return this.messageService.forwardMessage(
+            user.userId,
+            body.id,
+            body.conversationIds
+        )
     }
 }
