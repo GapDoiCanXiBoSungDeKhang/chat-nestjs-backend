@@ -49,6 +49,15 @@ export class Message {
     })
     seenBy!: Types.ObjectId[];
 
+    @Prop({ default: false })
+    isDeleted!: boolean;
+
+    @Prop({
+        type: [{ type: Types.ObjectId, ref: "User" }],
+        default: []
+    })
+    deletedFor!: Types.ObjectId[];
+
     @Prop({
         type: [{type: Types.ObjectId, ref: "User"}],
         default: []
@@ -61,4 +70,5 @@ export const MessageSchema = SchemaFactory.createForClass(Message);
 MessageSchema.index({conversationId: 1, createdAt: 1});
 MessageSchema.index({"reactions.userId": 1});
 MessageSchema.index({conversationId: 1, seenBy: 1});
+MessageSchema.index({deletedFor: 1});
 

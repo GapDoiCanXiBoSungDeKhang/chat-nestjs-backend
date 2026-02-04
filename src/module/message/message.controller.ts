@@ -1,4 +1,4 @@
-import {Body, Controller, Get, Param, Patch, Post, UseGuards} from "@nestjs/common";
+import {Body, Controller, Get, Param, Patch, Post, UseGuards, Query, Delete} from "@nestjs/common";
 
 import {MessageService} from "./message.service";
 
@@ -12,6 +12,8 @@ import {JwtDecode} from "../../common/decorators/jwt.decorator";
 import {JwtType} from "../../common/types/jwtTypes.type";
 import {ReactEmojiDto} from "./dto/reactEmoji.dto";
 import {EditMessageDto} from "./dto/editMessage.dto";
+import {DeleteMessageDto} from "./dto/deleteMessage.dto";
+import {QueryDeleteMessageDto} from "./dto/queryDeleteMessage.dto";
 
 @Controller("messages")
 @UseGuards(JwtAuthGuard, ConversationParticipantGuard)
@@ -69,6 +71,19 @@ export class MessageController {
         return this.messageService.markAsSeen(
             room,
             user.userId
+        );
+    }
+
+    @Delete(":id")
+    public async deleteMessage(
+        @JwtDecode() user: JwtType,
+        @Body() body: DeleteMessageDto,
+        @Query() query: QueryDeleteMessageDto
+    ) {
+        return this.messageService.delete(
+            body.id,
+            user.userId,
+            query.scope
         );
     }
 }

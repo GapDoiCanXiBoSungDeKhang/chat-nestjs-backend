@@ -162,4 +162,56 @@ export class MessageService {
         });
         return {success: true};
     }
+
+    public async delete(
+        id: string,
+        userId: string,
+        scope: "self" | "everyone",
+    ) {
+        const objectId = convertStringToObjectId(id);
+        const userObjectId = convertStringToObjectId(userId);
+
+        try {
+            let result = null;
+            if (scope === "self") {
+                result = await this.messageModel.findOneAndUpdate(
+                    {
+                        _id: objectId,
+                        deletedFor: { $ne: userObjectId },
+                    },
+                    {
+                        $addToSet: {
+                            deletedFor: userObjectId,
+                        },
+                    },
+                    { new: true },
+                );
+            }
+            if (scope === "everyone") {
+                result = await this.messageModel.findOneAndUpdate(
+                    {
+                        _id: objectId,
+                        senderId: userObjectId,
+                        isDeleted: { $ne: true },
+                    },
+                    {
+                        $set: {
+                            isDeleted: true,
+                            content: "Message deleted",
+                        },
+                    },
+                    { new: true },
+                );
+            }
+
+            if (!result) {
+                throw new ForbiddenException("You are not allowed to delete this message");
+            }
+            return result;
+        } catch (e) {
+            console.error(e);
+            throw e;
+        }
+    }
+
 }
