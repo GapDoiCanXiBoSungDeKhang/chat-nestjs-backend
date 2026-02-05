@@ -54,10 +54,6 @@ export class MessageService {
                 path: "replyTo", select: "content senderId",
                 populate: {path: "senderId", select: "name avatar"}
             },
-            {
-                path: "reactions",
-                populate: {path: "userId", select: "name avatar"}
-            },
             {path: "seenBy", select: "name avatar"}
         ]);
 
@@ -118,6 +114,7 @@ export class MessageService {
                     path: "reactions",
                     populate: {path: "userId", select: "name avatar"}
                 },
+                {path: "deletedFor", select: "name avatar"},
                 {path: "seenBy", select: "name avatar"}
             ])
             .sort({createdAt: 1})
