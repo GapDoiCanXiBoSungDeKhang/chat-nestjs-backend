@@ -8,7 +8,7 @@ import {UsersModule} from "../user/user.module";
 import {ConversationService} from "./conversation.service";
 import {ConversationController} from "./conversation.controller";
 
-import {ConversationParticipantGuard} from "./guard/conversation-participant.guard";
+import {ConversationParticipantGuard} from "./guard/conversationParticipant.guard";
 import {MessageModule} from "../message/message.module";
 
 @Module({

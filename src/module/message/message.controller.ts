@@ -3,7 +3,7 @@ import {Body, Controller, Get, Param, Patch, Post, UseGuards, Query, Delete} fro
 import {MessageService} from "./message.service";
 
 import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
-import {ConversationParticipantGuard} from "../conversation/guard/conversation-participant.guard";
+import {ConversationParticipantGuard} from "../conversation/guard/conversationParticipant.guard";
 
 import {IdConversationDto} from "./dto/id-conversation.dto";
 
@@ -16,6 +16,7 @@ import {EditMessageDto} from "./dto/editMessage.dto";
 import {DeleteMessageDto} from "./dto/deleteMessage.dto";
 import {QueryDeleteMessageDto} from "./dto/queryDeleteMessage.dto";
 import {ForwardMessageDto} from "./dto/forwardMessage.dto";
+import {MessageConversationGuard} from "../conversation/guard/messageConversation.guard";
 
 @Controller("messages")
 @UseGuards(JwtAuthGuard, ConversationParticipantGuard)
@@ -40,6 +41,7 @@ export class MessageController {
         );
     }
 
+    @UseGuards(MessageConversationGuard)
     @Patch(":id")
     public async editMessage(
         @JwtDecode() user: JwtType,
@@ -59,6 +61,7 @@ export class MessageController {
         return this.messageService.messages(room);
     }
 
+    @UseGuards(MessageConversationGuard)
     @Post("/:id/react")
     public async reactMessage(
         @JwtDecode() user: JwtType,
@@ -67,6 +70,7 @@ export class MessageController {
         return this.messageService.react(dto.id, user.userId, dto.emoji);
     }
 
+    @UseGuards(MessageConversationGuard)
     @Patch(":id/seen")
     public async markAsSeen(
         @Param("id") room: IdConversationDto["id"],
@@ -78,6 +82,7 @@ export class MessageController {
         );
     }
 
+    @UseGuards(MessageConversationGuard)
     @Delete(":id")
     public async deleteMessage(
         @JwtDecode() user: JwtType,
@@ -91,6 +96,7 @@ export class MessageController {
         );
     }
 
+    @UseGuards(MessageConversationGuard)
     @Post(":id/forward")
     public async forwardMessage(
         @JwtDecode() user: JwtType,

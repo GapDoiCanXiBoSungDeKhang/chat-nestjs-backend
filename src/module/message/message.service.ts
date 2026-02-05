@@ -240,6 +240,7 @@ export class MessageService {
             if (!result) {
                 throw new ForbiddenException("You are not allowed to delete this message");
             }
+            this.chatGateway.emitMessageDeleted()
             return result;
         } catch (e) {
             console.error(e);

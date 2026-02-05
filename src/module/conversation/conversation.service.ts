@@ -159,4 +159,13 @@ export class ConversationService {
             }
         );
     }
+
+    public async findById(conversationId: string) {
+        return this.conversationModel.findById(
+            convertStringToObjectId(conversationId),
+            {
+                _id: 1
+            }
+        );
+    }
 }

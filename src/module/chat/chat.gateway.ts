@@ -7,10 +7,11 @@ import {
     SubscribeMessage,
     MessageBody
 } from "@nestjs/websockets";
-import { JwtService } from "@nestjs/jwt";
-import { Socket, Server } from "socket.io";
+import {forwardRef, Inject} from "@nestjs/common";
+import {JwtService} from "@nestjs/jwt";
+import {Socket, Server} from "socket.io";
 
-import { ConversationService } from "../conversation/conversation.service";
+import {ConversationService} from "../conversation/conversation.service";
 
 @WebSocketGateway({
     cors: {
@@ -24,6 +25,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     constructor(
         private readonly jwtService: JwtService,
+
+        @Inject(forwardRef(() => ConversationService))
         private readonly conversationService: ConversationService,
     ) {}
 
@@ -120,5 +123,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     emitMessageEdited(conversationId: string, payload: any) {
         this.server.to(`room:${conversationId}`).emit("message_edited", payload);
+    }
+
+    emitMessageDeleted(conversationId: string, payload: any) {
+        this.server.to(`room:${conversationId}`).emit("message_deleted", payload);
     }
 }
