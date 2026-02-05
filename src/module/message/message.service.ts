@@ -2,7 +2,6 @@ import {
     ConflictException,
     ForbiddenException,
     forwardRef,
-    HttpException,
     Inject,
     Injectable,
     NotFoundException
@@ -179,7 +178,7 @@ export class MessageService {
         if (!messageEdit) {
             throw new ConflictException("message not found!");
         }
-        this.chatGateway.emitMessageEdited(
+        this.chatGateway.emitMessageReacted(
             messageEdit.conversationId.toString(),
             {
                 messageId,
@@ -308,12 +307,22 @@ export class MessageService {
         const messages = await this.messageModel.insertMany(docs);
 
         await Promise.all(
-            messages.map(m =>
-                this.conversationService.updateConversation(
+            messages.map(async m => {
+                await this.conversationService.updateConversation(
                     m.conversationId.toString(),
                     m._id.toString(),
-                ),
-            ),
+                );
+
+                await m.populate([
+                    { path: "senderId", select: "name avatar" },
+                    { path: "seenBy", select: "name avatar" },
+                ]);
+
+                this.chatGateway.emitMessageForwarded(
+                    m.conversationId.toString(),
+                    m,
+                );
+            }),
         );
 
         setImmediate(() => {

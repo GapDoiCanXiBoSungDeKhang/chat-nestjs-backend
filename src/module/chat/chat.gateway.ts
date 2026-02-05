@@ -132,4 +132,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     emitMessageReacted(conversationId: string, payload: any) {
         this.server.to(`room:${conversationId}`).emit("message_reacted", payload);
     }
+
+    emitMessageForwarded(conversationId: string, payload: any) {
+        this.server.to(`room:${conversationId}`).emit("message_forwarded", payload);
+    }
 }
