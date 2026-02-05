@@ -35,7 +35,7 @@ export class MessageController {
             room,
             body.content,
             type,
-            body?.replyTo
+            body?.replyTo,
         );
     }
 

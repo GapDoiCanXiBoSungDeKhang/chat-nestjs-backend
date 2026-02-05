@@ -34,47 +34,35 @@ export class MessageService {
             senderId: userObjectId,
             seenBy: [userObjectId],
             type,
-            content
-        }
-        if (replyTo) {
-            const findMessage = await this.findById(replyTo);
-            if (!findMessage) {
-                throw new NotFoundException("Reply not fount message");
-            }
-            data.replyTo = convertStringToObjectId(replyTo);
+            content,
+            ...(replyTo && {replyTo: convertStringToObjectId(replyTo)}),
         }
 
         const message = await this.messageModel.create(data);
-        await message.populate("senderId", "name avatar");
-        await message.populate({
-            path: "replyTo",
-            select: "content senderId",
-            populate: {
-                path: "senderId",
-                select: "name avatar"
+        await message.populate([
+            {path: "senderId", select: "name avatar"},
+            {
+                path: "replyTo",
+                select: "content senderId",
+                populate: {path: "senderId", select: "name avatar"}
             }
-        });
-        await this.conversationService
-            .updateConversation(
-                conversationId,
-                message._id.toString()
-            );
+        ]);
 
-        const receiverId = await this.conversationService
-            .getUserParticipant(
-                conversationId,
-                userId
-            );
-        await this.notificationService.create({
-            userId: receiverId,
-            type: "message",
-            refId: convertStringToObjectId(conversationId),
-            payload: {
-                conversationId: convertStringToObjectId(conversationId),
-                senderId: convertStringToObjectId(userId),
-                contend: message.content.slice(0, 30)
-            }
-        })
+        const receiverId = await this.conversationService.getUserParticipant(conversationId, userId);
+        await this.conversationService.updateConversation(conversationId, message._id.toString());
+        setImmediate(() => {
+            this.notificationService.create({
+                userId: receiverId,
+                type: "message",
+                refId: convObjectId,
+                payload: {
+                    conversationId: convObjectId,
+                    senderId: userObjectId,
+                    contend: message.content.slice(0, 30),
+                },
+            });
+        });
+
         return message;
     }
 
@@ -229,27 +217,64 @@ export class MessageService {
         id: string,
         conversationIds: string[],
     ) {
-        const findMessage = await this.findById(id);
-        if (!findMessage) {
+        const originalMessage = await this.findById(id);
+        if (!originalMessage) {
             throw new NotFoundException("message not found!");
         }
-        const res = [];
-        for (const conv of conversationIds) {
-            const checkConv = await this.conversationService.checkConversationId(conv);
-            if (!checkConv) continue;
-            const type: "text" | "file" | "image" | "forward" = "forward";
-            const message = await this.create(
-                userId,
-                conv,
-                findMessage.content,
-                type
-            );
-            res.push(message);
-        }
-        if (!res.length) {
+        const userObjectId = convertStringToObjectId(userId);
+
+        const conversations = await this.conversationService.conversationsIds(conversationIds);
+        if (!conversations.length) {
             throw new ForbiddenException("Nothing conversation active!");
         }
 
-        return res;
+        const receiverMap = new Map<string, Types.ObjectId>();
+        for (const conv of conversations) {
+            const other = conv.participants.find(
+                p => p.userId.toString() !== userId
+            );
+            receiverMap.set(conv._id.toString(), other!.userId);
+        }
+
+        const docs = conversations.map(conv => ({
+            conversationId: conv._id,
+            senderId: userObjectId,
+            type: "forward",
+            content: originalMessage.content,
+            forwardedFrom: originalMessage._id,
+            seenBy: [userObjectId],
+        }));
+        const messages = await this.messageModel.insertMany(docs);
+
+        await Promise.all(
+            messages.map(m =>
+                this.conversationService.updateConversation(
+                    m.conversationId.toString(),
+                    m._id.toString(),
+                ),
+            ),
+        );
+
+        setImmediate(() => {
+            for (const m of messages) {
+                const receiverId = receiverMap.get(
+                    m.conversationId.toString()
+                );
+                if (!receiverId) return;
+
+                this.notificationService.create({
+                    userId: receiverId,
+                    type: "message",
+                    refId: m.conversationId,
+                    payload: {
+                        conversationId: m.conversationId,
+                        senderId: userObjectId,
+                        contend: originalMessage.content?.slice(0, 30),
+                    },
+                });
+            }
+        });
+
+        return messages;
     }
 }

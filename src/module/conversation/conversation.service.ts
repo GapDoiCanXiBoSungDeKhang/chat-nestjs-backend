@@ -109,16 +109,20 @@ export class ConversationService {
         conversationId: string,
         userId: string
     ) {
-        const conversation = await this.conversationModel
-            .findById(
-                convertStringToObjectId(conversationId)
-            );
+        const conversation = await this.conversationModel.findOne(
+            {
+                _id: convertStringToObjectId(conversationId),
+                "participants.userId": convertStringToObjectId(userId)
+            },
+            {
+                participants: 1,
+            }
+        );
 
         if (!conversation) {
             throw new NotFoundException("Conversation not found");
         }
-        const other = conversation
-            .participants.find(
+        const other = conversation.participants.find(
                 p => p.userId.toString() !== userId
             );
         if (!other) {
@@ -140,9 +144,19 @@ export class ConversationService {
             }));
     }
 
-    public async checkConversationId(conversationId: string) {
-        return !!(await this.conversationModel.findById(
-            convertStringToObjectId(conversationId)
-        ));
+    public async conversationsIds(conversationIds: string[]) {
+        return this.conversationModel.find(
+            {
+                _id: {
+                    $in: conversationIds.map(conv =>
+                        convertStringToObjectId(conv)
+                    )
+                }
+            },
+            {
+                _id: 1,
+                participants: 1,
+            }
+        );
     }
 }

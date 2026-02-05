@@ -29,10 +29,10 @@ export class Message {
         ],
         default: [],
     })
-    reactions!: [
+    reactions!: {
         userId: Types.ObjectId,
         emoji: string,
-    ];
+    }[];
 
     @Prop({ type: Types.ObjectId, ref: "Message", default: null })
     replyTo?: Types.ObjectId;
@@ -70,8 +70,8 @@ export class Message {
 
 export const MessageSchema = SchemaFactory.createForClass(Message);
 
-MessageSchema.index({conversationId: 1, createdAt: 1});
-MessageSchema.index({"reactions.userId": 1});
-MessageSchema.index({conversationId: 1, seenBy: 1});
-MessageSchema.index({deletedFor: 1});
+MessageSchema.index({ conversationId: 1, createdAt: -1 });
+MessageSchema.index({ conversationId: 1, deletedFor: 1, createdAt: -1 });
+MessageSchema.index({ conversationId: 1, seenBy: 1 });
+MessageSchema.index({ "reactions.userId": 1 });
 
