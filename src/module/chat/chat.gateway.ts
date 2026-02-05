@@ -117,4 +117,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     emitNewMessage(conversationId: string, payload: any) {
         this.server.to(`room:${conversationId}`).emit("new_message", payload);
     }
+
+    emitMessageEdited(conversationId: string, payload: any) {
+        this.server.to(`room:${conversationId}`).emit("message_edited", payload);
+    }
 }

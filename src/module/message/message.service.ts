@@ -79,19 +79,24 @@ export class MessageService {
         content: string,
         id: string
     ) {
-        const findUser = await this.findById(id);
-        if (!findUser) {
+        const findMessage = await this.findById(id);
+        if (!findMessage) {
             throw new NotFoundException("message not found!");
         }
-        if (findUser.senderId.toString() !== userId) {
+        if (findMessage.senderId.toString() !== userId) {
             throw new ForbiddenException("Can't edit message");
         }
-        findUser.content = content
-        findUser.editedAt = new Date();
-        findUser.isEdited = true;
-        await findUser.save();
+        findMessage.content = content
+        findMessage.editedAt = new Date();
+        findMessage.isEdited = true;
+        await findMessage.save();
 
-        return findUser;
+        this.chatGateway.emitMessageEdited(
+            findMessage.conversationId.toString(),
+            findMessage
+        );
+
+        return findMessage;
     }
 
     public async messages(conversationId: string) {
@@ -113,7 +118,19 @@ export class MessageService {
     }
 
     public async findById(messageId: string) {
-        return this.messageModel.findById(convertStringToObjectId(messageId));
+        return this.messageModel.findById(convertStringToObjectId(messageId))
+            .populate([
+                {path: "senderId", select: "name avatar"},
+                {
+                    path: "replyTo", select: "content senderId",
+                    populate: {path: "senderId", select: "name avatar"}
+                },
+                {
+                    path: "reactions",
+                    populate: {path: "userId", select: "name avatar"}
+                },
+                {path: "seenBy", select: "name avatar"}
+            ]);
     }
 
     public async react(
