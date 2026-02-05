@@ -6,10 +6,11 @@ import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
 import {ConversationParticipantGuard} from "../conversation/guard/conversation-participant.guard";
 
 import {IdConversationDto} from "./dto/id-conversation.dto";
-import {CreateMessageDto} from "./dto/body-create.dto";
 
 import {JwtDecode} from "../../common/decorators/jwt.decorator";
 import {JwtType} from "../../common/types/jwtTypes.type";
+
+import {CreateMessageDto} from "./dto/body-create.dto";
 import {ReactEmojiDto} from "./dto/reactEmoji.dto";
 import {EditMessageDto} from "./dto/editMessage.dto";
 import {DeleteMessageDto} from "./dto/deleteMessage.dto";
@@ -58,7 +59,7 @@ export class MessageController {
         return this.messageService.messages(room);
     }
 
-    @Patch("/:id/react")
+    @Post("/:id/react")
     public async reactMessage(
         @JwtDecode() user: JwtType,
         @Body() dto: ReactEmojiDto

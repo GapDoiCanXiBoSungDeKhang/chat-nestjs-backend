@@ -144,9 +144,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 return;
             }
 
-            const message = await this.messageService
-                .create(userId, conversationId, data.content);
-
+            const message = await this.messageService.create(
+                userId,
+                conversationId,
+                data.content,
+                "text",
+                undefined
+            );
             if (!message) {
                 client.emit("error", {message: "error when sending message!"});
                 return;

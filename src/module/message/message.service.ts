@@ -42,10 +42,14 @@ export class MessageService {
         await message.populate([
             {path: "senderId", select: "name avatar"},
             {
-                path: "replyTo",
-                select: "content senderId",
+                path: "replyTo", select: "content senderId",
                 populate: {path: "senderId", select: "name avatar"}
-            }
+            },
+            {
+                path: "reactions",
+                populate: {path: "userId", select: "name avatar"}
+            },
+            {path: "seenBy", select: "name avatar"}
         ]);
 
         const receiverId = await this.conversationService.getUserParticipant(conversationId, userId);
@@ -88,7 +92,18 @@ export class MessageService {
 
     public async messages(conversationId: string) {
         return this.messageModel.find({conversationId: convertStringToObjectId(conversationId)})
-            .populate("senderId", "name avatar status")
+            .populate([
+                {path: "senderId", select: "name avatar"},
+                {
+                    path: "replyTo", select: "content senderId",
+                    populate: {path: "senderId", select: "name avatar"}
+                },
+                {
+                    path: "reactions",
+                    populate: {path: "userId", select: "name avatar"}
+                },
+                {path: "seenBy", select: "name avatar"}
+            ])
             .sort({createdAt: 1})
             .lean();
     }
@@ -133,7 +148,6 @@ export class MessageService {
 
         return this.findById(messageId);
     }
-
 
     public async filterMessageConversationNotSeen(
         conversationIds: Types.ObjectId[],
