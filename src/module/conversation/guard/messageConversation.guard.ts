@@ -17,7 +17,7 @@ export class MessageConversationGuard implements CanActivate {
         if (!findConversation) {
             throw new NotFoundException("conversation not found!");
         }
-        if (findConversation._id.toString() === messageId) {
+        if (findConversation._id.toString() !== messageId) {
             throw new ConflictException("message not in conversation!");
         }
 
