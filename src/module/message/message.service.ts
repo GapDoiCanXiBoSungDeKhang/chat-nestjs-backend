@@ -1,4 +1,12 @@
-import {ForbiddenException, forwardRef, HttpException, Inject, Injectable, NotFoundException} from "@nestjs/common";
+import {
+    ConflictException,
+    ForbiddenException,
+    forwardRef,
+    HttpException,
+    Inject,
+    Injectable,
+    NotFoundException
+} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import {Model, Types} from "mongoose";
 
@@ -168,7 +176,17 @@ export class MessageService {
         }
 
         const messageEdit = await this.findById(messageId);
-
+        if (!messageEdit) {
+            throw new ConflictException("message not found!");
+        }
+        this.chatGateway.emitMessageEdited(
+            messageEdit.conversationId.toString(),
+            {
+                messageId,
+                userId,
+                emoji,
+            }
+        );
         return messageEdit;
     }
 

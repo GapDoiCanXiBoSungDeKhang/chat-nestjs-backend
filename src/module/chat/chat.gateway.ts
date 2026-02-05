@@ -128,4 +128,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     emitMessageDeleted(conversationId: string, payload: any) {
         this.server.to(`room:${conversationId}`).emit("message_deleted", payload);
     }
+
+    emitMessageReacted(conversationId: string, payload: any) {
+        this.server.to(`room:${conversationId}`).emit("message_reacted", payload);
+    }
 }
