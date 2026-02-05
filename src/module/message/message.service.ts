@@ -5,6 +5,7 @@ import {Model, Types} from "mongoose";
 import {Message, MessageDocument} from "./schema/message.schema";
 import {ConversationService} from "../conversation/conversation.service";
 import {NotificationService} from "../notification/notification.service";
+import {ChatGateway} from "../chat/chat.gateway";
 
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 
@@ -17,6 +18,7 @@ export class MessageService {
         @Inject(forwardRef(() => ConversationService))
         private readonly conversationService: ConversationService,
         private readonly notificationService: NotificationService,
+        private readonly chatGateway: ChatGateway,
     ) {}
 
     public async create(
@@ -52,8 +54,10 @@ export class MessageService {
             {path: "seenBy", select: "name avatar"}
         ]);
 
-        const receiverId = await this.conversationService.getUserParticipant(conversationId, userId);
         await this.conversationService.updateConversation(conversationId, message._id.toString());
+        this.chatGateway.emitNewMessage(conversationId, message);
+
+        const receiverId = await this.conversationService.getUserParticipant(conversationId, userId);
         setImmediate(() => {
             this.notificationService.create({
                 userId: receiverId,

@@ -7,12 +7,10 @@ import {
     SubscribeMessage,
     MessageBody
 } from "@nestjs/websockets";
-import {JwtService} from "@nestjs/jwt";
+import { JwtService } from "@nestjs/jwt";
+import { Socket, Server } from "socket.io";
 
-import {Socket, Server} from "socket.io";
-
-import {ConversationService} from "../conversation/conversation.service";
-import {MessageService} from "../message/message.service";
+import { ConversationService } from "../conversation/conversation.service";
 
 @WebSocketGateway({
     cors: {
@@ -26,18 +24,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     constructor(
         private readonly jwtService: JwtService,
-        private readonly messageService: MessageService,
         private readonly conversationService: ConversationService,
     ) {}
 
     private onlineUsers = new Map<string, Set<string>>();
 
-    handleConnection(client: Socket): any {
-        const token: string = client.handshake.auth?.token
-            || client.handshake.query?.token;
-
+    handleConnection(client: Socket) {
+        const token = client.handshake.auth?.token || client.handshake.query?.token;
         if (!token) {
-            client.emit("error", {message: "Missing token!"});
             client.disconnect(true);
             return;
         }
@@ -49,142 +43,78 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
             if (!this.onlineUsers.has(userId)) {
                 this.onlineUsers.set(userId, new Set());
-                this.server.emit("user_online", {userId});
+                this.server.emit("user_online", { userId });
             }
-            this.onlineUsers.get(userId)?.add(client.id);
 
-            console.log(`Client connected: ${client.id}`);
-        } catch (error) {
-            client.emit("error", {message: "Invalid token!"});
+            this.onlineUsers.get(userId)!.add(client.id);
+        } catch {
             client.disconnect(true);
         }
     }
 
-    emitToUser(userId: string, event: string, data: any) {
-        const socketIds = this.onlineUsers.get(userId);
-        if (socketIds?.size) {
-            for (const socketId of socketIds) {
-                this.server.to(socketId).emit(event, data);
-            }
-        }
-    }
-
-    handleDisconnect(client: Socket): any {
+    handleDisconnect(client: Socket) {
         const userId = client.data.userId;
-
-        if (!userId) {
-            console.log(`Client ${client.id} disconnected without userId`);
-            return;
-        }
+        if (!userId) return;
 
         const sockets = this.onlineUsers.get(userId);
-        if (!sockets) {
-            return;
-        }
+        if (!sockets) return;
 
         sockets.delete(client.id);
         if (sockets.size === 0) {
             this.onlineUsers.delete(userId);
-            this.server.emit("user_offline", {userId});
-            console.log(`User ${userId} is now offline`);
+            this.server.emit("user_offline", { userId });
         }
     }
 
     @SubscribeMessage("join_conversation")
-    async handleJoinConversation(
+    async joinConversation(
         @ConnectedSocket() client: Socket,
-        @MessageBody() data: {conversationId: string}
+        @MessageBody() data: { conversationId: string }
     ) {
         const userId = client.data.userId;
-        const conversationId = data.conversationId;
+        const { conversationId } = data;
 
-        const checkParticipants = await this.conversationService
-            .findUserParticipants(
-                userId,
-                conversationId
-            );
-        if (!checkParticipants) {
-            client.emit("error", {message: "user not in conversation!"});
-            return;
-        }
+        const ok = await this.conversationService.findUserParticipants(
+            userId,
+            conversationId
+        );
+        if (!ok) return;
 
-        const room = `room:${data.conversationId}`;
+        const room = `room:${conversationId}`;
         client.join(room);
-        console.log(`userId ${userId} have join room ${conversationId}`);
-        console.log(client.rooms);
     }
 
-    @SubscribeMessage('leave_conversation')
-    handleLeaveConversation(
+    @SubscribeMessage("leave_conversation")
+    leaveConversation(
         @ConnectedSocket() client: Socket,
-        @MessageBody() data: { conversationId: string },
+        @MessageBody() data: { conversationId: string }
     ) {
-        const room = `room:${data.conversationId}`;
-        client.leave(room);
-    }
-
-
-    @SubscribeMessage("send_message")
-    async handleSendMessage(
-        @ConnectedSocket() client: Socket,
-        @MessageBody() data: {
-            conversationId: string,
-            content: string
-        }
-    ) {
-        try {
-            const userId = client.data.userId;
-            const conversationId = data.conversationId;
-
-            const checkParticipants = await this.conversationService
-                .findUserParticipants(userId, conversationId);
-
-            if (!checkParticipants) {
-                client.emit("error", {message: "user not in conversation!"});
-                return;
-            }
-
-            const message = await this.messageService.create(
-                userId,
-                conversationId,
-                data.content,
-                "text",
-                undefined
-            );
-            if (!message) {
-                client.emit("error", {message: "error when sending message!"});
-                return;
-            }
-
-            const room = `room:${data.conversationId}`;
-            this.server.to(room).emit("new_message", message);
-        } catch (error) {
-            console.error("Error in send_message:", error);
-            client.emit("error", {message: "Failed to send message"});
-        }
+        client.leave(`room:${data.conversationId}`);
     }
 
     @SubscribeMessage("typing_start")
-    handleTypingStart(
+    typingStart(
         @ConnectedSocket() client: Socket,
-        @MessageBody() data: { conversationId: string },
+        @MessageBody() data: { conversationId: string }
     ) {
-        const room = `room:${data.conversationId}`;
-        client.to(room).emit("user_typing", {
+        client.to(`room:${data.conversationId}`).emit("user_typing", {
             conversationId: data.conversationId,
             userId: client.data.userId,
         });
     }
 
     @SubscribeMessage("typing_stop")
-    handleTypingStop(
+    typingStop(
         @ConnectedSocket() client: Socket,
-        @MessageBody() data: { conversationId: string },
+        @MessageBody() data: { conversationId: string }
     ) {
-        const room = `room:${data.conversationId}`;
-        client.to(room).emit("user_stopped_typing", {
+        client.to(`room:${data.conversationId}`).emit("user_stopped_typing", {
             conversationId: data.conversationId,
             userId: client.data.userId,
         });
+    }
+
+    emitNewMessage(conversationId: string, payload: any) {
+        this.server.to(`room:${conversationId}`).emit("new_message", payload);
     }
 }
