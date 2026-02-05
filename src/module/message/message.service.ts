@@ -167,7 +167,9 @@ export class MessageService {
             );
         }
 
-        return this.findById(messageId);
+        const messageEdit = await this.findById(messageId);
+
+        return messageEdit;
     }
 
     public async filterMessageConversationNotSeen(
@@ -197,6 +199,7 @@ export class MessageService {
     }
 
     public async delete(
+        conversationId: string,
         id: string,
         userId: string,
         scope: "self" | "everyone",
@@ -240,7 +243,11 @@ export class MessageService {
             if (!result) {
                 throw new ForbiddenException("You are not allowed to delete this message");
             }
-            this.chatGateway.emitMessageDeleted()
+            this.chatGateway.emitMessageDeleted(conversationId, {
+                messageId: result._id.toString(),
+                scope: scope,
+                deletedBy: userId
+            });
             return result;
         } catch (e) {
             console.error(e);

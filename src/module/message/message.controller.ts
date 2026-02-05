@@ -67,7 +67,11 @@ export class MessageController {
         @JwtDecode() user: JwtType,
         @Body() dto: ReactEmojiDto
     ) {
-        return this.messageService.react(dto.id, user.userId, dto.emoji);
+        return this.messageService.react(
+            dto.id,
+            user.userId,
+            dto.emoji
+        );
     }
 
     @UseGuards(MessageConversationGuard)
@@ -85,11 +89,13 @@ export class MessageController {
     @UseGuards(MessageConversationGuard)
     @Delete(":id")
     public async deleteMessage(
+        @Param("id") room: IdConversationDto["id"],
         @JwtDecode() user: JwtType,
         @Body() body: DeleteMessageDto,
         @Query() query: QueryDeleteMessageDto
     ) {
         return this.messageService.delete(
+            room,
             body.id,
             user.userId,
             query.scope
