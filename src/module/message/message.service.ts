@@ -203,11 +203,20 @@ export class MessageService {
         conversationId: string,
         userId: string,
     ) {
+        const conObjectId = convertStringToObjectId(conversationId);
+        const userObjectId = convertStringToObjectId(userId);
+
         await this.messageModel.updateMany({
-            conversationId: convertStringToObjectId(conversationId),
-            seenBy: {$ne: convertStringToObjectId(userId)}
+            conversationId: conObjectId,
+            seenBy: {$ne: userObjectId}
         }, {
-            $addToSet: {seenBy: convertStringToObjectId(userId)}
+            $addToSet: {seenBy: userObjectId}
+        });
+
+        this.chatGateway.emitMessageSeen(conversationId, {
+            conversationId,
+            userId,
+            seenAt: new Date()
         });
         return {success: true};
     }
