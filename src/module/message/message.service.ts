@@ -121,6 +121,15 @@ export class MessageService {
             .lean();
     }
 
+    public async findByIdCheck(messageId: string) {
+        return this.messageModel.findById(
+            convertStringToObjectId(messageId),
+            {
+                conversationId: 1
+            }
+        );
+    }
+
     public async findById(messageId: string) {
         return this.messageModel.findById(convertStringToObjectId(messageId))
             .populate([
@@ -184,6 +193,40 @@ export class MessageService {
             }
         );
         return messageEdit;
+    }
+
+    public async unreact(
+        messageId: string,
+        userId: string,
+    ) {
+        const messageObjectId = convertStringToObjectId(messageId);
+        const userObjectId = convertStringToObjectId(userId);
+
+        const message = await this.messageModel.findOneAndUpdate(
+            {
+                _id: messageObjectId,
+                "reactions.userId": userObjectId,
+            },
+            {
+                $pull: {
+                    reactions: { userId: userObjectId },
+                },
+            },
+            { new: true },
+        );
+        if (!message) {
+            throw new NotFoundException("Reaction not found");
+        }
+        this.chatGateway.emitMessageReacted(
+            message.conversationId.toString(),
+            {
+                messageId,
+                userId,
+                emoji: null,
+            }
+        );
+
+        return message;
     }
 
     public async filterMessageConversationNotSeen(

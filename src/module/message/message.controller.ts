@@ -17,6 +17,7 @@ import {DeleteMessageDto} from "./dto/deleteMessage.dto";
 import {QueryDeleteMessageDto} from "./dto/queryDeleteMessage.dto";
 import {ForwardMessageDto} from "./dto/forwardMessage.dto";
 import {MessageConversationGuard} from "../conversation/guard/messageConversation.guard";
+import {UnreactEmojiDto} from "./dto/unreactEmoji.dto";
 
 @Controller("messages")
 @UseGuards(JwtAuthGuard, ConversationParticipantGuard)
@@ -72,6 +73,18 @@ export class MessageController {
             user.userId,
             dto.emoji
         );
+    }
+
+    @UseGuards(MessageConversationGuard)
+    @Patch("/:id/unreact")
+    public async unreactMessage(
+        @JwtDecode() user: JwtType,
+        @Body() dto: UnreactEmojiDto
+    ) {
+        return this.messageService.unreact(
+            dto.id,
+            user.userId,
+        )
     }
 
     @UseGuards(MessageConversationGuard)
