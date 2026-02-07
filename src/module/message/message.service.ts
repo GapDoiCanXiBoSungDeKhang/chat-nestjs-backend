@@ -190,6 +190,7 @@ export class MessageService {
                 messageId,
                 userId,
                 emoji,
+                action: "add"
             }
         );
         return messageEdit;
@@ -223,6 +224,7 @@ export class MessageService {
                 messageId,
                 userId,
                 emoji: null,
+                action: "remove"
             }
         );
 
