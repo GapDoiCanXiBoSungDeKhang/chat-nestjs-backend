@@ -82,35 +82,50 @@ export class MessageService {
         content: string,
         id: string
     ) {
-        const findMessage = await this.findById(id);
-        if (!findMessage) return;
-        if (findMessage.senderId._id.toString() !== userId) {
-            throw new ForbiddenException("Can't edit message");
-        }
-        findMessage.content = content
-        findMessage.editedAt = new Date();
-        findMessage.isEdited = true;
-        await findMessage.save();
-
-        this.chatGateway.emitMessageEdited(
-            findMessage.conversationId.toString(),
-            findMessage
+        const message = await this.messageModel.findById(
+            convertStringToObjectId(id)
         );
 
-        return findMessage;
+        if (!message) throw new NotFoundException("Message not found");
+        if (message.senderId.toString() !== userId) {
+            throw new ForbiddenException("Can't edit message");
+        }
+
+        message.content = content;
+        message.isEdited = true;
+        message.editedAt = new Date();
+        await message.save();
+
+        const populated = await this.messageModel
+            .findById(message._id)
+            .populate([
+                { path: "senderId", select: "name avatar" },
+                {
+                    path: "replyTo",
+                    select: "content senderId",
+                    populate: { path: "senderId", select: "name avatar" },
+                },
+                { path: "seenBy", select: "name avatar" },
+            ]);
+
+        this.chatGateway.emitMessageEdited(
+            message.conversationId.toString(),
+            populated
+        );
+
+        return populated;
     }
 
     public async messages(conversationId: string) {
-        return this.messageModel.find({conversationId: convertStringToObjectId(conversationId)})
+        return this.messageModel
+            .find({
+                conversationId: convertStringToObjectId(conversationId)
+            })
             .populate([
                 {path: "senderId", select: "name avatar"},
                 {
                     path: "replyTo", select: "content senderId",
                     populate: {path: "senderId", select: "name avatar"}
-                },
-                {
-                    path: "reactions",
-                    populate: {path: "userId", select: "name avatar"}
                 },
                 {path: "deletedFor", select: "name avatar"},
                 {path: "seenBy", select: "name avatar"}
@@ -126,22 +141,6 @@ export class MessageService {
                 conversationId: 1
             }
         );
-    }
-
-    public async findById(messageId: string) {
-        return this.messageModel.findById(convertStringToObjectId(messageId))
-            .populate([
-                {path: "senderId", select: "name avatar"},
-                {
-                    path: "replyTo", select: "content senderId",
-                    populate: {path: "senderId", select: "name avatar"}
-                },
-                {
-                    path: "reactions",
-                    populate: {path: "userId", select: "name avatar"}
-                },
-                {path: "seenBy", select: "name avatar"}
-            ]);
     }
 
     public async react(
@@ -178,7 +177,7 @@ export class MessageService {
             );
         }
 
-        const messageEdit = await this.findById(messageId);
+        const messageEdit = await this.messageModel.findById(messageObjectId);
         if (!messageEdit) {
             throw new ConflictException("message not found!");
         }
@@ -326,7 +325,8 @@ export class MessageService {
         id: string,
         conversationIds: string[],
     ) {
-        const originalMessage = await this.findById(id);
+        const objectId = convertStringToObjectId(id);
+        const originalMessage = await this.messageModel.findById(objectId);
         if (!originalMessage) {
             throw new NotFoundException("message not found!");
         }
