@@ -83,10 +83,8 @@ export class MessageService {
         id: string
     ) {
         const findMessage = await this.findById(id);
-        if (!findMessage) {
-            throw new NotFoundException("message not found!");
-        }
-        if (findMessage.senderId.toString() !== userId) {
+        if (!findMessage) return;
+        if (findMessage.senderId._id.toString() !== userId) {
             throw new ForbiddenException("Can't edit message");
         }
         findMessage.content = content

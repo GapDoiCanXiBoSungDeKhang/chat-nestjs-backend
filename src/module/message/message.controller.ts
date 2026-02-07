@@ -87,7 +87,6 @@ export class MessageController {
         )
     }
 
-    @UseGuards(MessageConversationGuard)
     @Patch(":id/seen")
     public async markAsSeen(
         @Param("id") room: IdConversationDto["id"],
