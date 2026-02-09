@@ -37,6 +37,9 @@ export class Message {
     @Prop({ type: Types.ObjectId, ref: "Message", default: null })
     replyTo?: Types.ObjectId;
 
+    @Prop({type: Number, default: 0})
+    attachmentCount!: number;
+
     @Prop({ default: false })
     isEdited!: boolean;
 
@@ -52,7 +55,7 @@ export class Message {
     @Prop({ default: false })
     isDeleted!: boolean;
 
-    @Prop({
+    @Prop({ 
         type: [{ type: Types.ObjectId, ref: "User" }],
         default: []
     })
@@ -60,12 +63,6 @@ export class Message {
 
     @Prop({ type: Types.ObjectId, ref: "Message", default: null })
     forwardedFrom?: Types.ObjectId;
-
-    @Prop({
-        type: [{type: Types.ObjectId, ref: "User"}],
-        default: []
-    })
-    deliveredTo!: Types.ObjectId[];
 }
 
 export const MessageSchema = SchemaFactory.createForClass(Message);
