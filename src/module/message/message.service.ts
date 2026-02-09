@@ -12,7 +12,7 @@ import {Model, Types} from "mongoose";
 import {Message, MessageDocument} from "./schema/message.schema";
 import {ConversationService} from "../conversation/conversation.service";
 import {NotificationService} from "../notification/notification.service";
-import {ChatGateway} from "../chat/chat.gateway";
+import {ChatGateway} from "../../gateway/chat.gateway";
 
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 

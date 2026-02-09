@@ -11,7 +11,7 @@ import {forwardRef, Inject} from "@nestjs/common";
 import {JwtService} from "@nestjs/jwt";
 import {Socket, Server} from "socket.io";
 
-import {ConversationService} from "../conversation/conversation.service";
+import {ConversationService} from "../module/conversation/conversation.service";
 
 @WebSocketGateway({
     cors: {

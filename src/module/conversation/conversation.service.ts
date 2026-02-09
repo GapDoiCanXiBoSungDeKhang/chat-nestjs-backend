@@ -33,7 +33,7 @@ export class ConversationService {
             throw new ConflictException("User not found");
         }
         if (myUserId === userId) {
-            throw new ConflictException("Cannot chat with yourself");
+            throw new ConflictException("Cannot gateway with yourself");
         }
         const existConversation = await this.conversationModel.findOne({
             type: "private",

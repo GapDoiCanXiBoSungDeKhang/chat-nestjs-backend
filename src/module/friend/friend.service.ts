@@ -10,7 +10,7 @@ import {Model} from "mongoose";
 import {FriendRequest, FriendRequestDocument} from "./schema/friendRequest.schema";
 import {ConversationService} from "../conversation/conversation.service";
 import {NotificationService} from "../notification/notification.service";
-import {ChatGateway} from "../chat/chat.gateway";
+import {ChatGateway} from "../../gateway/chat.gateway";
 
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 

@@ -6,7 +6,7 @@ import {ConversationModule} from "../conversation/conversation.module";
 import {MessageService} from "./message.service";
 import {MessageController} from "./message.controller";
 import {NotificationModule} from "../notification/notification.module";
-import {ChatModule} from "../chat/chat.module";
+import {ChatModule} from "../../gateway/chat.module";
 
 @Module({
     imports: [

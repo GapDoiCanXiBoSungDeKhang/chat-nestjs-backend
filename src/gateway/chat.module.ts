@@ -3,7 +3,7 @@ import {JwtModule} from "@nestjs/jwt";
 import {ConfigService} from "@nestjs/config";
 
 import {ChatGateway} from "./chat.gateway";
-import {ConversationModule} from "../conversation/conversation.module";
+import {ConversationModule} from "../module/conversation/conversation.module";
 
 @Module({
     imports: [
