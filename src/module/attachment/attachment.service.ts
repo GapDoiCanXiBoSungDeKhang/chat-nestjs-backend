@@ -11,7 +11,8 @@ export class AttachmentService {
         @InjectModel(Attachment.name)
         private readonly attachmentModel: Model<AttachmentDocument>,
         private readonly cloudService: CloudService,
-    ) {}
+    ) {
+    }
 
     public async uploadFiles(
         files: Express.Multer.File[],

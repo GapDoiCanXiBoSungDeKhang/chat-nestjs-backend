@@ -5,13 +5,13 @@ export type AttachmentDocument = Attachment & Document;
 
 @Schema({timestamps: true})
 export class Attachment {
-    @Prop({ type: Types.ObjectId, ref: "Message", required: true })
+    @Prop({type: Types.ObjectId, ref: "Message", required: true})
     messageId!: Types.ObjectId;
 
-    @Prop({ type: Types.ObjectId, ref: "Conversation", required: true })
+    @Prop({type: Types.ObjectId, ref: "Conversation", required: true})
     conversationId!: Types.ObjectId;
 
-    @Prop({ type: Types.ObjectId, ref: "User", required: true })
+    @Prop({type: Types.ObjectId, ref: "User", required: true})
     uploaderId!: Types.ObjectId;
 
     @Prop({
@@ -21,25 +21,25 @@ export class Attachment {
     })
     type!: string;
 
-    @Prop({ type: String, required: true })
+    @Prop({type: String, required: true})
     url!: string;
 
-    @Prop({ type: String })
+    @Prop({type: String})
     thumbnail?: string;
 
-    @Prop({ type: String })
+    @Prop({type: String})
     filename?: string;
 
-    @Prop({ type: String })
+    @Prop({type: String})
     originalName?: string;
 
-    @Prop({ type: Number })
+    @Prop({type: Number})
     size?: number;
 
-    @Prop({ type: String })
+    @Prop({type: String})
     mimeType?: string;
 
-    @Prop({ type: Number })
+    @Prop({type: Number})
     duration?: number;
 }
 

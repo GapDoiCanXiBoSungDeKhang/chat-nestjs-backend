@@ -23,14 +23,14 @@ export class MessageService {
     constructor(
         @InjectModel(Message.name)
         private readonly messageModel: Model<MessageDocument>,
-
         @Inject(forwardRef(() => ConversationService))
         private readonly conversationService: ConversationService,
         private readonly notificationService: NotificationService,
         private readonly chatGateway: ChatGateway,
         private readonly cloudService: CloudService,
         private readonly attachmentService: AttachmentService
-    ) {}
+    ) {
+    }
 
     public async create(
         userId: string,
@@ -123,13 +123,13 @@ export class MessageService {
         const populated = await this.messageModel
             .findById(message._id)
             .populate([
-                { path: "senderId", select: "name avatar" },
+                {path: "senderId", select: "name avatar"},
                 {
                     path: "replyTo",
                     select: "content senderId",
-                    populate: { path: "senderId", select: "name avatar" },
+                    populate: {path: "senderId", select: "name avatar"},
                 },
-                { path: "seenBy", select: "name avatar" },
+                {path: "seenBy", select: "name avatar"},
             ]);
 
         this.chatGateway.emitMessageEdited(
@@ -231,10 +231,10 @@ export class MessageService {
             },
             {
                 $pull: {
-                    reactions: { userId: userObjectId },
+                    reactions: {userId: userObjectId},
                 },
             },
-            { new: true },
+            {new: true},
         );
         if (!message) {
             throw new NotFoundException("Reaction not found");
@@ -302,14 +302,14 @@ export class MessageService {
                 result = await this.messageModel.findOneAndUpdate(
                     {
                         _id: objectId,
-                        deletedFor: { $ne: userObjectId },
+                        deletedFor: {$ne: userObjectId},
                     },
                     {
                         $addToSet: {
                             deletedFor: userObjectId,
                         },
                     },
-                    { new: true },
+                    {new: true},
                 );
             }
             if (scope === "everyone") {
@@ -317,7 +317,7 @@ export class MessageService {
                     {
                         _id: objectId,
                         senderId: userObjectId,
-                        isDeleted: { $ne: true },
+                        isDeleted: {$ne: true},
                     },
                     {
                         $set: {
@@ -325,7 +325,7 @@ export class MessageService {
                             content: "Message deleted",
                         },
                     },
-                    { new: true },
+                    {new: true},
                 );
             }
 
@@ -387,8 +387,8 @@ export class MessageService {
                 );
 
                 await m.populate([
-                    { path: "senderId", select: "name avatar" },
-                    { path: "seenBy", select: "name avatar" },
+                    {path: "senderId", select: "name avatar"},
+                    {path: "seenBy", select: "name avatar"},
                 ]);
 
                 this.chatGateway.emitMessageForwarded(

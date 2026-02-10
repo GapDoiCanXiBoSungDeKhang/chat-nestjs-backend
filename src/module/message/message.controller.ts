@@ -39,7 +39,8 @@ import {UploadFilesDto} from "./dto/uploadFiles.dto";
 export class MessageController {
     constructor(
         private readonly messageService: MessageService
-    ) {}
+    ) {
+    }
 
     @Post(":id")
     public async message(

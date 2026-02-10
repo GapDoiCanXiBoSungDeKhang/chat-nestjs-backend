@@ -6,7 +6,8 @@ import {ConversationService} from "../conversation.service";
 export class ConversationParticipantGuard implements CanActivate {
     constructor(
         private readonly conversationService: ConversationService,
-    ) {}
+    ) {
+    }
 
     async canActivate(context: ExecutionContext) {
         const req = context.switchToHttp().getRequest();

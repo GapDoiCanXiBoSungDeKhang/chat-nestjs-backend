@@ -1,36 +1,36 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document } from "mongoose";
+import {Prop, Schema, SchemaFactory} from "@nestjs/mongoose";
+import {Document} from "mongoose";
 import * as bcrypt from "bcrypt";
 
 export type UserDocument = User & Document;
 
-@Schema({ timestamps: true })
+@Schema({timestamps: true})
 export class User {
-    @Prop({ required: true, unique: true, lowercase: true, trim: true })
+    @Prop({required: true, unique: true, lowercase: true, trim: true})
     email!: string;
 
-    @Prop({ required: true })
+    @Prop({required: true})
     password!: string;
 
-    @Prop({ required: true })
+    @Prop({required: true})
     phoneNumber!: string;
 
-    @Prop({ required: true })
+    @Prop({required: true})
     name!: string;
 
-    @Prop({ default: null })
+    @Prop({default: null})
     avatar?: string;
 
-    @Prop({ default: "offline" })
+    @Prop({default: "offline"})
     status!: "online" | "offline";
 
-    @Prop({ default: false })
+    @Prop({default: false})
     isOnline!: boolean;
 
-    @Prop({ default: null })
+    @Prop({default: null})
     lastSeen!: Date;
 
-    @Prop({ default: null })
+    @Prop({default: null})
     refreshToken?: string;
 }
 

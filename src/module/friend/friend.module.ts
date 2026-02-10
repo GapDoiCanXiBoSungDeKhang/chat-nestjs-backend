@@ -22,4 +22,5 @@ import {ChatModule} from "../../gateway/chat.module";
     providers: [FriendService],
     controllers: [FriendController],
 })
-export class FriendModule {}
+export class FriendModule {
+}

@@ -22,7 +22,8 @@ export class FriendService {
         private readonly conversationService: ConversationService,
         private readonly notificationService: NotificationService,
         private readonly chatGateway: ChatGateway,
-    ) {}
+    ) {
+    }
 
     public async friendExits(
         fromId: string,
@@ -161,9 +162,9 @@ export class FriendService {
                 to: convertStringToObjectId(userId),
                 status: "pending"
             })
-                .populate("from", "name avatar")
-                .sort({ createdAt: -1 })
-                .lean();
+            .populate("from", "name avatar")
+            .sort({createdAt: -1})
+            .lean();
     }
 
     public async friends(userId: string) {
@@ -175,7 +176,7 @@ export class FriendService {
                     {to: convertStringToObjectId(userId)}
                 ]
             })
-                .populate("from to", "name avatar status")
+            .populate("from to", "name avatar status")
 
         return friends.map(
             r => r.from._id.toString() === userId

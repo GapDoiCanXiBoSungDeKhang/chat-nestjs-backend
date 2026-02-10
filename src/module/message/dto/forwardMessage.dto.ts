@@ -6,7 +6,7 @@ export class ForwardMessageDto {
     id!: string;
 
     @IsArray()
-    @IsMongoId({ each: true })
+    @IsMongoId({each: true})
     @ArrayMinSize(1)
     conversationIds!: string[];
 }

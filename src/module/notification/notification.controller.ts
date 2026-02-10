@@ -11,7 +11,8 @@ import {MarkReadDto} from "./dto/markRead.dto";
 export class NotificationController {
     constructor(
         private readonly notificationService: NotificationService
-    ) {}
+    ) {
+    }
 
     @Get()
     async getNotifications(@JwtDecode() user: JwtType) {

@@ -11,7 +11,8 @@ export class UserService {
     constructor(
         @InjectModel(User.name)
         private readonly userModel: Model<UserDocument>
-    ) {}
+    ) {
+    }
 
     public async users() {
         return this.userModel.find({}).lean();
@@ -51,7 +52,7 @@ export class UserService {
 
     public async listUser(userId: string) {
         return this.userModel.find(
-            { _id: {$ne: convertStringToObjectId(userId)}},
+            {_id: {$ne: convertStringToObjectId(userId)}},
             {
                 _id: 1,
                 name: 1

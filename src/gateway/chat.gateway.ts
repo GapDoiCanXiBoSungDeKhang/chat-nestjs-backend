@@ -25,10 +25,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     constructor(
         private readonly jwtService: JwtService,
-
         @Inject(forwardRef(() => ConversationService))
         private readonly conversationService: ConversationService,
-    ) {}
+    ) {
+    }
 
     private onlineUsers = new Map<string, Set<string>>();
 
@@ -46,7 +46,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
             if (!this.onlineUsers.has(userId)) {
                 this.onlineUsers.set(userId, new Set());
-                this.server.emit("user_online", { userId });
+                this.server.emit("user_online", {userId});
             }
 
             this.onlineUsers.get(userId)!.add(client.id);
@@ -65,7 +65,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         sockets.delete(client.id);
         if (sockets.size === 0) {
             this.onlineUsers.delete(userId);
-            this.server.emit("user_offline", { userId });
+            this.server.emit("user_offline", {userId});
         }
     }
 
@@ -75,7 +75,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         @MessageBody() data: { conversationId: string }
     ) {
         const userId = client.data.userId;
-        const { conversationId } = data;
+        const {conversationId} = data;
 
         const ok = await this.conversationService.findUserParticipants(
             userId,

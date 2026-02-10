@@ -8,7 +8,8 @@ import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
 export class UserController {
     constructor(
         private readonly userService: UserService,
-    ) {}
+    ) {
+    }
 
     @Get()
     @HttpCode(200)

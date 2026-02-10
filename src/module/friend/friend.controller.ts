@@ -15,7 +15,8 @@ import {UnfriendDto} from "./dto/unfriend.dto";
 export class FriendController {
     constructor(
         private readonly friendRequestService: FriendService
-    ) {}
+    ) {
+    }
 
     @HttpCode(201)
     @Post("request")

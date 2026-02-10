@@ -29,4 +29,5 @@ import {AttachmentModule} from "../attachment/attachment.module";
     controllers: [MessageController],
     exports: [MessageService],
 })
-export class MessageModule {}
+export class MessageModule {
+}

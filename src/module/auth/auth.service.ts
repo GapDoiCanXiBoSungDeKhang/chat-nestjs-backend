@@ -16,7 +16,8 @@ export class AuthService {
         private readonly userService: UserService,
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
-    ) {}
+    ) {
+    }
 
     public async register(dto: InputRegisterUserDto) {
         const existEmail = await this.userService.findByEmail(dto.email);

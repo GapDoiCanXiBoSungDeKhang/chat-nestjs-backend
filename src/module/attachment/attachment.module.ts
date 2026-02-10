@@ -17,4 +17,5 @@ import {AttachmentService} from "./attachment.service";
     providers: [AttachmentService],
     exports: [AttachmentService],
 })
-export class AttachmentModule {}
+export class AttachmentModule {
+}

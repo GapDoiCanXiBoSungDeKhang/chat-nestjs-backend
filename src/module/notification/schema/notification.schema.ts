@@ -5,7 +5,7 @@ export type NotificationDocument = Notification & Document;
 
 @Schema({timestamps: true})
 export class Notification {
-    @Prop({ type: Types.ObjectId, ref: "User", required: true })
+    @Prop({type: Types.ObjectId, ref: "User", required: true})
     userId!: Types.ObjectId;
 
     @Prop({
@@ -31,4 +31,4 @@ export class Notification {
 
 export const NotificationSchema = SchemaFactory.createForClass(Notification);
 
-NotificationSchema.index({ userId: 1, isRead: 1, createdAt: -1 });
+NotificationSchema.index({userId: 1, isRead: 1, createdAt: -1});

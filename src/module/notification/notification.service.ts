@@ -10,7 +10,8 @@ export class NotificationService {
     constructor(
         @InjectModel(Notification.name)
         private readonly notificationModel: Model<NotificationDocument>
-    ) {}
+    ) {
+    }
 
     async create(data: Partial<Notification>) {
         return this.notificationModel.create(data);
@@ -35,14 +36,14 @@ export class NotificationService {
             })
     }
 
-    async markRead(id: string,  userId: string) {
+    async markRead(id: string, userId: string) {
         return this.notificationModel.findOneAndUpdate(
             {
                 _id: convertStringToObjectId(id),
                 userId: convertStringToObjectId(userId)
             },
-            { isRead: true },
-            { new: true }
+            {isRead: true},
+            {new: true}
         );
     }
 

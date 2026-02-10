@@ -21,10 +21,10 @@ export class ConversationService {
         @InjectModel(Conversation.name)
         private readonly conversationModel: Model<ConversationDocument>,
         private readonly userService: UserService,
-
         @Inject(forwardRef(() => MessageService))
         private readonly messageService: MessageService
-    ) {}
+    ) {
+    }
 
     public async create(myUserId: string, userId: string) {
         const findUser = await this.userService.findByObjectId(userId);
@@ -123,8 +123,8 @@ export class ConversationService {
             throw new NotFoundException("Conversation not found");
         }
         const other = conversation.participants.find(
-                p => p.userId.toString() !== userId
-            );
+            p => p.userId.toString() !== userId
+        );
         if (!other) {
             throw new BadRequestException("Invalid private conversation");
         }

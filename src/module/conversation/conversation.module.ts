@@ -31,4 +31,5 @@ import {MessageModule} from "../message/message.module";
         ConversationParticipantGuard
     ],
 })
-export class ConversationModule {}
+export class ConversationModule {
+}

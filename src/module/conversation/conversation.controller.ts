@@ -11,7 +11,8 @@ import {CreatePrivateConversationDto} from "./dto/create-private.dto";
 export class ConversationController {
     constructor(
         private conversationService: ConversationService
-    ) {}
+    ) {
+    }
 
     @Post("private")
     @HttpCode(201)

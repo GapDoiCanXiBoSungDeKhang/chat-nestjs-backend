@@ -8,7 +8,8 @@ export class MessageConversationGuard implements CanActivate {
     constructor(
         private readonly conversationService: ConversationService,
         private readonly messageService: MessageService
-    ) {}
+    ) {
+    }
 
     async canActivate(context: ExecutionContext) {
         const req = context.switchToHttp().getRequest();

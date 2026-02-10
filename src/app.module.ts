@@ -30,4 +30,5 @@ import {AttachmentModule} from "./module/attachment/attachment.module";
         NotificationModule
     ]
 })
-export class AppModule {}
+export class AppModule {
+}

@@ -18,4 +18,5 @@ import {ConversationModule} from "../module/conversation/conversation.module";
     providers: [ChatGateway],
     exports: [ChatGateway]
 })
-export class ChatModule {}
+export class ChatModule {
+}

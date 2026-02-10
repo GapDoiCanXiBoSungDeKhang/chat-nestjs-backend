@@ -5,4 +5,5 @@ import {CloudService} from "./cloud.service";
     providers: [CloudService],
     exports: [CloudService]
 })
-export class CloudModule {}
+export class CloudModule {
+}

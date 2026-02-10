@@ -23,8 +23,8 @@ export class CloudService {
             const resourceType = type === "image"
                 ? "image"
                 : type === "video" || type === "voice"
-                ? "video"
-                : "raw"
+                    ? "video"
+                    : "raw"
             const res = await cloudinary.uploader.upload(
                 file.path,
                 {
@@ -52,7 +52,8 @@ export class CloudService {
         } catch (err) {
             throw new InternalServerErrorException("Upload to Cloudinary failed");
         } finally {
-            fs.unlink(file.path, () => {});
+            fs.unlink(file.path, () => {
+            });
         }
     }
 

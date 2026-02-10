@@ -34,16 +34,16 @@ export class Message {
         emoji: string,
     }[];
 
-    @Prop({ type: Types.ObjectId, ref: "Message", default: null })
+    @Prop({type: Types.ObjectId, ref: "Message", default: null})
     replyTo?: Types.ObjectId;
 
     @Prop({type: Number, default: 0})
     attachmentCount!: number;
 
-    @Prop({ default: false })
+    @Prop({default: false})
     isEdited!: boolean;
 
-    @Prop({ default: null })
+    @Prop({default: null})
     editedAt?: Date;
 
     @Prop({
@@ -52,23 +52,23 @@ export class Message {
     })
     seenBy!: Types.ObjectId[];
 
-    @Prop({ default: false })
+    @Prop({default: false})
     isDeleted!: boolean;
 
-    @Prop({ 
-        type: [{ type: Types.ObjectId, ref: "User" }],
+    @Prop({
+        type: [{type: Types.ObjectId, ref: "User"}],
         default: []
     })
     deletedFor!: Types.ObjectId[];
 
-    @Prop({ type: Types.ObjectId, ref: "Message", default: null })
+    @Prop({type: Types.ObjectId, ref: "Message", default: null})
     forwardedFrom?: Types.ObjectId;
 }
 
 export const MessageSchema = SchemaFactory.createForClass(Message);
 
-MessageSchema.index({ conversationId: 1, createdAt: -1 });
-MessageSchema.index({ conversationId: 1, deletedFor: 1, createdAt: -1 });
-MessageSchema.index({ conversationId: 1, seenBy: 1 });
-MessageSchema.index({ "reactions.userId": 1 });
+MessageSchema.index({conversationId: 1, createdAt: -1});
+MessageSchema.index({conversationId: 1, deletedFor: 1, createdAt: -1});
+MessageSchema.index({conversationId: 1, seenBy: 1});
+MessageSchema.index({"reactions.userId": 1});
 

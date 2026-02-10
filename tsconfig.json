@@ -2,19 +2,14 @@
   "compilerOptions": {
     "module": "commonjs",
     "target": "ES2021",
-
     "outDir": "./dist",
     "rootDir": "./src",
-
     "strict": true,
     "sourceMap": true,
-
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   }

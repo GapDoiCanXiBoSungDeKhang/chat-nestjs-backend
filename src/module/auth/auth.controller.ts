@@ -15,7 +15,8 @@ import {JwtType} from "../../common/types/jwtTypes.type";
 export class AuthController {
     constructor(
         private readonly authService: AuthService
-    ) {}
+    ) {
+    }
 
     @Post("register")
     @HttpCode(201)
