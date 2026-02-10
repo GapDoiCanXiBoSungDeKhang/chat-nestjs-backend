@@ -5,7 +5,7 @@ import * as fs from "node:fs";
 import {CloudUploadType, CloudUpload} from "./cloud.types";
 
 @Injectable()
-export class CloudCloudService {
+export class CloudService {
     constructor() {
         cloudinary.config({
             cloud_name: process.env.CLOUD_NAME,

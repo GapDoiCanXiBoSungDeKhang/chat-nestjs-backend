@@ -1,7 +1,8 @@
 import {Module} from "@nestjs/common";
+import {CloudService} from "./cloud.service";
 
 @Module({
-    providers: [],
-    exports: []
+    providers: [CloudService],
+    exports: [CloudService]
 })
 export class CloudModule {}
