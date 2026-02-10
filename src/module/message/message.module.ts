@@ -7,9 +7,13 @@ import {MessageService} from "./message.service";
 import {MessageController} from "./message.controller";
 import {NotificationModule} from "../notification/notification.module";
 import {ChatModule} from "../../gateway/chat.module";
+import {UploadModule} from "../../shared/upload/upload.module";
+import {CloudModule} from "../../shared/cloud/cloud.module";
 
 @Module({
     imports: [
+        CloudModule,
+        UploadModule,
         ChatModule,
         NotificationModule,
         forwardRef(() => ConversationModule),

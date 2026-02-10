@@ -1,4 +1,17 @@
-import {Body, Controller, Get, Param, Patch, Post, UseGuards, Query, Delete} from "@nestjs/common";
+import {
+    Body,
+    Controller,
+    Get,
+    Param,
+    Patch,
+    Post,
+    UseGuards,
+    Query,
+    Delete,
+    UseInterceptors,
+    UploadedFiles
+} from "@nestjs/common";
+import {FilesInterceptor} from "@nestjs/platform-express";
 
 import {MessageService} from "./message.service";
 
@@ -18,6 +31,8 @@ import {QueryDeleteMessageDto} from "./dto/queryDeleteMessage.dto";
 import {ForwardMessageDto} from "./dto/forwardMessage.dto";
 import {MessageConversationGuard} from "../conversation/guard/messageConversation.guard";
 import {UnreactEmojiDto} from "./dto/unreactEmoji.dto";
+import {createMulterOptions} from "../../shared/upload/upload.config";
+import * as fs from "node:fs";
 
 @Controller("messages")
 @UseGuards(JwtAuthGuard, ConversationParticipantGuard)
@@ -41,6 +56,27 @@ export class MessageController {
             body?.replyTo,
         );
     }
+
+    @Post(":id/file")
+    @UseInterceptors(
+        FilesInterceptor(
+            "files",
+            10,
+            createMulterOptions("file"),
+        ),
+    )
+    public async uploadFiles(
+        @UploadedFiles() files: Express.Multer.File[]
+    ) {
+        console.log(files);
+        let res = 0;
+        for (const file of files) {
+            fs.unlink(file.path, () => {});
+            res++;
+        }
+        console.log(`Have been remove ${res} file`);
+    }
+
 
     @UseGuards(MessageConversationGuard)
     @Patch(":id")
