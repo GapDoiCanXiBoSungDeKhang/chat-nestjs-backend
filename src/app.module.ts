@@ -10,6 +10,7 @@ import {MessageModule} from "./module/message/message.module";
 import {ChatModule} from "./gateway/chat.module";
 import {FriendModule} from "./module/friend/friend.module";
 import {NotificationModule} from "./module/notification/notification.module";
+import {AttachmentModule} from "./module/attachment/attachment.module";
 
 @Module({
     imports: [
@@ -25,6 +26,7 @@ import {NotificationModule} from "./module/notification/notification.module";
         MessageModule,
         FriendModule,
         ChatModule,
+        AttachmentModule,
         NotificationModule
     ]
 })

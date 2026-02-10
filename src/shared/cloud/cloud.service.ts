@@ -3,6 +3,7 @@ import {v2 as cloudinary} from "cloudinary";
 import * as fs from "node:fs";
 
 import {CloudUploadType, CloudUpload} from "./cloud.types";
+import {convertStringToObjectId} from "../helpers/convertObjectId.helpers";
 
 @Injectable()
 export class CloudService {
@@ -58,11 +59,31 @@ export class CloudService {
     public async uploadMultiple(
         files: Express.Multer.File[],
         type: CloudUploadType,
-    ): Promise<CloudUpload[]> {
-        const res: CloudUpload[] = [];
+        messageId: string,
+        conversationId: string,
+        uploaderId: string,
+    ) {
+
+        const res = [];
+        const messageObjectId = convertStringToObjectId(messageId);
+        const conversationObjectId = convertStringToObjectId(conversationId);
+        const uploaderObjectId = convertStringToObjectId(uploaderId);
+
         for (const file of files) {
             const uploaded = await this.uploadSingle(file, type);
-            res.push(uploaded);
+            res.push({
+                messageId: messageObjectId,
+                conversationId: conversationObjectId,
+                uploaderId: uploaderObjectId,
+                type: type,
+                url: uploaded.url,
+                thumbnail: uploaded.thumbnail,
+                filename: file.filename,
+                originalName: uploaded.originalName,
+                size: uploaded.size,
+                mimeType: uploaded.mimeType,
+                duration: uploaded.duration
+            });
         }
         return res;
     }

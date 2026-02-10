@@ -11,8 +11,8 @@ export class Message {
     @Prop({type: Types.ObjectId, ref: "User", required: true})
     senderId!: Types.ObjectId;
 
-    @Prop({type: String, required: true})
-    content!: string;
+    @Prop({type: String})
+    content?: string;
 
     @Prop({
         enum: ["text", "file", "image", "forward", "voice"],

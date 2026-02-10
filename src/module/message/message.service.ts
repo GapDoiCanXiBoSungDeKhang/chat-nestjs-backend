@@ -15,6 +15,8 @@ import {NotificationService} from "../notification/notification.service";
 import {ChatGateway} from "../../gateway/chat.gateway";
 
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
+import {CloudService} from "../../shared/cloud/cloud.service";
+import {AttachmentService} from "../attachment/attachment.service";
 
 @Injectable()
 export class MessageService {
@@ -26,6 +28,8 @@ export class MessageService {
         private readonly conversationService: ConversationService,
         private readonly notificationService: NotificationService,
         private readonly chatGateway: ChatGateway,
+        private readonly cloudService: CloudService,
+        private readonly attachmentService: AttachmentService
     ) {}
 
     public async create(
@@ -69,12 +73,32 @@ export class MessageService {
                 payload: {
                     conversationId: convObjectId,
                     senderId: userObjectId,
-                    contend: message.content.slice(0, 30),
+                    contend: message.content?.slice(0, 30),
                 },
             });
         });
 
         return message;
+    }
+
+    public async uploadFiles(
+        files: Express.Multer.File[],
+        conversationId: string,
+        userId: string,
+        replyTo?: string,
+    ) {
+        const conversationObjectId = convertStringToObjectId(conversationId);
+        const senderId = convertStringToObjectId(userId);
+
+        const message = await this.messageModel.create({
+            conversationId: conversationObjectId,
+            senderId,
+            type: "file",
+            seenBy: [senderId],
+            ...(replyTo && {replyTo: convertStringToObjectId(replyTo)}),
+        });
+        const res = await this.attachmentService.uploadFiles(files, message.id, userId, conversationId);
+        return res;
     }
 
     public async edit(

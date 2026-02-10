@@ -9,9 +9,11 @@ import {NotificationModule} from "../notification/notification.module";
 import {ChatModule} from "../../gateway/chat.module";
 import {UploadModule} from "../../shared/upload/upload.module";
 import {CloudModule} from "../../shared/cloud/cloud.module";
+import {AttachmentModule} from "../attachment/attachment.module";
 
 @Module({
     imports: [
+        AttachmentModule,
         CloudModule,
         UploadModule,
         ChatModule,
