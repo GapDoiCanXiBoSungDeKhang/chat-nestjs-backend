@@ -1,7 +1,8 @@
 import {Injectable, InternalServerErrorException} from "@nestjs/common";
 import {v2 as cloudinary} from "cloudinary";
-import {CloudUploadType, CloudUpload} from "./cloud.types";
 import * as fs from "node:fs";
+
+import {CloudUploadType, CloudUpload} from "./cloud.types";
 
 @Injectable()
 export class CloudCloudService {
@@ -52,5 +53,17 @@ export class CloudCloudService {
         } finally {
             fs.unlink(file.path, () => {});
         }
+    }
+
+    public async uploadMultiple(
+        files: Express.Multer.File[],
+        type: CloudUploadType,
+    ): Promise<CloudUpload[]> {
+        const res: CloudUpload[] = [];
+        for (const file of files) {
+            const uploaded = await this.uploadSingle(file, type);
+            res.push(uploaded);
+        }
+        return res;
     }
 }
