@@ -32,8 +32,9 @@ import {QueryDeleteMessageDto} from "./dto/queryDeleteMessage.dto";
 import {ForwardMessageDto} from "./dto/forwardMessage.dto";
 import {MessageConversationGuard} from "../conversation/guard/messageConversation.guard";
 import {UnreactEmojiDto} from "./dto/unreactEmoji.dto";
-import {createMulterOptions} from "../../shared/upload/upload.config";
 import {UploadFilesDto} from "./dto/uploadFiles.dto";
+
+import {createMulterOptions} from "../../shared/upload/upload.config";
 
 @Controller("messages")
 @UseGuards(JwtAuthGuard, ConversationParticipantGuard)
