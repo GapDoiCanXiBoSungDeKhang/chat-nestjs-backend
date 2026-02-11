@@ -1,14 +1,14 @@
 export const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 export const ALLOWED_FILE_TYPES = {
-    image: [
+    media: [
+        // Images
         "image/jpeg",
         "image/png",
         "image/webp",
         "image/gif",
-    ],
 
-    video: [
+        // Videos
         "video/mp4",
         "video/webm",
         "video/quicktime", // .mov (iOS hay dùng)
@@ -34,7 +34,7 @@ export const ALLOWED_FILE_TYPES = {
         "application/vnd.ms-excel",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 
-        // PowerPoint (nếu cần)
+        // PowerPoint
         "application/vnd.ms-powerpoint",
         "application/vnd.openxmlformats-officedocument.presentationml.presentation",
 
@@ -42,4 +42,3 @@ export const ALLOWED_FILE_TYPES = {
         "text/plain",
     ],
 };
-

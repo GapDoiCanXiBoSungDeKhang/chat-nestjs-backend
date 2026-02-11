@@ -1,4 +1,6 @@
-export type CloudUploadType = "image" | "video" | "file" | "voice";
+export type CloudUploadType = "media" | "file" | "voice";
+
+export type UploadFileType = "file" | "video" | "voice" | "image";
 
 export interface CloudUpload {
     url: string;

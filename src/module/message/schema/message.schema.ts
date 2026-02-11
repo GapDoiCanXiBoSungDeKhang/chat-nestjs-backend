@@ -15,10 +15,10 @@ export class Message {
     content?: string;
 
     @Prop({
-        enum: ["text", "file", "image", "forward", "voice"],
+        enum: ["text", "file", "media", "voice", "forward"],
         default: "text",
     })
-    type!: "text" | "file" | "image" | "forward" | "voice";
+    type!: "text" | "file" | "media" | "voice" | "forward";
 
     @Prop({
         type: [

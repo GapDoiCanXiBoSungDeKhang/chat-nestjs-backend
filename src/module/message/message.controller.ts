@@ -80,6 +80,28 @@ export class MessageController {
         );
     }
 
+    @Post(":id/media")
+    @UseInterceptors(
+        FilesInterceptor(
+            "files",
+            10,
+            createMulterOptions("media")
+        )
+    )
+    public async uploadMedias(
+        @UploadedFiles() files: Express.Multer.File[],
+        @Param("id") room: IdConversationDto["id"],
+        @JwtDecode() user: JwtType,
+        @Body() dto: UploadFilesDto,
+    ) {
+        return this.messageService.uploadMedias(
+            files,
+            room,
+            user.userId,
+            dto?.replyTo,
+        )
+    }
+
     @UseGuards(MessageConversationGuard)
     @Patch(":id")
     public async editMessage(

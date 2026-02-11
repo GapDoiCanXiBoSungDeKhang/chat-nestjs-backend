@@ -15,7 +15,6 @@ import {NotificationService} from "../notification/notification.service";
 import {ChatGateway} from "../../gateway/chat.gateway";
 
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
-import {CloudService} from "../../shared/cloud/cloud.service";
 import {AttachmentService} from "../attachment/attachment.service";
 
 @Injectable()
@@ -27,7 +26,6 @@ export class MessageService {
         private readonly conversationService: ConversationService,
         private readonly notificationService: NotificationService,
         private readonly chatGateway: ChatGateway,
-        private readonly cloudService: CloudService,
         private readonly attachmentService: AttachmentService
     ) {
     }
@@ -36,7 +34,7 @@ export class MessageService {
         userId: string,
         conversationId: string,
         content: string,
-        type: "text" | "file" | "image" | "forward",
+        type: "text" | "file" | "media" | "voice" | "forward",
         replyTo?: string,
     ) {
         const convObjectId = convertStringToObjectId(conversationId);
@@ -98,14 +96,39 @@ export class MessageService {
             attachmentCount: files.length,
             ...(replyTo && {replyTo: convertStringToObjectId(replyTo)}),
         });
-        const res = await this.attachmentService.uploadFiles(
+
+        return this.attachmentService.uploadFiles(
             files,
             message.id,
             userId,
             conversationId
         );
+    }
 
-        return res;
+    public async uploadMedias(
+        files: Express.Multer.File[],
+        conversationId: string,
+        userId: string,
+        replyTo?: string,
+    ) {
+        const conversationObjectId = convertStringToObjectId(userId);
+        const senderId = convertStringToObjectId(userId);
+
+        const message = await this.messageModel.create({
+            conversationId: conversationObjectId,
+            senderId,
+            type: "media",
+            seenBy: [senderId],
+            attachmentCount: files.length,
+            ...(replyTo && {replyTo: convertStringToObjectId(replyTo)}),
+        });
+
+        return this.attachmentService.uploadMedias(
+            files,
+            message.id,
+            userId,
+            conversationId,
+        );
     }
 
     public async edit(

@@ -2,7 +2,7 @@ import {Injectable, InternalServerErrorException} from "@nestjs/common";
 import {v2 as cloudinary} from "cloudinary";
 import * as fs from "node:fs";
 
-import {CloudUploadType, CloudUpload} from "./cloud.types";
+import {CloudUploadType, CloudUpload, UploadFileType} from "./cloud.types";
 import {convertStringToObjectId} from "../helpers/convertObjectId.helpers";
 
 @Injectable()
@@ -17,7 +17,7 @@ export class CloudService {
 
     public async uploadSingle(
         file: Express.Multer.File,
-        type: CloudUploadType,
+        type: UploadFileType,
     ): Promise<CloudUpload> {
         try {
             const resourceType = type === "image"
@@ -59,7 +59,6 @@ export class CloudService {
 
     public async uploadMultiple(
         files: Express.Multer.File[],
-        type: CloudUploadType,
         messageId: string,
         conversationId: string,
         uploaderId: string,
@@ -69,20 +68,32 @@ export class CloudService {
         const uploaderObjectId = convertStringToObjectId(uploaderId);
 
         const uploads = await Promise.all(
-            files.map(file => this.uploadSingle(file, "file"))
+            files.map(file => {
+                const type = this.detectType(file.mimetype);
+                return this.uploadSingle(file, type);
+            })
         );
-        return uploads.map((upload, i) => ({
-            messageId: messageObjectId,
-            conversationId: conversationObjectId,
-            uploaderId: uploaderObjectId,
-            type,
-            url: upload.url,
-            thumbnail: upload.thumbnail,
-            filename: files[i].filename,
-            originalName: files[i].originalname,
-            size: upload.size,
-            mimeType: upload.mimeType,
-            duration: upload.duration,
-        }))
+        return uploads.map((upload, i) => {
+            const detected = this.detectType(files[i].mimetype);
+            return {
+                messageId: messageObjectId,
+                conversationId: conversationObjectId,
+                uploaderId: uploaderObjectId,
+                type: detected,
+                url: upload.url,
+                thumbnail: upload.thumbnail,
+                filename: files[i].filename,
+                originalName: files[i].originalname,
+                size: upload.size,
+                mimeType: upload.mimeType,
+                duration: upload.duration,
+            }
+        });
+    }
+
+    private detectType(mime: string) {
+        if (mime.startsWith("image/")) return "image";
+        if (mime.startsWith("video/")) return "video";
+        return "file";
     }
 }

@@ -22,7 +22,22 @@ export class AttachmentService {
     ) {
         const res = await this.cloudService.uploadMultiple(
             files,
-            "file",
+            messageId,
+            conversationId,
+            uploaderId
+        );
+
+        return this.attachmentModel.insertMany(res);
+    }
+
+    public async uploadMedias(
+        files: Express.Multer.File[],
+        messageId: string,
+        uploaderId: string,
+        conversationId: string,
+    ) {
+        const res = await this.cloudService.uploadMultiple(
+            files,
             messageId,
             conversationId,
             uploaderId
