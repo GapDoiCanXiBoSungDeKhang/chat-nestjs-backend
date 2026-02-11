@@ -2,7 +2,7 @@ import {Injectable, InternalServerErrorException} from "@nestjs/common";
 import {v2 as cloudinary} from "cloudinary";
 import * as fs from "node:fs";
 
-import {CloudUploadType, CloudUpload, UploadFileType} from "./cloud.types";
+import {CloudUpload, UploadFileType} from "./cloud.types";
 import {convertStringToObjectId} from "../helpers/convertObjectId.helpers";
 
 @Injectable()

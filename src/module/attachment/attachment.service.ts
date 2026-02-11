@@ -54,7 +54,7 @@ export class AttachmentService {
         const uploaderObjectId = convertStringToObjectId(uploaderId);
         const messageObjectId = convertStringToObjectId(messageId);
         const conversationObjectId = convertStringToObjectId(conversationId);
-        
+
         const upload = await this.cloudService.uploadSingle(file, "voice");
         return this.attachmentModel.insertOne({
             messageId: messageObjectId,
