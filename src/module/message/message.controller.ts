@@ -10,7 +10,9 @@ import {
     Delete,
     UseInterceptors,
     UploadedFiles,
+    UploadedFile,
 } from "@nestjs/common";
+import {FileInterceptor, FilesInterceptor} from "@nestjs/platform-express";
 
 import {MessageService} from "./message.service";
 
@@ -30,7 +32,6 @@ import {QueryDeleteMessageDto} from "./dto/queryDeleteMessage.dto";
 import {ForwardMessageDto} from "./dto/forwardMessage.dto";
 import {MessageConversationGuard} from "../conversation/guard/messageConversation.guard";
 import {UnreactEmojiDto} from "./dto/unreactEmoji.dto";
-import {FilesInterceptor} from "@nestjs/platform-express";
 import {createMulterOptions} from "../../shared/upload/upload.config";
 import {UploadFilesDto} from "./dto/uploadFiles.dto";
 
@@ -99,7 +100,28 @@ export class MessageController {
             room,
             user.userId,
             dto?.replyTo,
+        );
+    }
+
+    @Post(":id/voice")
+    @UseInterceptors(
+        FileInterceptor(
+            "file",
+            createMulterOptions("voice")
         )
+    )
+    public async uploadVoice(
+        @UploadedFile() file: Express.Multer.File,
+        @Param("id") room: IdConversationDto["id"],
+        @JwtDecode() user: JwtType,
+        @Body() dto: UploadFilesDto
+    ) {
+       return this.messageService.uploadVoice(
+           file,
+           room,
+           user.userId,
+           dto?.replyTo,
+       )
     }
 
     @UseGuards(MessageConversationGuard)

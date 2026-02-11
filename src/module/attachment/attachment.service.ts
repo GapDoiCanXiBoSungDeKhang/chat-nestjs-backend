@@ -4,6 +4,7 @@ import {InjectModel} from "@nestjs/mongoose";
 
 import {Attachment, AttachmentDocument} from "./schema/attachment.schema";
 import {CloudService} from "../../shared/cloud/cloud.service";
+import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 
 @Injectable()
 export class AttachmentService {
@@ -36,13 +37,37 @@ export class AttachmentService {
         uploaderId: string,
         conversationId: string,
     ) {
-        const res = await this.cloudService.uploadMultiple(
+        return this.uploadFiles(
             files,
             messageId,
+            uploaderId,
             conversationId,
-            uploaderId
         );
+    }
 
-        return this.attachmentModel.insertMany(res);
+    public async uploadVoice(
+        file: Express.Multer.File,
+        messageId: string,
+        uploaderId: string,
+        conversationId: string,
+    ) {
+        const uploaderObjectId = convertStringToObjectId(uploaderId);
+        const messageObjectId = convertStringToObjectId(messageId);
+        const conversationObjectId = convertStringToObjectId(conversationId);
+        
+        const upload = await this.cloudService.uploadSingle(file, "voice");
+        return this.attachmentModel.insertOne({
+            messageId: messageObjectId,
+            conversationId: conversationObjectId,
+            uploaderId: uploaderObjectId,
+            type: "voice",
+            url: upload.url,
+            thumbnail: upload.thumbnail,
+            filename: file.filename,
+            originalName: file.originalname,
+            size: upload.size,
+            mimeType: upload.mimeType,
+            duration: upload.duration,
+        });
     }
 }

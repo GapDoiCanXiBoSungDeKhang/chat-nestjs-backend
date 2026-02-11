@@ -13,9 +13,9 @@ import {Message, MessageDocument} from "./schema/message.schema";
 import {ConversationService} from "../conversation/conversation.service";
 import {NotificationService} from "../notification/notification.service";
 import {ChatGateway} from "../../gateway/chat.gateway";
+import {AttachmentService} from "../attachment/attachment.service";
 
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
-import {AttachmentService} from "../attachment/attachment.service";
 
 @Injectable()
 export class MessageService {
@@ -125,6 +125,32 @@ export class MessageService {
 
         return this.attachmentService.uploadMedias(
             files,
+            message.id,
+            userId,
+            conversationId,
+        );
+    }
+
+    public async uploadVoice(
+        file: Express.Multer.File,
+        conversationId: string,
+        userId: string,
+        replyTo?: string,
+    ) {
+        const conversationObjectId = convertStringToObjectId(conversationId);
+        const senderId = convertStringToObjectId(userId);
+
+        const message = await this.messageModel.create({
+            conversationId: conversationObjectId,
+            senderId,
+            type: "voice",
+            seenBy: [senderId],
+            attachmentCount: 1,
+            ...(replyTo && {replyTo: convertStringToObjectId(replyTo)}),
+        });
+
+        return this.attachmentService.uploadVoice(
+            file,
             message.id,
             userId,
             conversationId,
