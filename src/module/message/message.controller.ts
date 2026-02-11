@@ -76,7 +76,7 @@ export class MessageController {
             files,
             room,
             user.userId,
-            dto.replyTo,
+            dto?.replyTo,
         );
     }
 

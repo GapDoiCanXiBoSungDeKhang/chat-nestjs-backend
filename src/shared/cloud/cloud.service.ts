@@ -64,28 +64,25 @@ export class CloudService {
         conversationId: string,
         uploaderId: string,
     ) {
-
-        const res = [];
         const messageObjectId = convertStringToObjectId(messageId);
         const conversationObjectId = convertStringToObjectId(conversationId);
         const uploaderObjectId = convertStringToObjectId(uploaderId);
 
-        for (const file of files) {
-            const uploaded = await this.uploadSingle(file, type);
-            res.push({
-                messageId: messageObjectId,
-                conversationId: conversationObjectId,
-                uploaderId: uploaderObjectId,
-                type: type,
-                url: uploaded.url,
-                thumbnail: uploaded.thumbnail,
-                filename: file.filename,
-                originalName: uploaded.originalName,
-                size: uploaded.size,
-                mimeType: uploaded.mimeType,
-                duration: uploaded.duration
-            });
-        }
-        return res;
+        const uploads = await Promise.all(
+            files.map(file => this.uploadSingle(file, "file"))
+        );
+        return uploads.map((upload, i) => ({
+            messageId: messageObjectId,
+            conversationId: conversationObjectId,
+            uploaderId: uploaderObjectId,
+            type,
+            url: upload.url,
+            thumbnail: upload.thumbnail,
+            filename: upload.originalName,
+            originalName: Buffer.from(files[i].filename, "latin1").toString("utf8"),
+            size: upload.size,
+            mimeType: upload.mimeType,
+            duration: upload.duration,
+        }))
     }
 }

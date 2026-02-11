@@ -95,9 +95,16 @@ export class MessageService {
             senderId,
             type: "file",
             seenBy: [senderId],
+            attachmentCount: files.length,
             ...(replyTo && {replyTo: convertStringToObjectId(replyTo)}),
         });
-        const res = await this.attachmentService.uploadFiles(files, message.id, userId, conversationId);
+        const res = await this.attachmentService.uploadFiles(
+            files,
+            message.id,
+            userId,
+            conversationId
+        );
+
         return res;
     }
 
