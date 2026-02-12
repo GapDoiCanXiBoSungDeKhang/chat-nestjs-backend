@@ -35,6 +35,7 @@ import {UnreactEmojiDto} from "./dto/unreactEmoji.dto";
 import {UploadFilesDto} from "./dto/uploadFiles.dto";
 
 import {createMulterOptions} from "../../shared/upload/upload.config";
+import {LinkPreviewDto} from "./dto/linkPreview.dto";
 
 @Controller("messages")
 @UseGuards(JwtAuthGuard, ConversationParticipantGuard)
@@ -123,6 +124,15 @@ export class MessageController {
            user.userId,
            dto?.replyTo,
        )
+    }
+
+    @Post(":id/link-preview")
+    public async linkPreview(
+        @Param("id") room: IdConversationDto["id"],
+        @Body() dto: LinkPreviewDto,
+        @JwtDecode() user: JwtType,
+    ) {
+
     }
 
     @UseGuards(MessageConversationGuard)

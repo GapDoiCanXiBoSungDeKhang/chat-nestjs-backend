@@ -46,7 +46,10 @@ export class MessageService {
             seenBy: [userObjectId],
             type,
             content,
-            ...(replyTo && {replyTo: convertStringToObjectId(replyTo)}),
+            ...(replyTo
+                && await this.findById(replyTo)
+                && {replyTo: convertStringToObjectId(replyTo)}
+            ),
         }
 
         const message = await this.messageModel.create(data);
@@ -94,7 +97,11 @@ export class MessageService {
             type: "file",
             seenBy: [senderId],
             attachmentCount: files.length,
-            ...(replyTo && {replyTo: convertStringToObjectId(replyTo)}),
+            ...(
+                replyTo
+                && await this.findById(replyTo)
+                && {replyTo: convertStringToObjectId(replyTo)}
+            ),
         });
 
         return this.attachmentService.uploadFiles(
@@ -120,7 +127,11 @@ export class MessageService {
             type: "media",
             seenBy: [senderId],
             attachmentCount: files.length,
-            ...(replyTo && {replyTo: convertStringToObjectId(replyTo)}),
+            ...(
+                replyTo
+                && await this.findById(replyTo)
+                && {replyTo: convertStringToObjectId(replyTo)}
+            ),
         });
 
         return this.attachmentService.uploadMedias(
@@ -146,7 +157,11 @@ export class MessageService {
             type: "voice",
             seenBy: [senderId],
             attachmentCount: 1,
-            ...(replyTo && {replyTo: convertStringToObjectId(replyTo)}),
+            ...(
+                replyTo
+                && await this.findById(replyTo)
+                && {replyTo: convertStringToObjectId(replyTo)}
+            ),
         });
 
         return this.attachmentService.uploadVoice(
@@ -212,6 +227,15 @@ export class MessageService {
             ])
             .sort({createdAt: 1})
             .lean();
+    }
+
+    public async findById(id: string) {
+        try {
+            return this.messageModel.findById(convertStringToObjectId(id));
+        } catch (error) {
+            console.log(error);
+            throw new NotFoundException("Not found message");
+        }
     }
 
     public async findByIdCheck(messageId: string) {
