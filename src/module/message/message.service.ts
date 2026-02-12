@@ -14,8 +14,10 @@ import {ConversationService} from "../conversation/conversation.service";
 import {NotificationService} from "../notification/notification.service";
 import {ChatGateway} from "../../gateway/chat.gateway";
 import {AttachmentService} from "../attachment/attachment.service";
+import {LinkPreviewService} from "../link-preview/link-preview.service";
 
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
+import {extractValidUrls} from "../../shared/ultis/extractUrl.ulti";
 
 @Injectable()
 export class MessageService {
@@ -26,7 +28,8 @@ export class MessageService {
         private readonly conversationService: ConversationService,
         private readonly notificationService: NotificationService,
         private readonly chatGateway: ChatGateway,
-        private readonly attachmentService: AttachmentService
+        private readonly attachmentService: AttachmentService,
+        private readonly linkPreviewService: LinkPreviewService,
     ) {
     }
 
@@ -34,25 +37,23 @@ export class MessageService {
         userId: string,
         conversationId: string,
         content: string,
-        type: "text" | "file" | "media" | "voice" | "forward",
         replyTo?: string,
     ) {
         const convObjectId = convertStringToObjectId(conversationId);
-        const userObjectId = convertStringToObjectId(userId);
+        const senderId = convertStringToObjectId(userId);
 
-        const data: MessageDocument = {
+        const message = await this.messageModel.create({
             conversationId: convObjectId,
-            senderId: userObjectId,
-            seenBy: [userObjectId],
-            type,
+            senderId,
+            seenBy: [senderId],
+            type: "text",
             content,
-            ...(replyTo
+            ...(
+                replyTo
                 && await this.findById(replyTo)
                 && {replyTo: convertStringToObjectId(replyTo)}
             ),
-        }
-
-        const message = await this.messageModel.create(data);
+        });
         await message.populate([
             {path: "senderId", select: "name avatar"},
             {
@@ -62,7 +63,16 @@ export class MessageService {
             {path: "seenBy", select: "name avatar"}
         ]);
 
-        await this.conversationService.updateConversation(conversationId, message._id.toString());
+        const urls = extractValidUrls(content);
+        if (urls.length) {
+            await Promise.all(
+                urls.map(url =>
+                    this.linkPreviewService.fetchLink(url)
+                ),
+            );
+        }
+
+        await this.conversationService.updateConversation(conversationId, message.id);
         this.chatGateway.emitNewMessage(conversationId, message);
 
         const receiverId = await this.conversationService.getUserParticipant(conversationId, userId);
@@ -73,7 +83,7 @@ export class MessageService {
                 refId: convObjectId,
                 payload: {
                     conversationId: convObjectId,
-                    senderId: userObjectId,
+                    senderId,
                     contend: message.content?.slice(0, 30),
                 },
             });
@@ -103,6 +113,7 @@ export class MessageService {
                 && {replyTo: convertStringToObjectId(replyTo)}
             ),
         });
+        await this.conversationService.updateConversation(conversationId, message.id);
 
         return this.attachmentService.uploadFiles(
             files,
@@ -118,7 +129,7 @@ export class MessageService {
         userId: string,
         replyTo?: string,
     ) {
-        const conversationObjectId = convertStringToObjectId(userId);
+        const conversationObjectId = convertStringToObjectId(conversationId);
         const senderId = convertStringToObjectId(userId);
 
         const message = await this.messageModel.create({
@@ -133,6 +144,7 @@ export class MessageService {
                 && {replyTo: convertStringToObjectId(replyTo)}
             ),
         });
+        await this.conversationService.updateConversation(conversationId, message.id);
 
         return this.attachmentService.uploadMedias(
             files,
@@ -163,6 +175,7 @@ export class MessageService {
                 && {replyTo: convertStringToObjectId(replyTo)}
             ),
         });
+        await this.conversationService.updateConversation(conversationId, message.id);
 
         return this.attachmentService.uploadVoice(
             file,

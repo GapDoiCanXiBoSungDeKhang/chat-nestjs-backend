@@ -1,8 +1,8 @@
-import {IsUrl, IsOptional, IsMongoId} from "class-validator";
+import {IsUrl, IsOptional, IsMongoId, IsString} from "class-validator";
 
 export class LinkPreviewDto {
     @IsUrl()
-    url!: string;
+    content!: string;
 
     @IsOptional()
     @IsMongoId()

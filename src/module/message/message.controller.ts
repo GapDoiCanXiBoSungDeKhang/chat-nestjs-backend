@@ -48,16 +48,14 @@ export class MessageController {
     @Post(":id")
     public async message(
         @Param("id") room: IdConversationDto["id"],
-        @Body() body: CreateMessageDto,
+        @Body() dto: CreateMessageDto,
         @JwtDecode() user: JwtType
     ) {
-        const type: "text" | "file" | "image" | "forward" = "text";
         return this.messageService.create(
             user.userId,
             room,
-            body.content,
-            type,
-            body?.replyTo,
+            dto.content,
+            dto?.replyTo,
         );
     }
 
@@ -132,7 +130,12 @@ export class MessageController {
         @Body() dto: LinkPreviewDto,
         @JwtDecode() user: JwtType,
     ) {
-
+        return this.messageService.create(
+            user.userId,
+            room,
+            dto.content,
+            dto?.replyTo,
+        )
     }
 
     @UseGuards(MessageConversationGuard)

@@ -8,6 +8,12 @@ export class LinkPreview {
     @Prop({type: Types.ObjectId, ref: "Message", required: true})
     messageId!: Types.ObjectId;
 
+    @Prop({type: Types.ObjectId, ref: "Conversation", required: true})
+    conversationId!: Types.ObjectId;
+
+    @Prop({type: Types.ObjectId, ref: "User", required: true})
+    senderId!: Types.ObjectId;
+
     @Prop({type: String, required: true})
     url!: string;
 

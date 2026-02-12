@@ -10,9 +10,11 @@ import {ChatModule} from "../../gateway/chat.module";
 import {UploadModule} from "../../shared/upload/upload.module";
 import {CloudModule} from "../../shared/cloud/cloud.module";
 import {AttachmentModule} from "../attachment/attachment.module";
+import {LinkPreviewModule} from "../link-preview/link-preview.module";
 
 @Module({
     imports: [
+        LinkPreviewModule,
         AttachmentModule,
         CloudModule,
         UploadModule,
