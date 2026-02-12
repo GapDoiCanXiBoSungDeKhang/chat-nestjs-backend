@@ -132,7 +132,6 @@ export class ConversationService {
         return other.userId;
     }
 
-
     public async findUserParticipants(
         userId: string,
         conversationId: string,

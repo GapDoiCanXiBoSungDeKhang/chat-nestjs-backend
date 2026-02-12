@@ -4,6 +4,7 @@ import {InjectModel} from "@nestjs/mongoose";
 import axios from "axios";
 import * as cheerio from "cheerio";
 import {LinkPreview, LinkPreviewDocument} from "./schema/link-preview.schema";
+import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 
 @Injectable()
 export class LinkPreviewService {
@@ -13,9 +14,18 @@ export class LinkPreviewService {
     ) {
     }
 
-    public async fetchLink(url: string) {
+    public async fetchLink(
+        url: string,
+        messageId: string,
+        conversationId: string,
+        userId: string,
+    ) {
         const cached = await this.linkPreviewModel.findOne({url}).lean();
         if (cached) return cached;
+
+        const senderId = convertStringToObjectId(userId);
+        const conversationObjectId = convertStringToObjectId(conversationId);
+        const messageObjectId = convertStringToObjectId(messageId);
 
         const {data} = await axios.get(url, {
             timeout: 5000,
@@ -30,6 +40,9 @@ export class LinkPreviewService {
             $(`meta[name='${prop}']`).attr("content");
 
         const preview = {
+            senderId,
+            messageId: messageObjectId,
+            conversationId: conversationObjectId,
             url,
             title: meta("og:title") || $("title").text(),
             description: meta("og:description"),

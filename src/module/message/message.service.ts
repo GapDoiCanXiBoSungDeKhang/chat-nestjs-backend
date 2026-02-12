@@ -36,7 +36,7 @@ export class MessageService {
     public async create(
         userId: string,
         conversationId: string,
-        content: string,
+        content?: string,
         replyTo?: string,
     ) {
         const convObjectId = convertStringToObjectId(conversationId);
@@ -47,7 +47,10 @@ export class MessageService {
             senderId,
             seenBy: [senderId],
             type: "text",
-            content,
+            ...(
+                content?.length
+                && { content }
+            ),
             ...(
                 replyTo
                 && await this.findById(replyTo)
@@ -63,20 +66,11 @@ export class MessageService {
             {path: "seenBy", select: "name avatar"}
         ]);
 
-        const urls = extractValidUrls(content);
-        if (urls.length) {
-            await Promise.all(
-                urls.map(url =>
-                    this.linkPreviewService.fetchLink(url)
-                ),
-            );
-        }
-
-        await this.conversationService.updateConversation(conversationId, message.id);
         this.chatGateway.emitNewMessage(conversationId, message);
-
         const receiverId = await this.conversationService.getUserParticipant(conversationId, userId);
         setImmediate(() => {
+            this.conversationService.updateConversation(conversationId, message.id);
+
             this.notificationService.create({
                 userId: receiverId,
                 type: "message",
@@ -87,6 +81,22 @@ export class MessageService {
                     contend: message.content?.slice(0, 30),
                 },
             });
+
+            if (content?.length) {
+                const urls = extractValidUrls(content);
+                if (urls.length) {
+                    Promise.all(
+                        urls.map(url =>
+                            this.linkPreviewService.fetchLink(
+                                url,
+                                message.id,
+                                conversationId,
+                                userId,
+                            )
+                        ),
+                    );
+                }
+            }
         });
 
         return message;
