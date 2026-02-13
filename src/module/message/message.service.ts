@@ -33,73 +33,87 @@ export class MessageService {
     ) {
     }
 
-    public async create(
-        userId: string,
-        conversationId: string,
-        content?: string,
-        replyTo?: string,
-    ) {
-        const convObjectId = convertStringToObjectId(conversationId);
-        const senderId = convertStringToObjectId(userId);
+    private async buildReplyTo(replyTo?: string) {
+        if (!replyTo) return undefined;
 
-        const message = await this.messageModel.create({
-            conversationId: convObjectId,
-            senderId,
-            seenBy: [senderId],
-            type: "text",
-            ...(
-                content?.length
-                && { content }
-            ),
-            ...(
-                replyTo
-                && await this.findById(replyTo)
-                && {replyTo: convertStringToObjectId(replyTo)}
-            ),
-        });
-        await message.populate([
+        const message = await this.messageModel.findById(
+            convertStringToObjectId(replyTo),
+            { _id: 1 }
+        );
+
+        if (!message) throw new NotFoundException("Reply message not found");
+
+        return convertStringToObjectId(replyTo);
+    }
+
+    private getArrayPopulate() {
+        return [
             {path: "senderId", select: "name avatar"},
             {
                 path: "replyTo", select: "content senderId",
                 populate: {path: "senderId", select: "name avatar"}
             },
             {path: "seenBy", select: "name avatar"}
-        ]);
+        ]
+    }
 
+    public async create(
+        userId: string,
+        conversationId: string,
+        content: string,
+        replyTo?: string,
+    ) {
+        const convObjectId = convertStringToObjectId(conversationId);
+        const senderId = convertStringToObjectId(userId);
+
+        const replyToObjectId = await this.buildReplyTo(replyTo);
+
+        const message = await this.messageModel.create({
+            conversationId: convObjectId,
+            senderId,
+            seenBy: [senderId],
+            type: "text",
+            content,
+            ...(replyToObjectId && {replyTo: replyToObjectId}),
+        });
+        await message.populate(this.getArrayPopulate());
+        const urls = extractValidUrls(content);
+        if (urls.length) {
+            await Promise.all(
+                urls.map(url =>
+                    this.linkPreviewService.fetchLink(
+                        url,
+                        message.id,
+                        conversationId,
+                        userId,
+                    )
+                ),
+            );
+        }
         this.chatGateway.emitNewMessage(conversationId, message);
+        await this.Notification(conversationId, message, userId);
+
+        return message;
+    }
+
+    private async Notification(
+        conversationId: string,
+        message: MessageDocument,
+        userId: string,
+    ) {
         const receiverId = await this.conversationService.getUserParticipant(conversationId, userId);
         setImmediate(() => {
-            this.conversationService.updateConversation(conversationId, message.id);
-
             this.notificationService.create({
                 userId: receiverId,
                 type: "message",
-                refId: convObjectId,
+                refId: message.conversationId,
                 payload: {
-                    conversationId: convObjectId,
-                    senderId,
-                    contend: message.content?.slice(0, 30),
+                    conversationId: message.conversationId,
+                    senderId: userId,
+                    content: message.content?.slice(0, 30),
                 },
             });
-
-            if (content?.length) {
-                const urls = extractValidUrls(content);
-                if (urls.length) {
-                    Promise.all(
-                        urls.map(url =>
-                            this.linkPreviewService.fetchLink(
-                                url,
-                                message.id,
-                                conversationId,
-                                userId,
-                            )
-                        ),
-                    );
-                }
-            }
         });
-
-        return message;
     }
 
     public async uploadFiles(
@@ -108,29 +122,35 @@ export class MessageService {
         userId: string,
         replyTo?: string,
     ) {
-        const conversationObjectId = convertStringToObjectId(conversationId);
+        const convObjectId = convertStringToObjectId(conversationId);
         const senderId = convertStringToObjectId(userId);
 
+        const replyToObjectId = await this.buildReplyTo(replyTo);
+
         const message = await this.messageModel.create({
-            conversationId: conversationObjectId,
+            conversationId: convObjectId,
             senderId,
-            type: "file",
             seenBy: [senderId],
             attachmentCount: files.length,
-            ...(
-                replyTo
-                && await this.findById(replyTo)
-                && {replyTo: convertStringToObjectId(replyTo)}
-            ),
+            type: "file",
+            ...(replyToObjectId && {replyTo: replyToObjectId}),
         });
-        await this.conversationService.updateConversation(conversationId, message.id);
+        await message.populate(this.getArrayPopulate());
 
-        return this.attachmentService.uploadFiles(
+        const attachments = await this.attachmentService.uploadFiles(
             files,
             message.id,
             userId,
             conversationId
         );
+
+        await this.conversationService.updateConversation(
+            conversationId,
+            message.id
+        );
+        await this.Notification(conversationId, message, userId);
+
+        return { message, attachments };
     }
 
     public async uploadMedias(
@@ -139,29 +159,36 @@ export class MessageService {
         userId: string,
         replyTo?: string,
     ) {
-        const conversationObjectId = convertStringToObjectId(conversationId);
+        const convObjectId = convertStringToObjectId(conversationId);
         const senderId = convertStringToObjectId(userId);
 
-        const message = await this.messageModel.create({
-            conversationId: conversationObjectId,
-            senderId,
-            type: "media",
-            seenBy: [senderId],
-            attachmentCount: files.length,
-            ...(
-                replyTo
-                && await this.findById(replyTo)
-                && {replyTo: convertStringToObjectId(replyTo)}
-            ),
-        });
-        await this.conversationService.updateConversation(conversationId, message.id);
+        const replyToObjectId = await this.buildReplyTo(replyTo);
 
-        return this.attachmentService.uploadMedias(
+        const message = await this.messageModel.create({
+            conversationId: convObjectId,
+            senderId,
+            seenBy: [senderId],
+            type: "media",
+            attachmentCount: files.length,
+            ...(replyToObjectId && {replyTo: replyToObjectId}),
+        });
+
+        await message.populate(this.getArrayPopulate());
+
+        const attachments = await this.attachmentService.uploadMedias(
             files,
             message.id,
             userId,
-            conversationId,
+            conversationId
         );
+
+        await this.conversationService.updateConversation(
+            conversationId,
+            message.id
+        );
+        await this.Notification(conversationId, message, userId);
+
+        return { message, attachments };
     }
 
     public async uploadVoice(
@@ -170,29 +197,36 @@ export class MessageService {
         userId: string,
         replyTo?: string,
     ) {
-        const conversationObjectId = convertStringToObjectId(conversationId);
+        const convObjectId = convertStringToObjectId(conversationId);
         const senderId = convertStringToObjectId(userId);
 
-        const message = await this.messageModel.create({
-            conversationId: conversationObjectId,
-            senderId,
-            type: "voice",
-            seenBy: [senderId],
-            attachmentCount: 1,
-            ...(
-                replyTo
-                && await this.findById(replyTo)
-                && {replyTo: convertStringToObjectId(replyTo)}
-            ),
-        });
-        await this.conversationService.updateConversation(conversationId, message.id);
+        const replyToObjectId = await this.buildReplyTo(replyTo);
 
-        return this.attachmentService.uploadVoice(
+        const message = await this.messageModel.create({
+            conversationId: convObjectId,
+            senderId,
+            seenBy: [senderId],
+            type: "voice",
+            attachmentCount: 1,
+            ...(replyToObjectId && {replyTo: replyToObjectId}),
+        });
+
+        await message.populate(this.getArrayPopulate());
+
+        const attachments = await this.attachmentService.uploadVoice(
             file,
             message.id,
             userId,
-            conversationId,
+            conversationId
         );
+
+        await this.conversationService.updateConversation(
+            conversationId,
+            message.id
+        );
+        await this.Notification(conversationId, message, userId);
+
+        return { message, attachments };
     }
 
     public async edit(
@@ -250,15 +284,6 @@ export class MessageService {
             ])
             .sort({createdAt: 1})
             .lean();
-    }
-
-    public async findById(id: string) {
-        try {
-            return this.messageModel.findById(convertStringToObjectId(id));
-        } catch (error) {
-            console.log(error);
-            throw new NotFoundException("Not found message");
-        }
     }
 
     public async findByIdCheck(messageId: string) {

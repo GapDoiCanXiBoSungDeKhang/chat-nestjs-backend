@@ -99,11 +99,21 @@ export class ConversationService {
         conversationId: string,
         messageId: string,
     ) {
-        await this.conversationModel.findByIdAndUpdate(
+        const updatedConversation = await this.conversationModel.findByIdAndUpdate(
             convertStringToObjectId(conversationId),
-            {lastMessage: convertStringToObjectId(messageId)}
-        )
+            {
+                $set: {
+                    lastMessage: convertStringToObjectId(messageId),
+                },
+            },
+            { new: true }
+        );
+        if (!updatedConversation) {
+            throw new NotFoundException("Conversation not found");
+        }
+        return updatedConversation;
     }
+
 
     public async getUserParticipant(
         conversationId: string,

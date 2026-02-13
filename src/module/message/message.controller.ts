@@ -133,7 +133,7 @@ export class MessageController {
         return this.messageService.create(
             user.userId,
             room,
-            dto?.content,
+            dto.content,
             dto?.replyTo,
         )
     }
