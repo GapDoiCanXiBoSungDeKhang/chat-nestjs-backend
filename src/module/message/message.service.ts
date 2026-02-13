@@ -92,6 +92,7 @@ export class MessageService {
             );
         }
         this.chatGateway.emitNewMessage(conversationId, message);
+        this.chatGateway.emitNewMessageLinkPreview(conversationId, getLinks);
 
         await this.conversationService.updateConversation(
             conversationId,
@@ -149,6 +150,7 @@ export class MessageService {
             userId,
             conversationId
         );
+        this.chatGateway.emitNewMessageFiles(conversationId, {message, attachments});
 
         await this.conversationService.updateConversation(
             conversationId,
@@ -187,6 +189,7 @@ export class MessageService {
             userId,
             conversationId
         );
+        this.chatGateway.emitNewMessageMedias(conversationId, {message, attachments});
 
         await this.conversationService.updateConversation(
             conversationId,
@@ -225,6 +228,7 @@ export class MessageService {
             userId,
             conversationId
         );
+        this.chatGateway.emitNewMessageVoice(conversationId, {message, attachments});
 
         await this.conversationService.updateConversation(
             conversationId,
