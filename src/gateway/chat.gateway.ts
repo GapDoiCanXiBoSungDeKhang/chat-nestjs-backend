@@ -140,4 +140,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     emitMessageSeen(conversationId: string, payload: any) {
         this.server.to(`room:${conversationId}`).emit("message_seen", payload);
     }
+
+    emitNewMessageFiles(conversationId: string, payload: any) {
+        this.server.to(`room:${conversationId}`).emit("new_message_file", payload);
+    }
+
+    emitNewMessageMedias(conversationId: string, payload: any) {
+        this.server.to(`room:${conversationId}`).emit("new_message_media", payload);
+    }
+
+    emitNewMessageVoice(conversationId: string, payload: any) {
+        this.server.to(`room:${conversationId}`).emit("new_message_voice", payload);
+    }
+
+    emitNewMessageLinkPreview(conversationId: string, payload: any) {
+        this.server.to(`room:${conversationId}`).emit("new_message_linkPreview", payload);
+    }
 }

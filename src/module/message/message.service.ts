@@ -67,6 +67,7 @@ export class MessageService {
         const senderId = convertStringToObjectId(userId);
 
         const replyToObjectId = await this.buildReplyTo(replyTo);
+        let getLinks;
 
         const message = await this.messageModel.create({
             conversationId: convObjectId,
@@ -79,7 +80,7 @@ export class MessageService {
         await message.populate(this.getArrayPopulate());
         const urls = extractValidUrls(content);
         if (urls.length) {
-            await Promise.all(
+            getLinks = await Promise.all(
                 urls.map(url =>
                     this.linkPreviewService.fetchLink(
                         url,
@@ -91,9 +92,14 @@ export class MessageService {
             );
         }
         this.chatGateway.emitNewMessage(conversationId, message);
+
+        await this.conversationService.updateConversation(
+            conversationId,
+            message.id
+        );
         await this.Notification(conversationId, message, userId);
 
-        return message;
+        return {message, getLinks};
     }
 
     private async Notification(

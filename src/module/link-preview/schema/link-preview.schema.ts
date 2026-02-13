@@ -28,3 +28,7 @@ export class LinkPreview {
 }
 
 export const LinkPreviewSchema = SchemaFactory.createForClass(LinkPreview);
+
+LinkPreviewSchema.index({url: 1, createdAt: 1});
+LinkPreviewSchema.index({messageId: 1, createdAt: 1});
+LinkPreviewSchema.index({senderId: 1, createdAt: 1});
