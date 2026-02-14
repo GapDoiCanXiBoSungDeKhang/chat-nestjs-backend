@@ -1,4 +1,4 @@
-import {Model} from "mongoose";
+import {Model, Types} from "mongoose";
 import {Injectable} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 
@@ -69,5 +69,21 @@ export class AttachmentService {
             mimeType: upload.mimeType,
             duration: upload.duration,
         });
+    }
+
+    public async getAttachments(ids: Types.ObjectId[]) {
+        return this.attachmentModel.find({messageId: {$in: ids}}).lean();
+    }
+
+    public async groupAttachmentsById(ids: Types.ObjectId[]) {
+        const attachments = await this.getAttachments(ids);
+
+        return attachments.reduce<Record<string, AttachmentDocument[]>>(
+            (acc, att) => {
+                const mgsId = att.messageId.toString();
+                if (!acc[mgsId]) acc[mgsId] = [];
+                acc[mgsId].push(att);
+                return acc;
+            }, {});
     }
 }

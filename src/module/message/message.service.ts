@@ -27,9 +27,9 @@ export class MessageService {
         @Inject(forwardRef(() => ConversationService))
         private readonly conversationService: ConversationService,
         private readonly notificationService: NotificationService,
-        private readonly chatGateway: ChatGateway,
         private readonly attachmentService: AttachmentService,
         private readonly linkPreviewService: LinkPreviewService,
+        private readonly chatGateway: ChatGateway,
     ) {
     }
 
@@ -279,7 +279,7 @@ export class MessageService {
     }
 
     public async messages(conversationId: string) {
-        return this.messageModel
+        const message = await this.messageModel
             .find({
                 conversationId: convertStringToObjectId(conversationId)
             })
@@ -294,6 +294,31 @@ export class MessageService {
             ])
             .sort({createdAt: 1})
             .lean();
+
+        const messageIdsAttachments = message
+            .filter(m => ["file", "media", "voice"].includes(m.type))
+            .map((m) => m._id);
+        const messageIds = message.map((m) => m._id)
+
+        const groupAttachments = await this.attachmentService.groupAttachmentsById(messageIdsAttachments);
+        const groupLinks = await this.linkPreviewService.groupLinkPreviewsById(messageIds);
+
+        const messagesWithAttachments = message.map((mgs) => {
+            const mgsId = mgs._id.toString();
+
+            if (groupAttachments[mgsId]) {
+                mgs.attachments = mgs.type === "voice"
+                    ? [groupAttachments[mgsId][0]]
+                    : groupAttachments[mgsId];
+            }
+            if (groupLinks[mgsId]) {
+                mgs.linkPreviews = groupLinks[mgsId];
+            }
+
+            return mgs;
+        });
+
+        return messagesWithAttachments;
     }
 
     public async findByIdCheck(messageId: string) {

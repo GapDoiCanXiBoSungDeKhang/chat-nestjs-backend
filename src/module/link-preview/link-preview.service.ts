@@ -1,4 +1,4 @@
-import {Model} from "mongoose";
+import {Model, Types} from "mongoose";
 import {Injectable} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import axios from "axios";
@@ -49,5 +49,21 @@ export class LinkPreviewService {
             image: meta("og:image"),
         };
         return this.linkPreviewModel.create(preview);
+    }
+
+    public async getLinkPreviews(ids: Types.ObjectId[]) {
+        return this.linkPreviewModel.find({messageId: {$in: ids}}).lean();
+    }
+
+    public async groupLinkPreviewsById(ids: Types.ObjectId[]) {
+        const linkPreviews = await this.getLinkPreviews(ids);
+
+        return linkPreviews.reduce<Record<string, LinkPreviewDocument[]>>(
+            (acc, link) => {
+                const mgsId = link.messageId.toString();
+                if (!acc[mgsId]) acc[mgsId] = [];
+                acc[mgsId].push(link);
+                return acc;
+            }, {});
     }
 }
