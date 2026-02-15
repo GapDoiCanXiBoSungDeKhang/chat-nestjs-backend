@@ -18,24 +18,24 @@ import {MessageService} from "./message.service";
 
 import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
 import {ConversationParticipantGuard} from "../conversation/guard/conversationParticipant.guard";
-
-import {IdConversationDto} from "./dto/id-conversation.dto";
+import {MessageConversationGuard} from "../conversation/guard/messageConversation.guard";
 
 import {JwtDecode} from "../../common/decorators/jwt.decorator";
 import {JwtType} from "../../common/types/jwtTypes.type";
 
+import {IdConversationDto} from "./dto/id-conversation.dto";
 import {CreateMessageDto} from "./dto/body-create.dto";
 import {ReactEmojiDto} from "./dto/reactEmoji.dto";
 import {EditMessageDto} from "./dto/editMessage.dto";
 import {DeleteMessageDto} from "./dto/deleteMessage.dto";
 import {QueryDeleteMessageDto} from "./dto/queryDeleteMessage.dto";
 import {ForwardMessageDto} from "./dto/forwardMessage.dto";
-import {MessageConversationGuard} from "../conversation/guard/messageConversation.guard";
 import {UnreactEmojiDto} from "./dto/unreactEmoji.dto";
 import {UploadFilesDto} from "./dto/uploadFiles.dto";
+import {LinkPreviewDto} from "./dto/linkPreview.dto";
+import {SearchMessageDto} from "./dto/search.dto";
 
 import {createMulterOptions} from "../../shared/upload/upload.config";
-import {LinkPreviewDto} from "./dto/linkPreview.dto";
 
 @Controller("messages")
 @UseGuards(JwtAuthGuard, ConversationParticipantGuard)
@@ -156,6 +156,14 @@ export class MessageController {
         @Param("id") room: IdConversationDto["id"],
     ) {
         return this.messageService.messages(room);
+    }
+
+    @Get(":id/search")
+    public async search(
+        @Query() dto: SearchMessageDto,
+        @Param("id") room: IdConversationDto["id"],
+    ) {
+        return this.messageService.search(dto.q, room);
     }
 
     @UseGuards(MessageConversationGuard)

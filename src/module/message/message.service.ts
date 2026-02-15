@@ -103,6 +103,24 @@ export class MessageService {
         return {message, getLinks};
     }
 
+    public async search(q: string, conversationId: string) {
+        const conversationObjectId = convertStringToObjectId(conversationId);
+
+        if (!q || q.trim().length === 0) {
+            return [];
+        }
+        const res = await this.messageModel.find(
+            {
+                $text: {$search: q},
+                conversationId: conversationObjectId
+            },
+            {score: {$meta: "textScore"}}
+        )
+            .sort({score: {$meta: "textScore"}})
+            .limit(20);
+        return res;
+    }
+
     private async Notification(
         conversationId: string,
         message: MessageDocument,

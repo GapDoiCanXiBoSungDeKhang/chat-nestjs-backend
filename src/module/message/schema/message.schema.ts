@@ -71,4 +71,5 @@ MessageSchema.index({conversationId: 1, createdAt: -1});
 MessageSchema.index({conversationId: 1, deletedFor: 1, createdAt: -1});
 MessageSchema.index({conversationId: 1, seenBy: 1});
 MessageSchema.index({"reactions.userId": 1});
+MessageSchema.index({content: "text"});
 
