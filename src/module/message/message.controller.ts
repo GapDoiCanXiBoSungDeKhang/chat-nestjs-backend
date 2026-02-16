@@ -65,18 +65,20 @@ export class MessageController {
     @Post(":id/pin")
     public async pin(
         @Body() dto: PinMessageDto,
+        @Param("id") room: ConversationIdDto["id"],
         @JwtDecode() user: JwtType
     ) {
-        return this.messageService.pin(dto.id, user.userId);
+        return this.messageService.pin(dto.id, user.userId, room);
     }
 
     @UseGuards(MessageConversationGuard)
     @Patch(":id/unpin")
     public async unpin(
         @Body() dto: PinMessageDto,
+        @Param("id") room: ConversationIdDto["id"],
         @JwtDecode() user: JwtType
     ) {
-        return this.messageService.unpin(dto.id, user.userId);
+        return this.messageService.unpin(dto.id, user.userId, room);
     }
 
     @Post(":id/file")

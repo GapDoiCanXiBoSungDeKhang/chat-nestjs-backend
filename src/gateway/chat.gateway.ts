@@ -165,4 +165,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             }
         }
     }
+
+    emitMessagePinned(conversationId: string, payload: any) {
+        this.server.to(`room:${conversationId}`).emit("message_pinned", payload);
+    }
+
+    emitMessageUnpinned(conversationId: string, payload: any) {
+        this.server.to(`room:${conversationId}`).emit("message_unpinned", payload);
+    }
 }

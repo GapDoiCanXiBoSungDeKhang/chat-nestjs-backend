@@ -122,7 +122,11 @@ export class MessageService {
         return res;
     }
 
-    public async pin(messageId: string, userId: string) {
+    public async pin(
+        messageId: string,
+        userId: string,
+        conversationId: string
+    ) {
         const mgs = await this.messageModel.findById(convertStringToObjectId(messageId));
         if (!mgs) throw new NotFoundException("Message not found");
         if (mgs.isPinned) throw new ForbiddenException("Message already pinned");
@@ -131,10 +135,21 @@ export class MessageService {
         mgs.pinByUser = convertStringToObjectId(userId);
         mgs.pinnedAt = new Date();
         await mgs.save();
+
+        this.chatGateway.emitMessagePinned(conversationId, {
+            messageId: mgs.id,
+            isPinned: true,
+            pinByUser: mgs.pinByUser,
+            pinnedAt: mgs.pinnedAt.toISOString(),
+        })
         return mgs;
     }
 
-    public async unpin(messageId: string, userId: string) {
+    public async unpin(
+        messageId: string,
+        userId: string,
+        conversationId: string
+    ) {
         const mgs = await this.messageModel.findById(convertStringToObjectId(messageId));
         if (!mgs) throw new NotFoundException("Message not found");
         if (!mgs.isPinned) throw new ForbiddenException("Message already not pinned");
@@ -144,6 +159,13 @@ export class MessageService {
         mgs.isPinned = false;
         mgs.pinByUser = null;
         await mgs.save();
+
+        this.chatGateway.emitMessageUnpinned(conversationId, {
+            messageId: mgs.id,
+            isPinned: false,
+            pinByUser: null,
+            pinnedAt: null,
+        })
         return mgs;
     }
 
