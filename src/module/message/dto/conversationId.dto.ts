@@ -1,6 +1,6 @@
 import {IsMongoId, IsNotEmpty} from "class-validator";
 
-export class IdConversationDto {
+export class ConversationIdDto {
     @IsMongoId()
     @IsNotEmpty()
     id!: string;

@@ -23,8 +23,8 @@ import {MessageConversationGuard} from "../conversation/guard/messageConversatio
 import {JwtDecode} from "../../common/decorators/jwt.decorator";
 import {JwtType} from "../../common/types/jwtTypes.type";
 
-import {IdConversationDto} from "./dto/id-conversation.dto";
-import {CreateMessageDto} from "./dto/body-create.dto";
+import {ConversationIdDto} from "./dto/conversationId.dto";
+import {CreateMessageDto} from "./dto/createMessage.dto";
 import {ReactEmojiDto} from "./dto/reactEmoji.dto";
 import {EditMessageDto} from "./dto/editMessage.dto";
 import {DeleteMessageDto} from "./dto/deleteMessage.dto";
@@ -49,7 +49,7 @@ export class MessageController {
 
     @Post(":id")
     public async message(
-        @Param("id") room: IdConversationDto["id"],
+        @Param("id") room: ConversationIdDto["id"],
         @Body() dto: CreateMessageDto,
         @JwtDecode() user: JwtType
     ) {
@@ -89,7 +89,7 @@ export class MessageController {
     )
     public async uploadFiles(
         @UploadedFiles() files: Express.Multer.File[],
-        @Param("id") room: IdConversationDto["id"],
+        @Param("id") room: ConversationIdDto["id"],
         @JwtDecode() user: JwtType,
         @Body() dto: UploadFilesDto,
     ) {
@@ -111,7 +111,7 @@ export class MessageController {
     )
     public async uploadMedias(
         @UploadedFiles() files: Express.Multer.File[],
-        @Param("id") room: IdConversationDto["id"],
+        @Param("id") room: ConversationIdDto["id"],
         @JwtDecode() user: JwtType,
         @Body() dto: UploadFilesDto,
     ) {
@@ -132,7 +132,7 @@ export class MessageController {
     )
     public async uploadVoice(
         @UploadedFile() file: Express.Multer.File,
-        @Param("id") room: IdConversationDto["id"],
+        @Param("id") room: ConversationIdDto["id"],
         @JwtDecode() user: JwtType,
         @Body() dto: UploadFilesDto
     ) {
@@ -146,7 +146,7 @@ export class MessageController {
 
     @Post(":id/link-preview")
     public async linkPreview(
-        @Param("id") room: IdConversationDto["id"],
+        @Param("id") room: ConversationIdDto["id"],
         @Body() dto: LinkPreviewDto,
         @JwtDecode() user: JwtType,
     ) {
@@ -173,7 +173,7 @@ export class MessageController {
 
     @Get(":id")
     public async getMessages(
-        @Param("id") room: IdConversationDto["id"],
+        @Param("id") room: ConversationIdDto["id"],
         @Query() query: PaginationDto
     ) {
         return this.messageService.messages(
@@ -186,7 +186,7 @@ export class MessageController {
     @Get(":id/search")
     public async search(
         @Query() dto: SearchMessageDto,
-        @Param("id") room: IdConversationDto["id"],
+        @Param("id") room: ConversationIdDto["id"],
     ) {
         return this.messageService.search(dto.q, room);
     }
@@ -218,7 +218,7 @@ export class MessageController {
 
     @Patch(":id/seen")
     public async markAsSeen(
-        @Param("id") room: IdConversationDto["id"],
+        @Param("id") room: ConversationIdDto["id"],
         @JwtDecode() user: JwtType
     ) {
         return this.messageService.markAsSeen(
@@ -230,7 +230,7 @@ export class MessageController {
     @UseGuards(MessageConversationGuard)
     @Delete(":id")
     public async deleteMessage(
-        @Param("id") room: IdConversationDto["id"],
+        @Param("id") room: ConversationIdDto["id"],
         @JwtDecode() user: JwtType,
         @Body() body: DeleteMessageDto,
         @Query() query: QueryDeleteMessageDto
