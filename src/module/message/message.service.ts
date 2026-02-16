@@ -133,6 +133,19 @@ export class MessageService {
         return mgs;
     }
 
+    public async unpin(messageId: string, userId: string) {
+        const mgs = await this.messageModel.findById(convertStringToObjectId(messageId));
+        if (!mgs) throw new NotFoundException("Message not found");
+        if (!mgs.isPinned) throw new ForbiddenException("Message already not pinned");
+        if (!mgs.pinByUser || mgs.pinByUser.toString() !== userId) {
+            throw new ForbiddenException("You are not user pin this message!")
+        }
+        mgs.isPinned = false;
+        mgs.pinByUser = null;
+        await mgs.save();
+        return mgs;
+    }
+
     private async Notification(
         conversationId: string,
         message: MessageDocument,

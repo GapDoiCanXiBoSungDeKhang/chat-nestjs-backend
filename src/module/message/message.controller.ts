@@ -69,6 +69,15 @@ export class MessageController {
         return this.messageService.pin(dto.id, user.userId);
     }
 
+    @UseGuards(MessageConversationGuard)
+    @Patch(":id/unpin")
+    public async unpin(
+        @Body() dto: PinMessageDto,
+        @JwtDecode() user: JwtType
+    ) {
+        return this.messageService.unpin(dto.id, user.userId);
+    }
+
     @Post(":id/file")
     @UseInterceptors(
         FilesInterceptor(

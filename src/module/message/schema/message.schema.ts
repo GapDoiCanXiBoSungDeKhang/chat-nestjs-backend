@@ -65,7 +65,7 @@ export class Message {
     isPinned!: boolean;
 
     @Prop({type: Types.ObjectId, ref: "User", default: null})
-    pinByUser?: Types.ObjectId;
+    pinByUser?: Types.ObjectId | null;
 
     @Prop({default: null})
     pinnedAt?: Date;
