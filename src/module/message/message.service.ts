@@ -324,8 +324,8 @@ export class MessageService {
 
     public async messages(
         conversationId: string,
-        page: number,
-        limit: number
+        page: number=1,
+        limit: number=20
     ) {
         const skip = limitPagination(page, limit);
 
