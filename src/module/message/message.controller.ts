@@ -36,6 +36,7 @@ import {LinkPreviewDto} from "./dto/linkPreview.dto";
 import {SearchMessageDto} from "./dto/search.dto";
 
 import {createMulterOptions} from "../../shared/upload/upload.config";
+import {PinMessageDto} from "./dto/pinMessage.dto";
 
 @Controller("messages")
 @UseGuards(JwtAuthGuard, ConversationParticipantGuard)
@@ -57,6 +58,15 @@ export class MessageController {
             dto.content,
             dto?.replyTo,
         );
+    }
+
+    @UseGuards(MessageConversationGuard)
+    @Post(":id/pin")
+    public async pin(
+        @Body() dto: PinMessageDto,
+        @JwtDecode() user: JwtType
+    ) {
+        return this.messageService.pin(dto.id, user.userId);
     }
 
     @Post(":id/file")

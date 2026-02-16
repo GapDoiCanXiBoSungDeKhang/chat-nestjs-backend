@@ -61,6 +61,15 @@ export class Message {
     })
     deletedFor!: Types.ObjectId[];
 
+    @Prop({type: Boolean, default: false})
+    isPinned!: boolean;
+
+    @Prop({type: Types.ObjectId, ref: "User", default: null})
+    pinByUser?: Types.ObjectId;
+
+    @Prop({default: null})
+    pinnedAt?: Date;
+
     @Prop({type: Types.ObjectId, ref: "Message", default: null})
     forwardedFrom?: Types.ObjectId;
 }

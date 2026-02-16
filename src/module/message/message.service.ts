@@ -106,7 +106,7 @@ export class MessageService {
     public async search(q: string, conversationId: string) {
         const conversationObjectId = convertStringToObjectId(conversationId);
 
-        if (!q || q.trim().length === 0) {
+        if (!q || !q.trim().length) {
             return [];
         }
         const res = await this.messageModel.find(
@@ -119,6 +119,18 @@ export class MessageService {
             .sort({score: {$meta: "textScore"}})
             .limit(20);
         return res;
+    }
+
+    public async pin(messageId: string, userId: string) {
+        const mgs = await this.messageModel.findById(convertStringToObjectId(messageId));
+        if (!mgs) throw new NotFoundException("Message not found");
+        if (mgs.isPinned) throw new ForbiddenException("Message already pinned");
+
+        mgs.isPinned = true;
+        mgs.pinByUser = convertStringToObjectId(userId);
+        mgs.pinnedAt = new Date();
+        await mgs.save();
+        return mgs;
     }
 
     private async Notification(
