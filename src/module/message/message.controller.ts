@@ -37,6 +37,7 @@ import {SearchMessageDto} from "./dto/search.dto";
 
 import {createMulterOptions} from "../../shared/upload/upload.config";
 import {PinMessageDto} from "./dto/pinMessage.dto";
+import {PaginationDto} from "./dto/pagination.dto";
 
 @Controller("messages")
 @UseGuards(JwtAuthGuard, ConversationParticipantGuard)
@@ -173,8 +174,13 @@ export class MessageController {
     @Get(":id")
     public async getMessages(
         @Param("id") room: IdConversationDto["id"],
+        @Query() query: PaginationDto
     ) {
-        return this.messageService.messages(room);
+        return this.messageService.messages(
+            room,
+            query.page,
+            query.limit,
+        );
     }
 
     @Get(":id/search")

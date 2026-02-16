@@ -18,6 +18,7 @@ import {LinkPreviewService} from "../link-preview/link-preview.service";
 
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 import {extractValidUrls} from "../../shared/ultis/extractUrl.ulti";
+import {limitPagination} from "../../shared/ultis/pagination.ulti";
 
 @Injectable()
 export class MessageService {
@@ -321,7 +322,13 @@ export class MessageService {
         return populated;
     }
 
-    public async messages(conversationId: string) {
+    public async messages(
+        conversationId: string,
+        page: number,
+        limit: number
+    ) {
+        const skip = limitPagination(page, limit);
+
         const message = await this.messageModel
             .find({
                 conversationId: convertStringToObjectId(conversationId)
@@ -336,6 +343,8 @@ export class MessageService {
                 {path: "seenBy", select: "name avatar"}
             ])
             .sort({createdAt: 1})
+            .skip(skip)
+            .limit(limit)
             .lean();
 
         const messageIdsAttachments = message
