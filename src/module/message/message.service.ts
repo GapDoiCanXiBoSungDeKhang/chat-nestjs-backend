@@ -346,53 +346,67 @@ export class MessageService {
 
     public async messages(
         conversationId: string,
-        page: number=1,
-        limit: number=20
+        limit: number = 19,
+        before?: string
     ) {
-        const skip = limitPagination(page, limit);
+        const query: any = {
+            conversationId: convertStringToObjectId(conversationId)
+        };
 
-        const message = await this.messageModel
-            .find({
-                conversationId: convertStringToObjectId(conversationId)
-            })
+        if (before) {
+            query._id = {$lt: convertStringToObjectId(before)};
+        }
+
+        const messages = await this.messageModel
+            .find(query)
             .populate([
-                {path: "senderId", select: "name avatar"},
+                { path: "senderId", select: "name avatar" },
                 {
-                    path: "replyTo", select: "content senderId",
-                    populate: {path: "senderId", select: "name avatar"}
+                    path: "replyTo",
+                    select: "content senderId",
+                    populate: { path: "senderId", select: "name avatar" }
                 },
-                {path: "deletedFor", select: "name avatar"},
-                {path: "seenBy", select: "name avatar"}
+                { path: "deletedFor", select: "name avatar" },
+                { path: "seenBy", select: "name avatar" }
             ])
-            .sort({createdAt: 1})
-            .skip(skip)
+            .sort({createdAt: -1})
             .limit(limit)
             .lean();
 
-        const messageIdsAttachments = message
+        const messageIdsAttachments = messages
             .filter(m => ["file", "media", "voice"].includes(m.type))
-            .map((m) => m._id);
-        const messageIds = message.map((m) => m._id)
+            .map(m => m._id);
 
-        const groupAttachments = await this.attachmentService.groupAttachmentsById(messageIdsAttachments);
-        const groupLinks = await this.linkPreviewService.groupLinkPreviewsById(messageIds);
+        const messageIds = messages.map(m => m._id);
 
-        const messagesWithAttachments = message.map((mgs) => {
-            const mgsId = mgs._id.toString();
+        const groupAttachments =
+            await this.attachmentService.groupAttachmentsById(messageIdsAttachments);
 
-            if (groupAttachments[mgsId]) {
-                mgs.attachments = mgs.type === "voice"
-                    ? [groupAttachments[mgsId][0]]
-                    : groupAttachments[mgsId];
+        const groupLinks =
+            await this.linkPreviewService.groupLinkPreviewsById(messageIds);
+
+        const enriched = messages.map(m => {
+            const id = m._id.toString();
+
+            if (groupAttachments[id]) {
+                m.attachments =
+                    m.type === "voice"
+                        ? [groupAttachments[id][0]]
+                        : groupAttachments[id];
             }
-            if (groupLinks[mgsId]) {
-                mgs.linkPreviews = groupLinks[mgsId];
+
+            if (groupLinks[id]) {
+                m.linkPreviews = groupLinks[id];
             }
 
-            return mgs;
+            return m;
         });
 
-        return messagesWithAttachments;
+        return {
+            messages: enriched.reverse(),
+            nextCursor: enriched.length ? enriched[0]._id : null,
+            hasMore: enriched.length === limit
+        };
     }
 
     public async findByIdCheck(messageId: string) {

@@ -187,8 +187,8 @@ export class MessageController {
     ) {
         return this.messageService.messages(
             room,
-            query.page,
             query.limit,
+            query.before,
         );
     }
 
