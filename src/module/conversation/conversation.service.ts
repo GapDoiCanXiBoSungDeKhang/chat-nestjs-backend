@@ -2,7 +2,7 @@ import {Model} from "mongoose";
 import {InjectModel} from "@nestjs/mongoose";
 import {
     BadRequestException,
-    ConflictException,
+    ConflictException, ForbiddenException,
     forwardRef,
     Inject,
     Injectable,
@@ -56,6 +56,31 @@ export class ConversationService {
             ]
         });
         return create;
+    }
+
+    public async createGroup(
+        userId: string,
+        name: string,
+        groupIds: string[],
+    ) {
+        const uniqueIds = Array.from(
+            new Set([userId, ...groupIds])
+        );
+        if (uniqueIds.length < 3) {
+            throw new BadRequestException(
+                "Group must be at least 3 members"
+            );
+        }
+        const participants = uniqueIds.map(uid => ({
+            userId: convertStringToObjectId(uid),
+            role: uid === userId ? "owner" : "member",
+        }));
+        return this.conversationModel.create({
+            createdBy: convertStringToObjectId(userId),
+            type: "group",
+            participants,
+            name,
+        });
     }
 
     public async getAllConversations(myUserId: string) {
