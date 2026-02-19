@@ -31,10 +31,6 @@ export class UserService {
         return !!(await this.userModel.findOne({email}));
     }
 
-    async findByObjectId(id: string) {
-        return !!(await this.userModel.findById(convertStringToObjectId(id)));
-    }
-
     public async getInfoByEmail(email: string) {
         return this.userModel.findOne({email}).lean();
     }
@@ -58,5 +54,16 @@ export class UserService {
                 name: 1
             }
         ).lean();
+    }
+
+    public async getUserValid(userIds: string[]) {
+        return this.userModel.find(
+            {
+                _id: {
+                    $in: userIds.map(
+                        uid => convertStringToObjectId(uid)
+                    )
+                }
+            }).lean();
     }
 }

@@ -2,7 +2,6 @@ import {Model} from "mongoose";
 import {InjectModel} from "@nestjs/mongoose";
 import {
     BadRequestException,
-    ConflictException, ForbiddenException,
     forwardRef,
     Inject,
     Injectable,
@@ -72,11 +71,7 @@ export class ConversationService {
     }
 
     private async checkListUser(userIds: string[]) {
-        const idsObjectId = userIds.map(uid => convertStringToObjectId(uid));
-
-        const group = await this.conversationModel.find({
-            "participants.userId": {$in: idsObjectId},
-        });
+        const group = await this.userService.getUserValid(userIds);
         if (group.length !== userIds.length) return false;
         return true;
     }
