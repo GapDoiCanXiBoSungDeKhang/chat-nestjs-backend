@@ -27,35 +27,29 @@ export class ConversationService {
     }
 
     public async create(myUserId: string, userId: string) {
-        const findUser = await this.userService.findByObjectId(userId);
-
-        if (!findUser) {
-            throw new ConflictException("User not found");
-        }
-        if (myUserId === userId) {
-            throw new ConflictException("Cannot gateway with yourself");
+        const uniqueIds = Array.from(
+            new Set([userId, myUserId])
+        )
+        const ok = await this.checkListUser(uniqueIds);
+        if (!ok) {
+            throw new BadRequestException(
+                "Owner or user not found!"
+            )
         }
         const existConversation = await this.conversationModel.findOne({
             type: "private",
             participants: {
-                $all: [
-                    {$elemMatch: {userId: convertStringToObjectId(myUserId)}},
-                    {$elemMatch: {userId: convertStringToObjectId(userId)}}
-                ]
+                $all: this.convertMapCheckElement(uniqueIds)
             }
         });
         if (existConversation) {
             return existConversation;
         }
-        const create = await this.conversationModel.create({
+        return this.conversationModel.create({
             type: "private",
             createdBy: convertStringToObjectId(myUserId),
-            participants: [
-                {userId: convertStringToObjectId(myUserId), role: "owner"},
-                {userId: convertStringToObjectId(userId), role: "member"}
-            ]
+            participants: this.groupParticipants(uniqueIds, myUserId)
         });
-        return create;
     }
 
     public async infoPrivate(id: string) {
