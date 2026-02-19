@@ -25,12 +25,12 @@ export class ConversationController {
         return this.conversationService.create(user.userId, dto.userId);
     }
 
-    @Get("private/:id/info")
+    @Get(":id/info")
     @HttpCode(200)
     public async getInfoPrivate(
         @Param("id") room: ConversationIdDto["id"]
     ) {
-        return this.conversationService.infoPrivate(room);
+        return this.conversationService.infoConversation(room);
     }
 
     @Post("group")

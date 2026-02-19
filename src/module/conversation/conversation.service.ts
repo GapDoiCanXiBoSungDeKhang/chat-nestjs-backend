@@ -51,7 +51,7 @@ export class ConversationService {
         });
     }
 
-    public async infoPrivate(id: string) {
+    public async infoConversation(id: string) {
         const findConversationPrivate = await this.conversationModel.findById(
             convertStringToObjectId(id)
         )
