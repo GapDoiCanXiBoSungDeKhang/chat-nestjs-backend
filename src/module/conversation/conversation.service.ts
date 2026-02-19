@@ -54,9 +54,7 @@ export class ConversationService {
         });
     }
 
-    public async infoMediaConversation(id: string) {
-        const attachments = await this.attachmentService.getAttachmentRoom(id);
-
+    private hashTable(attachments: AttachmentDocument[]) {
         const hashTable: Record<number, Record<number, AttachmentDocument[]>> = {};
         attachments.forEach(att => {
             const date = new Date(att.createdAt);
@@ -75,6 +73,11 @@ export class ConversationService {
         });
 
         return hashTable;
+    }
+
+    public async infoMediaConversation(id: string) {
+        const attachments = await this.attachmentService.getAttachmentRoom(id);
+        return this.hashTable(attachments);
     }
 
     public async infoConversation(id: string) {
