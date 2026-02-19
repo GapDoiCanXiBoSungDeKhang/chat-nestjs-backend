@@ -76,7 +76,12 @@ export class ConversationService {
     }
 
     public async infoMediaConversation(id: string) {
-        const attachments = await this.attachmentService.getAttachmentRoom(id);
+        const attachments = await this.attachmentService.getAttachmentRoomMedia(id);
+        return this.hashTable(attachments);
+    }
+
+    public async infoFileConversation(id: string) {
+        const attachments = await this.attachmentService.getAttachmentRoomFile(id);
         return this.hashTable(attachments);
     }
 

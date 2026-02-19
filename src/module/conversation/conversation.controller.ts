@@ -41,6 +41,14 @@ export class ConversationController {
         return this.conversationService.infoMediaConversation(room);
     }
 
+    @Get(":id/info/file")
+    @HttpCode(200)
+    public async getInfoFile(
+        @Param("id") room: ConversationIdDto["id"]
+    ) {
+        return this.conversationService.infoFileConversation(room);
+    }
+
     @Post("group")
     @HttpCode(201)
     public async createConversationGroup(
