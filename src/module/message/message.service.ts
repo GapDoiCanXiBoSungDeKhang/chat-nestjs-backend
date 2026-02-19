@@ -173,7 +173,7 @@ export class MessageService {
         message: MessageDocument,
         userId: string,
     ) {
-        const receiverId = await this.conversationService.getUserParticipant(conversationId, userId);
+        const receiverId = await this.conversationService.getOtherUserParticipant(conversationId, userId);
         setImmediate(() => {
             this.notificationService.create({
                 userId: receiverId,

@@ -108,6 +108,24 @@ export class ConversationService {
         return findConversationPrivate;
     }
 
+    public async addMembers(
+        room: string,
+        ownerId: string,
+        userIds: string[],
+    ) {
+        const uniqueIds = Array.from(
+            new Set(userIds)
+        );
+        const ok = await this.checkListUser(uniqueIds);
+        if (!ok) {
+            throw new BadRequestException(
+                "Some user not found!"
+            );
+        }
+        const conversation = await this.findConversation(room);
+        const actor = await this.getUserParticipant(conversation, ownerId);
+    }
+
     private convertMapCheckElement(userIds: string[]) {
         return userIds.map(uid => ({
             $elemMatch: {userId: convertStringToObjectId(uid)},
@@ -223,29 +241,44 @@ export class ConversationService {
         return updatedConversation;
     }
 
-
-    public async getUserParticipant(
-        conversationId: string,
-        userId: string
-    ) {
-        const conversation = await this.conversationModel.findOne(
-            {
-                _id: convertStringToObjectId(conversationId),
-                "participants.userId": convertStringToObjectId(userId)
-            },
-            {
-                participants: 1,
-            }
-        );
-
+    private async findConversation(room: string) {
+        const conversation = await this.conversationModel.findById(
+            convertStringToObjectId(room),
+        )
+            .lean();
         if (!conversation) {
             throw new NotFoundException("Conversation not found");
         }
+        return conversation;
+    }
+
+    private async getUserParticipant(
+        conversation: ConversationDocument,
+        userId: string
+    ) {
+        const obj = conversation.participants.find(
+            conv => conv.userId.toString() === userId
+        );
+        if (!obj) {
+            throw new BadRequestException(
+                "Participant not found user needed!"
+            );
+        }
+        return obj;
+    }
+
+    public async getOtherUserParticipant(
+        conversationId: string,
+        userId: string
+    ) {
+        const conversation = await this.findConversation(conversationId);
         const other = conversation.participants.find(
             p => p.userId.toString() !== userId
         );
         if (!other) {
-            throw new BadRequestException("Invalid private conversation");
+            throw new BadRequestException(
+                "Invalid private conversation"
+            );
         }
 
         return other.userId;

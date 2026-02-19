@@ -1,4 +1,4 @@
-import {Controller, Post, HttpCode, UseGuards, Body, Get, Param} from "@nestjs/common";
+import {Controller, Post, HttpCode, UseGuards, Body, Get, Param, Patch} from "@nestjs/common";
 import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
 
 import {JwtDecode} from "../../common/decorators/jwt.decorator";
@@ -7,6 +7,7 @@ import {ConversationService} from "./conversation.service";
 import {CreatePrivateConversationDto} from "./dto/createPrivate.dto";
 import {CreateGroupDto} from "./dto/createGroup.dto";
 import {ConversationIdDto} from "./dto/conversationId.dto";
+import {AddMemberDto} from "./dto/addMember.dto";
 
 @Controller("conversations")
 @UseGuards(JwtAuthGuard)
@@ -68,6 +69,20 @@ export class ConversationController {
             dto.name,
             dto.groupIds
         );
+    }
+
+    @Patch(":id/member")
+    @HttpCode(200)
+    public async addMember(
+        @JwtDecode() user: JwtType,
+        @Param("id") room: ConversationIdDto["id"],
+        @Body() dto: AddMemberDto
+    ) {
+        return this.conversationService.addMembers(
+            room,
+            user.userId,
+            dto.userIds
+        )
     }
 
     @Get("")
