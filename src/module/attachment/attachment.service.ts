@@ -92,6 +92,7 @@ export class AttachmentService {
             conversationId: convertStringToObjectId(room),
             type: {$in: ["video", "image"]},
         })
+            .lean();
     }
 
     public async getAttachmentRoomFile(room: string) {
@@ -99,5 +100,6 @@ export class AttachmentService {
             conversationId: convertStringToObjectId(room),
             type: "file",
         })
+            .lean();
     }
 }

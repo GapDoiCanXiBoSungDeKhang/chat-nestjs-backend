@@ -15,6 +15,8 @@ import {MessageService} from "../message/message.service";
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 import {AttachmentService} from "../attachment/attachment.service";
 import {AttachmentDocument} from "../attachment/schema/attachment.schema";
+import {LinkPreviewService} from "../link-preview/link-preview.service";
+import {LinkPreviewDocument} from "../link-preview/schema/link-preview.schema";
 
 @Injectable()
 export class ConversationService {
@@ -25,6 +27,7 @@ export class ConversationService {
         @Inject(forwardRef(() => MessageService))
         private readonly messageService: MessageService,
         private readonly attachmentService: AttachmentService,
+        private readonly linkPreviewService: LinkPreviewService
     ) {
     }
 
@@ -54,9 +57,12 @@ export class ConversationService {
         });
     }
 
-    private hashTable(attachments: AttachmentDocument[]) {
-        const hashTable: Record<number, Record<number, AttachmentDocument[]>> = {};
-        attachments.forEach(att => {
+    private hashTable<T extends AttachmentDocument | LinkPreviewDocument>(
+        attachments: T[]
+    ): Record<number, Record<number, T[]>> {
+        const hashTable: Record<number, Record<number, T[]>> = {};
+
+        for (const att of attachments) {
             const date = new Date(att.createdAt);
             const month = date.getMonth() + 1;
             const year = date.getFullYear();
@@ -64,16 +70,15 @@ export class ConversationService {
             if (!hashTable[year]) {
                 hashTable[year] = {};
             }
-
             if (!hashTable[year][month]) {
                 hashTable[year][month] = [];
             }
-
             hashTable[year][month].push(att);
-        });
+        }
 
         return hashTable;
     }
+
 
     public async infoMediaConversation(id: string) {
         const attachments = await this.attachmentService.getAttachmentRoomMedia(id);
@@ -83,6 +88,11 @@ export class ConversationService {
     public async infoFileConversation(id: string) {
         const attachments = await this.attachmentService.getAttachmentRoomFile(id);
         return this.hashTable(attachments);
+    }
+
+    public async infoLinkPreviewConversation(id: string) {
+        const linkPreviews = await this.linkPreviewService.getLinkPreview(id);
+        return this.hashTable(linkPreviews);
     }
 
     public async infoConversation(id: string) {

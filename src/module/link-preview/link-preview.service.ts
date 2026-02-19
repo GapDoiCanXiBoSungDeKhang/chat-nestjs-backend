@@ -66,4 +66,11 @@ export class LinkPreviewService {
                 return acc;
             }, {});
     }
+
+    public async getLinkPreview(room: string) {
+        return this.linkPreviewModel.find({
+            conversationId: convertStringToObjectId(room),
+        })
+            .lean();
+    }
 }

@@ -49,6 +49,14 @@ export class ConversationController {
         return this.conversationService.infoFileConversation(room);
     }
 
+    @Get(":id/info/link-preview")
+    @HttpCode(200)
+    public async getInfoLinkPreview(
+        @Param("id") room: ConversationIdDto["id"]
+    ) {
+        return this.conversationService.infoLinkPreviewConversation(room);
+    }
+
     @Post("group")
     @HttpCode(201)
     public async createConversationGroup(
