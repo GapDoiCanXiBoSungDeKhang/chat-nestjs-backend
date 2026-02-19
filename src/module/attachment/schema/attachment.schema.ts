@@ -44,3 +44,6 @@ export class Attachment {
 }
 
 export const AttachmentSchema = SchemaFactory.createForClass(Attachment);
+
+AttachmentSchema.index({conversationId: 1});
+AttachmentSchema.index({messageId: 1});

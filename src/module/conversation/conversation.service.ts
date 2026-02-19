@@ -13,6 +13,8 @@ import {Conversation, ConversationDocument} from "./schema/conversation.schema";
 import {UserService} from "../user/user.service";
 import {MessageService} from "../message/message.service";
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
+import {AttachmentService} from "../attachment/attachment.service";
+import {AttachmentDocument} from "../attachment/schema/attachment.schema";
 
 @Injectable()
 export class ConversationService {
@@ -21,7 +23,8 @@ export class ConversationService {
         private readonly conversationModel: Model<ConversationDocument>,
         private readonly userService: UserService,
         @Inject(forwardRef(() => MessageService))
-        private readonly messageService: MessageService
+        private readonly messageService: MessageService,
+        private readonly attachmentService: AttachmentService,
     ) {
     }
 
@@ -49,6 +52,29 @@ export class ConversationService {
             createdBy: convertStringToObjectId(myUserId),
             participants: this.groupParticipants(uniqueIds, myUserId)
         });
+    }
+
+    public async infoMediaConversation(id: string) {
+        const attachments = await this.attachmentService.getAttachmentRoom(id);
+
+        const hashTable: Record<number, Record<number, AttachmentDocument[]>> = {};
+        attachments.forEach(att => {
+            const date = new Date(att.createdAt);
+            const month = date.getMonth() + 1;
+            const year = date.getFullYear();
+
+            if (!hashTable[year]) {
+                hashTable[year] = {};
+            }
+
+            if (!hashTable[year][month]) {
+                hashTable[year][month] = [];
+            }
+
+            hashTable[year][month].push(att);
+        });
+
+        return hashTable;
     }
 
     public async infoConversation(id: string) {

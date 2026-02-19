@@ -86,4 +86,11 @@ export class AttachmentService {
                 return acc;
             }, {});
     }
+
+    public async getAttachmentRoom(room: string) {
+        return this.attachmentModel.find({
+            conversationId: convertStringToObjectId(room),
+            type: {$in: ["video", "image"]},
+        })
+    }
 }
