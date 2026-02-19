@@ -58,6 +58,42 @@ export class ConversationService {
         return create;
     }
 
+    public async infoPrivate(id: string) {
+        const findConversationPrivate = await this.conversationModel.findById(
+            convertStringToObjectId(id)
+        )
+            .populate(this.arrayPopulate())
+            .lean();
+        if (!findConversationPrivate) {
+            throw new NotFoundException("Not found");
+        }
+
+        return findConversationPrivate;
+    }
+
+    private convertMapCheckElement(userIds: string[]) {
+        return userIds.map(uid => ({
+            $elemMatch: {userId: convertStringToObjectId(uid)},
+        }));
+    }
+
+    private async checkListUser(userIds: string[]) {
+        const idsObjectId = userIds.map(uid => convertStringToObjectId(uid));
+
+        const group = await this.conversationModel.find({
+            "participants.userId": {$in: idsObjectId},
+        });
+        if (group.length !== userIds.length) return false;
+        return true;
+    }
+
+    private groupParticipants(userIds: string[], ownerId: string) {
+        return userIds.map(uid => ({
+            userId: convertStringToObjectId(uid),
+            role: uid === ownerId ? "owner" : "member",
+        }));
+    }
+
     public async createGroup(
         userId: string,
         name: string,
@@ -66,35 +102,50 @@ export class ConversationService {
         const uniqueIds = Array.from(
             new Set([userId, ...groupIds])
         );
+        const ok = await this.checkListUser(uniqueIds);
+        if (!ok) {
+            throw new BadRequestException(
+                "Some user not found.",
+            );
+        }
         if (uniqueIds.length < 3) {
             throw new BadRequestException(
                 "Group must be at least 3 members"
             );
         }
-        const participants = uniqueIds.map(uid => ({
-            userId: convertStringToObjectId(uid),
-            role: uid === userId ? "owner" : "member",
-        }));
+        const existGroup = await this.conversationModel.findOne({
+            name,
+            type: "group",
+            participants: {
+                $all: this.convertMapCheckElement(uniqueIds)
+            }
+        });
+        if (existGroup) {
+            return existGroup;
+        }
         return this.conversationModel.create({
             createdBy: convertStringToObjectId(userId),
+            participants: this.groupParticipants(uniqueIds, userId),
             type: "group",
-            participants,
             name,
         });
+    }
+
+    private arrayPopulate() {
+        return [
+            { path: "participants.userId", select: "name avatar status" },
+            {
+                path: "lastMessage",
+                select: "senderId content createdAt",
+                populate: { path: "senderId", select: "name avatar" }
+            }
+        ];
     }
 
     public async getAllConversations(myUserId: string) {
         const conversations = await this.conversationModel
             .find({"participants.userId": convertStringToObjectId(myUserId)})
-            .populate("participants.userId", "name avatar status")
-            .populate({
-                path: "lastMessage",
-                select: "senderId content createdAt",
-                populate: {
-                    path: "senderId",
-                    select: "name avatar"
-                }
-            })
+            .populate(this.arrayPopulate())
             .sort({updateAt: -1})
             .lean();
 

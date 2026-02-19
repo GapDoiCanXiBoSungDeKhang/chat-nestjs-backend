@@ -23,7 +23,7 @@ import {MessageConversationGuard} from "../conversation/guard/messageConversatio
 import {JwtDecode} from "../../common/decorators/jwt.decorator";
 import {JwtType} from "../../common/types/jwtTypes.type";
 
-import {ConversationIdDto} from "./dto/conversationId.dto";
+import {ConversationIdDto} from "../conversation/dto/conversationId.dto";
 import {CreateMessageDto} from "./dto/createMessage.dto";
 import {ReactEmojiDto} from "./dto/reactEmoji.dto";
 import {EditMessageDto} from "./dto/editMessage.dto";
