@@ -35,7 +35,6 @@ export class Conversation {
 
 export const ConversationSchema = SchemaFactory.createForClass(Conversation);
 
-ConversationSchema.index({updatedAt: -1});
 ConversationSchema.index({_id: 1, "participants.userId": 1});
 ConversationSchema.index({type: 1, "participants.userId": 1});
 ConversationSchema.index({type: 1, name: 1, "participants.userId": 1});

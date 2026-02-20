@@ -71,7 +71,7 @@ export class ConversationController {
         );
     }
 
-    @Patch(":id/member")
+    @Patch(":id/members")
     @HttpCode(200)
     public async addMember(
         @JwtDecode() user: JwtType,
@@ -81,7 +81,8 @@ export class ConversationController {
         return this.conversationService.addMembers(
             room,
             user.userId,
-            dto.userIds
+            dto.userIds,
+            dto.description
         )
     }
 

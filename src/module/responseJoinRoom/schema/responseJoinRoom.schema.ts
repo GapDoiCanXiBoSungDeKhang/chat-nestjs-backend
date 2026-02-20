@@ -26,3 +26,5 @@ export class ResponseJoinRoom {
 }
 
 export const ResponseJoinRoomSchema = SchemaFactory.createForClass(ResponseJoinRoom);
+
+ResponseJoinRoomSchema.index({conversationId: 1, createdAt: 1});

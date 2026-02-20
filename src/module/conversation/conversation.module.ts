@@ -12,6 +12,7 @@ import {ConversationParticipantGuard} from "./guard/conversationParticipant.guar
 import {MessageModule} from "../message/message.module";
 import {AttachmentModule} from "../attachment/attachment.module";
 import {LinkPreviewModule} from "../link-preview/link-preview.module";
+import {ResponseJoinRoomModule} from "../responseJoinRoom/responseJoinRoom.module";
 
 @Module({
     imports: [
@@ -19,6 +20,7 @@ import {LinkPreviewModule} from "../link-preview/link-preview.module";
         UsersModule,
         AttachmentModule,
         LinkPreviewModule,
+        ResponseJoinRoomModule,
         MongooseModule.forFeature([{
             name: Conversation.name,
             schema: ConversationSchema,

@@ -17,6 +17,7 @@ import {AttachmentService} from "../attachment/attachment.service";
 import {AttachmentDocument} from "../attachment/schema/attachment.schema";
 import {LinkPreviewService} from "../link-preview/link-preview.service";
 import {LinkPreviewDocument} from "../link-preview/schema/link-preview.schema";
+import {ResponseJoinRoomService} from "../responseJoinRoom/responseJoinRoom.service";
 
 @Injectable()
 export class ConversationService {
@@ -27,7 +28,8 @@ export class ConversationService {
         @Inject(forwardRef(() => MessageService))
         private readonly messageService: MessageService,
         private readonly attachmentService: AttachmentService,
-        private readonly linkPreviewService: LinkPreviewService
+        private readonly linkPreviewService: LinkPreviewService,
+        private readonly responseJoinRoomService: ResponseJoinRoomService
     ) {
     }
 
@@ -108,23 +110,60 @@ export class ConversationService {
         return findConversationPrivate;
     }
 
+    public async isAnyMemberExists(
+        conversationId: string,
+        members: string[]
+    ) {
+        const mbObjectIds = members.map(uid => convertStringToObjectId(uid));
+
+        const existingConversation = await this.conversationModel.findOne({
+            _id: convertStringToObjectId(conversationId),
+            "participants.userId": { $in: mbObjectIds }
+        });
+
+        return !!existingConversation;
+    }
+
+
     public async addMembers(
         room: string,
         ownerId: string,
         userIds: string[],
+        description: string,
     ) {
         const uniqueIds = Array.from(
             new Set(userIds)
         );
-        const ok = await this.checkListUser(uniqueIds);
-        if (!ok) {
+        const [validUsers, alreadyExists] = await Promise.all([
+            this.checkListUser(uniqueIds),
+            this.isAnyMemberExists(room, uniqueIds)
+        ]);
+        if (!validUsers) {
+            throw new BadRequestException("Some users not found!");
+        }
+        if (alreadyExists) {
             throw new BadRequestException(
-                "Some user not found!"
+                "Some users already exist in group!"
             );
         }
         const conversation = await this.findConversation(room);
         const actor = await this.getUserParticipant(conversation, ownerId);
+
+        if (!["owner", "admin"].includes(actor.role)) {
+            return this.responseJoinRoomService.createResponse(
+                ownerId,
+                room,
+                uniqueIds,
+                description,
+            );
+        }
+        conversation.participants.push(
+            ...this.groupParticipants(userIds, ownerId)
+        );
+        await conversation.save();
+        return conversation;
     }
+
 
     private convertMapCheckElement(userIds: string[]) {
         return userIds.map(uid => ({
@@ -138,7 +177,10 @@ export class ConversationService {
         return true;
     }
 
-    private groupParticipants(userIds: string[], ownerId: string) {
+    private groupParticipants(
+        userIds: string[],
+        ownerId: string
+    ): ConversationDocument["participants"] {
         return userIds.map(uid => ({
             userId: convertStringToObjectId(uid),
             role: uid === ownerId ? "owner" : "member",
@@ -244,8 +286,7 @@ export class ConversationService {
     private async findConversation(room: string) {
         const conversation = await this.conversationModel.findById(
             convertStringToObjectId(room),
-        )
-            .lean();
+        );
         if (!conversation) {
             throw new NotFoundException("Conversation not found");
         }

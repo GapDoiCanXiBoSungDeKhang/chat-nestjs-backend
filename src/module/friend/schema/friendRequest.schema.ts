@@ -22,7 +22,7 @@ export class FriendRequest {
         enum: ["pending", "accepted", "rejected"],
         default: "pending"
     })
-    status!: string;
+    status!: "pending" | "reject" | "accept";
 }
 
 export const FriendRequestSchema = SchemaFactory.createForClass(FriendRequest);
