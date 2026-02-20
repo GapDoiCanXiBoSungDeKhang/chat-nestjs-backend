@@ -17,7 +17,7 @@ import {AttachmentService} from "../attachment/attachment.service";
 import {AttachmentDocument} from "../attachment/schema/attachment.schema";
 import {LinkPreviewService} from "../link-preview/link-preview.service";
 import {LinkPreviewDocument} from "../link-preview/schema/link-preview.schema";
-import {ResponseJoinRoomService} from "../responseJoinRoom/responseJoinRoom.service";
+import {RequestJoinRoomService} from "../requestJoinRoom/requestJoinRoom.service";
 
 @Injectable()
 export class ConversationService {
@@ -29,7 +29,7 @@ export class ConversationService {
         private readonly messageService: MessageService,
         private readonly attachmentService: AttachmentService,
         private readonly linkPreviewService: LinkPreviewService,
-        private readonly responseJoinRoomService: ResponseJoinRoomService
+        private readonly responseJoinRoomService: RequestJoinRoomService
     ) {
     }
 

@@ -2,11 +2,11 @@ import {Model} from "mongoose";
 import {Injectable} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 
-import {ResponseJoinRoom, ResponseJoinRoomDocument} from "./schema/responseJoinRoom.schema";
+import {ResponseJoinRoom, ResponseJoinRoomDocument} from "./schema/requestJoinRoom.schema";
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 
 @Injectable()
-export class ResponseJoinRoomService {
+export class RequestJoinRoomService {
     constructor(
         @InjectModel(ResponseJoinRoom.name)
         private readonly responseJoinRoomModel: Model<ResponseJoinRoomDocument>,

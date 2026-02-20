@@ -12,7 +12,7 @@ import {ConversationParticipantGuard} from "./guard/conversationParticipant.guar
 import {MessageModule} from "../message/message.module";
 import {AttachmentModule} from "../attachment/attachment.module";
 import {LinkPreviewModule} from "../link-preview/link-preview.module";
-import {ResponseJoinRoomModule} from "../responseJoinRoom/responseJoinRoom.module";
+import {RequestJoinRoomModule} from "../requestJoinRoom/requestJoinRoom.module";
 
 @Module({
     imports: [
@@ -20,7 +20,7 @@ import {ResponseJoinRoomModule} from "../responseJoinRoom/responseJoinRoom.modul
         UsersModule,
         AttachmentModule,
         LinkPreviewModule,
-        ResponseJoinRoomModule,
+        RequestJoinRoomModule,
         MongooseModule.forFeature([{
             name: Conversation.name,
             schema: ConversationSchema,

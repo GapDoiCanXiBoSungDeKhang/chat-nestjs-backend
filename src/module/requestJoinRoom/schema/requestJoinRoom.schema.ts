@@ -25,6 +25,6 @@ export class ResponseJoinRoom {
     description!: string;
 }
 
-export const ResponseJoinRoomSchema = SchemaFactory.createForClass(ResponseJoinRoom);
+export const RequestJoinRoomSchema = SchemaFactory.createForClass(ResponseJoinRoom);
 
-ResponseJoinRoomSchema.index({conversationId: 1, createdAt: 1});
+RequestJoinRoomSchema.index({conversationId: 1, createdAt: 1});
