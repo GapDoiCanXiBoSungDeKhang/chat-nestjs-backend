@@ -1,4 +1,4 @@
-import {Model} from "mongoose";
+import {Model, Types} from "mongoose";
 import {InjectModel} from "@nestjs/mongoose";
 import {
     BadRequestException,
@@ -124,16 +124,14 @@ export class ConversationService {
         return !!existingConversation;
     }
 
-
     public async addMembers(
         room: string,
-        ownerId: string,
+        actorId: string,
         userIds: string[],
         description: string,
     ) {
-        const uniqueIds = Array.from(
-            new Set(userIds)
-        );
+        const uniqueIds = Array.from(new Set(userIds));
+
         const [validUsers, alreadyExists] = await Promise.all([
             this.checkListUser(uniqueIds),
             this.isAnyMemberExists(room, uniqueIds)
@@ -147,23 +145,83 @@ export class ConversationService {
             );
         }
         const conversation = await this.findConversation(room);
-        const actor = await this.getUserParticipant(conversation, ownerId);
+        const actor = this.getUserParticipant(conversation, actorId);
 
         if (!["owner", "admin"].includes(actor.role)) {
             return this.responseJoinRoomService.createResponse(
-                ownerId,
+                actorId,
                 room,
                 uniqueIds,
                 description,
             );
         }
         conversation.participants.push(
-            ...this.groupParticipants(userIds, ownerId)
+            ...this.groupParticipants(userIds, actorId)
         );
         await conversation.save();
         return conversation;
     }
 
+    public async removeMembers(
+        room: string,
+        actorId: string,
+        userIds: string[],
+    ) {
+        if (!userIds.length) {
+            throw new BadRequestException(
+                "User must be less than 1!"
+            );
+        }
+        const conversation = await this.findConversation(room);
+        const actor = this.getUserParticipant(conversation, actorId);
+        const checkCanRemoveMem = this.checkCantRemoveMember(
+            conversation,
+            userIds,
+            actorId
+        );
+
+        if (!["owner", "admin"].includes(actor.role)) {
+            throw new BadRequestException(
+                "User role must be a owner or admin!"
+            );
+        }
+        if (!checkCanRemoveMem) {
+            throw new BadRequestException(
+                "Can't remove member for this conversation!"
+            );
+        }
+        const uniqueIds = new Set(userIds);
+        const newParticipants = conversation.participants
+            .filter(obj => !uniqueIds.has(obj.userId.toString()));
+
+        conversation.participants = newParticipants;
+        await conversation.save();
+        return conversation;
+    }
+
+    private checkCantRemoveMember(
+        conversation: ConversationDocument,
+        members: string[],
+        actorId: string
+    ) {
+        const uids = new Set(
+            conversation.participants
+                .map(uid => uid.userId.toString())
+        );
+        for (const uid of members) {
+            if (!uids.has(uid)) {
+                return false;
+            }
+            if (uid === actorId) {
+                return false;
+            }
+            const obj = this.getUserParticipant(conversation, uid)
+            if (obj.role === "owner") {
+                return false;
+            }
+        }
+        return true;
+    }
 
     private convertMapCheckElement(userIds: string[]) {
         return userIds.map(uid => ({
@@ -192,9 +250,8 @@ export class ConversationService {
         name: string,
         groupIds: string[],
     ) {
-        const uniqueIds = Array.from(
-            new Set([userId, ...groupIds])
-        );
+        const uniqueIds = Array.from(new Set([userId, ...groupIds]));
+
         const ok = await this.checkListUser(uniqueIds);
         if (!ok) {
             throw new BadRequestException(
@@ -283,7 +340,7 @@ export class ConversationService {
         return updatedConversation;
     }
 
-    private async findConversation(room: string) {
+    private async  findConversation(room: string) {
         const conversation = await this.conversationModel.findById(
             convertStringToObjectId(room),
         );
@@ -293,7 +350,8 @@ export class ConversationService {
         return conversation;
     }
 
-    private async getUserParticipant(
+
+    private getUserParticipant(
         conversation: ConversationDocument,
         userId: string
     ) {

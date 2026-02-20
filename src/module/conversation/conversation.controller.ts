@@ -1,4 +1,4 @@
-import {Controller, Post, HttpCode, UseGuards, Body, Get, Param, Patch} from "@nestjs/common";
+import {Controller, Post, HttpCode, UseGuards, Body, Get, Param, Patch, Delete} from "@nestjs/common";
 import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
 
 import {JwtDecode} from "../../common/decorators/jwt.decorator";
@@ -8,6 +8,7 @@ import {CreatePrivateConversationDto} from "./dto/createPrivate.dto";
 import {CreateGroupDto} from "./dto/createGroup.dto";
 import {ConversationIdDto} from "./dto/conversationId.dto";
 import {AddMemberDto} from "./dto/addMember.dto";
+import {RemoveMemberDto} from "./dto/removeMember.dto";
 
 @Controller("conversations")
 @UseGuards(JwtAuthGuard)
@@ -71,7 +72,7 @@ export class ConversationController {
         );
     }
 
-    @Patch(":id/members")
+    @Patch(":id/members/add")
     @HttpCode(200)
     public async addMember(
         @JwtDecode() user: JwtType,
@@ -83,6 +84,20 @@ export class ConversationController {
             user.userId,
             dto.userIds,
             dto.description
+        )
+    }
+
+    @Delete(":id/members/remove")
+    @HttpCode(200)
+    public async removeMember(
+        @JwtDecode() user: JwtType,
+        @Param("id") room: ConversationIdDto["id"],
+        @Body() dto: RemoveMemberDto
+    ) {
+        return this.conversationService.removeMembers(
+            room,
+            user.userId,
+            dto.userIds,
         )
     }
 
