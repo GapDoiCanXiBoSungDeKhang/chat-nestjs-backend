@@ -81,7 +81,6 @@ export class ConversationService {
         return hashTable;
     }
 
-
     public async infoMediaConversation(id: string) {
         const attachments = await this.attachmentService.getAttachmentRoomMedia(id);
         return this.hashTable(attachments);
@@ -118,7 +117,7 @@ export class ConversationService {
 
         const existingConversation = await this.conversationModel.findOne({
             _id: convertStringToObjectId(conversationId),
-            "participants.userId": { $in: mbObjectIds }
+            "participants.userId": {$in: mbObjectIds}
         });
 
         return !!existingConversation;
@@ -138,6 +137,9 @@ export class ConversationService {
         ]);
         if (!validUsers) {
             throw new BadRequestException("Some users not found!");
+        }
+        if (!uniqueIds.length) {
+            throw new BadRequestException("User must be less than 1");
         }
         if (alreadyExists) {
             throw new BadRequestException(
@@ -167,10 +169,12 @@ export class ConversationService {
         actorId: string,
         userIds: string[],
     ) {
+        const ok = await this.checkListUser(userIds);
+        if (!ok) {
+            throw new BadRequestException("Some users not found!");
+        }
         if (!userIds.length) {
-            throw new BadRequestException(
-                "User must be less than 1!"
-            );
+            throw new BadRequestException("User must be less than 1!");
         }
         const conversation = await this.findConversation(room);
         const actor = this.getUserParticipant(conversation, actorId);
@@ -196,6 +200,43 @@ export class ConversationService {
 
         conversation.participants = newParticipants;
         await conversation.save();
+        return conversation;
+    }
+
+    public async changeRole(
+        actorId: string,
+        room: string,
+        userId: string,
+        role: "admin" | "member",
+    ) {
+        const ok = await this.checkListUser([userId]);
+        if (!ok) {
+            throw new BadRequestException("User not found!");
+        }
+        const conversation = await this.findConversation(room);
+        const actor = this.getUserParticipant(conversation, actorId);
+        const obj = this.getUserParticipant(
+            conversation,
+            userId
+        );
+
+        if (!["owner", "admin"].includes(actor.role)) {
+            throw new BadRequestException("User role must be a owner or admin!")
+        }
+        if (actorId === userId) {
+            throw new BadRequestException(
+                "You can't change role for this you!"
+            )
+        }
+        if (actor.role === "admin" && obj.role === "owner") {
+            throw new BadRequestException(
+                "You can't change role for this user!"
+            );
+        }
+        const participant = this.getUserParticipant(conversation, userId);
+        participant.role = role;
+        await conversation.save();
+
         return conversation;
     }
 
@@ -283,11 +324,11 @@ export class ConversationService {
 
     private arrayPopulate() {
         return [
-            { path: "participants.userId", select: "name avatar status" },
+            {path: "participants.userId", select: "name avatar status"},
             {
                 path: "lastMessage",
                 select: "senderId content createdAt",
-                populate: { path: "senderId", select: "name avatar" }
+                populate: {path: "senderId", select: "name avatar"}
             }
         ];
     }
@@ -332,7 +373,7 @@ export class ConversationService {
                     lastMessage: convertStringToObjectId(messageId),
                 },
             },
-            { new: true }
+            {new: true}
         );
         if (!updatedConversation) {
             throw new NotFoundException("Conversation not found");
@@ -340,7 +381,7 @@ export class ConversationService {
         return updatedConversation;
     }
 
-    private async  findConversation(room: string) {
+    private async findConversation(room: string) {
         const conversation = await this.conversationModel.findById(
             convertStringToObjectId(room),
         );
@@ -349,7 +390,6 @@ export class ConversationService {
         }
         return conversation;
     }
-
 
     private getUserParticipant(
         conversation: ConversationDocument,

@@ -14,4 +14,5 @@ import {LinkPreviewService} from "./link-preview.service";
     providers: [LinkPreviewService],
     exports: [LinkPreviewService],
 })
-export class LinkPreviewModule {}
+export class LinkPreviewModule {
+}

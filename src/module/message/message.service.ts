@@ -38,7 +38,7 @@ export class MessageService {
 
         const message = await this.messageModel.findById(
             convertStringToObjectId(replyTo),
-            { _id: 1 }
+            {_id: 1}
         );
 
         if (!message) throw new NotFoundException("Reply message not found");
@@ -223,7 +223,7 @@ export class MessageService {
         );
         await this.Notification(conversationId, message, userId);
 
-        return { message, attachments };
+        return {message, attachments};
     }
 
     public async uploadMedias(
@@ -262,7 +262,7 @@ export class MessageService {
         );
         await this.Notification(conversationId, message, userId);
 
-        return { message, attachments };
+        return {message, attachments};
     }
 
     public async uploadVoice(
@@ -301,7 +301,7 @@ export class MessageService {
         );
         await this.Notification(conversationId, message, userId);
 
-        return { message, attachments };
+        return {message, attachments};
     }
 
     public async edit(
@@ -359,14 +359,14 @@ export class MessageService {
         const messages = await this.messageModel
             .find(query)
             .populate([
-                { path: "senderId", select: "name avatar" },
+                {path: "senderId", select: "name avatar"},
                 {
                     path: "replyTo",
                     select: "content senderId",
-                    populate: { path: "senderId", select: "name avatar" }
+                    populate: {path: "senderId", select: "name avatar"}
                 },
-                { path: "deletedFor", select: "name avatar" },
-                { path: "seenBy", select: "name avatar" }
+                {path: "deletedFor", select: "name avatar"},
+                {path: "seenBy", select: "name avatar"}
             ])
             .sort({createdAt: -1})
             .limit(limit)

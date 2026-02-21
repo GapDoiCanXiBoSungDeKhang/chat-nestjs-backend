@@ -35,7 +35,7 @@ export class LinkPreviewService {
         });
         const $ = cheerio.load(data);
 
-        const meta = (prop:string)=>
+        const meta = (prop: string) =>
             $(`meta[property='${prop}']`).attr("content") ||
             $(`meta[name='${prop}']`).attr("content");
 

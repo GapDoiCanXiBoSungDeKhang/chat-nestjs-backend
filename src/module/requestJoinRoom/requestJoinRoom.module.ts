@@ -15,4 +15,5 @@ import {RequestJoinRoomService} from "./requestJoinRoom.service";
     providers: [RequestJoinRoomService],
     exports: [RequestJoinRoomService]
 })
-export class RequestJoinRoomModule {}
+export class RequestJoinRoomModule {
+}

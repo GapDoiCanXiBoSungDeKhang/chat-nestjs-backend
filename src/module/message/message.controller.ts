@@ -138,12 +138,12 @@ export class MessageController {
         @JwtDecode() user: JwtType,
         @Body() dto: UploadFilesDto
     ) {
-       return this.messageService.uploadVoice(
-           file,
-           room,
-           user.userId,
-           dto?.replyTo,
-       )
+        return this.messageService.uploadVoice(
+            file,
+            room,
+            user.userId,
+            dto?.replyTo,
+        )
     }
 
     @Post(":id/link-preview")

@@ -9,6 +9,7 @@ import {CreateGroupDto} from "./dto/createGroup.dto";
 import {ConversationIdDto} from "./dto/conversationId.dto";
 import {AddMemberDto} from "./dto/addMember.dto";
 import {RemoveMemberDto} from "./dto/removeMember.dto";
+import {ChangeRoleDto} from "./dto/changeRole.dto";
 
 @Controller("conversations")
 @UseGuards(JwtAuthGuard)
@@ -98,6 +99,21 @@ export class ConversationController {
             room,
             user.userId,
             dto.userIds,
+        )
+    }
+
+    @Patch(":id/members/role")
+    @HttpCode(200)
+    public async changeRole(
+        @JwtDecode() user: JwtType,
+        @Param("id") room: ConversationIdDto["id"],
+        @Body() dto: ChangeRoleDto
+    ) {
+        return this.conversationService.changeRole(
+            user.userId,
+            room,
+            dto.id,
+            dto.role
         )
     }
 
