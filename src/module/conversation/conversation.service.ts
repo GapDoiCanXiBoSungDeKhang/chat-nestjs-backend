@@ -1,4 +1,4 @@
-import {Model, Types} from "mongoose";
+import {connect, Model, Types} from "mongoose";
 import {InjectModel} from "@nestjs/mongoose";
 import {
     BadRequestException,
@@ -235,6 +235,37 @@ export class ConversationService {
         }
         const participant = this.getUserParticipant(conversation, userId);
         participant.role = role;
+        await conversation.save();
+
+        return conversation;
+    }
+
+    public async leaveGroup(userId: string, room: string) {
+        const conversation = await this.findConversation(room);
+        const actor = this.getUserParticipant(conversation, userId);
+
+        if (actor.role === "owner") {
+            let newOwner = conversation.participants.find(
+                p => p.userId.toString() !== userId && p.role === "admin"
+            );
+            if (!newOwner) {
+                newOwner = conversation.participants.find(
+                    p => p.userId.toString() !== userId
+                );
+            }
+            if (newOwner) {
+                newOwner.role = "owner";
+            } else {
+                await conversation.deleteOne();
+                return {
+                    status: "group is deleted!"
+                }
+            }
+        }
+        const newParticipants = conversation.participants.filter(
+            obj => obj.userId.toString() !== userId
+        );
+        conversation.participants = newParticipants;
         await conversation.save();
 
         return conversation;

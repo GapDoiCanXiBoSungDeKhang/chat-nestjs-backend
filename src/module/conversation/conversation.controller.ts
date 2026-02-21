@@ -117,6 +117,15 @@ export class ConversationController {
         )
     }
 
+    @Delete(":id/members/leave")
+    @HttpCode(200)
+    public async leaveGroup(
+        @JwtDecode() user: JwtType,
+        @Param("id") room: ConversationIdDto["id"],
+    ) {
+        return this.conversationService.leaveGroup(user.userId, room);
+    }
+
     @Get("")
     @HttpCode(200)
     public async conversations(@JwtDecode() user: JwtType) {
