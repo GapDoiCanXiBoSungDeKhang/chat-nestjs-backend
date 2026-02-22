@@ -1,6 +1,6 @@
 import {IsEnum, IsMongoId} from "class-validator";
 
-export enum RoleType {
+enum RoleType {
     admin = "admin",
     member = "member",
 }

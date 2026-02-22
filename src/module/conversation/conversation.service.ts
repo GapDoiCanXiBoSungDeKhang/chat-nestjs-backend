@@ -1,7 +1,7 @@
-import {connect, Model, Types} from "mongoose";
+import {Model} from "mongoose";
 import {InjectModel} from "@nestjs/mongoose";
 import {
-    BadRequestException,
+    ForbiddenException,
     forwardRef,
     Inject,
     Injectable,
@@ -42,7 +42,7 @@ export class ConversationService {
         )
         const ok = await this.checkListUser(uniqueIds);
         if (!ok) {
-            throw new BadRequestException(
+            throw new ForbiddenException(
                 "Owner or user not found!"
             )
         }
@@ -139,13 +139,13 @@ export class ConversationService {
             this.isAnyMemberExists(room, uniqueIds)
         ]);
         if (!validUsers) {
-            throw new BadRequestException("Some users not found!");
+            throw new ForbiddenException("Some users not found!");
         }
         if (!uniqueIds.length) {
-            throw new BadRequestException("User must be less than 1");
+            throw new ForbiddenException("User must be less than 1");
         }
         if (alreadyExists) {
-            throw new BadRequestException(
+            throw new ForbiddenException(
                 "Some users already exist in group!"
             );
         }
@@ -174,10 +174,10 @@ export class ConversationService {
     ) {
         const ok = await this.checkListUser(userIds);
         if (!ok) {
-            throw new BadRequestException("Some users not found!");
+            throw new ForbiddenException("Some users not found!");
         }
         if (!userIds.length) {
-            throw new BadRequestException("User must be less than 1!");
+            throw new ForbiddenException("User must be less than 1!");
         }
         const conversation = await this.findConversation(room);
         const actor = this.getUserParticipant(conversation, actorId);
@@ -188,12 +188,12 @@ export class ConversationService {
         );
 
         if (!["owner", "admin"].includes(actor.role)) {
-            throw new BadRequestException(
+            throw new ForbiddenException(
                 "User role must be a owner or admin!"
             );
         }
         if (!checkCanRemoveMem) {
-            throw new BadRequestException(
+            throw new ForbiddenException(
                 "Can't remove member for this conversation!"
             );
         }
@@ -214,7 +214,7 @@ export class ConversationService {
     ) {
         const ok = await this.checkListUser([userId]);
         if (!ok) {
-            throw new BadRequestException("User not found!");
+            throw new ForbiddenException("User not found!");
         }
         const conversation = await this.findConversation(room);
         const actor = this.getUserParticipant(conversation, actorId);
@@ -224,15 +224,15 @@ export class ConversationService {
         );
 
         if (!["owner", "admin"].includes(actor.role)) {
-            throw new BadRequestException("User role must be a owner or admin!")
+            throw new ForbiddenException("User role must be a owner or admin!")
         }
         if (actorId === userId) {
-            throw new BadRequestException(
+            throw new ForbiddenException(
                 "You can't change role for this you!"
             )
         }
         if (actor.role === "admin" && obj.role === "owner") {
-            throw new BadRequestException(
+            throw new ForbiddenException(
                 "You can't change role for this user!"
             );
         }
@@ -279,6 +279,35 @@ export class ConversationService {
         return this.requestJoinRoomService.listRequestJoinRoom(
             conversation._id.toString()
         );
+    }
+
+    public async handleRequest(
+        room: string,
+        action: "accept" | "reject",
+        id: string,
+        actorId: string
+    ) {
+        const conversation = await this.findConversation(room);
+        const actor = this.getUserParticipant(conversation, actorId);
+
+        if (!["owner", "admin"].includes(actor.role)) {
+            throw new ForbiddenException("User role must be a owner or admin!");
+        }
+        const userId = await this.requestJoinRoomService
+            .handleRequestJoinRoom(id);
+
+        if (action === "accept") {
+            const participant = this.groupParticipants([userId], actorId);
+            conversation.participants.push(
+                ...participant
+            );
+            await conversation.save();
+            return conversation;
+        }
+        return {
+            status: "reject",
+            message: "request have been rejected!"
+        }
     }
 
     private checkCantRemoveMember(
@@ -336,12 +365,12 @@ export class ConversationService {
 
         const ok = await this.checkListUser(uniqueIds);
         if (!ok) {
-            throw new BadRequestException(
+            throw new ForbiddenException(
                 "Some user not found.",
             );
         }
         if (uniqueIds.length < 3) {
-            throw new BadRequestException(
+            throw new ForbiddenException(
                 "Group must be at least 3 members"
             );
         }
@@ -443,7 +472,7 @@ export class ConversationService {
             conv => conv.userId.toString() === userId
         );
         if (!obj) {
-            throw new BadRequestException(
+            throw new ForbiddenException(
                 "Participant not found user needed!"
             );
         }
@@ -459,7 +488,7 @@ export class ConversationService {
             p => p.userId.toString() !== userId
         );
         if (!other) {
-            throw new BadRequestException(
+            throw new ForbiddenException(
                 "Invalid private conversation"
             );
         }

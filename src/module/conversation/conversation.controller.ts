@@ -10,6 +10,7 @@ import {ConversationIdDto} from "./dto/conversationId.dto";
 import {AddMemberDto} from "./dto/addMember.dto";
 import {RemoveMemberDto} from "./dto/removeMember.dto";
 import {ChangeRoleDto} from "./dto/changeRole.dto";
+import {HandleRequestDto} from "./dto/handleRequest.dto";
 
 @Controller("conversations")
 @UseGuards(JwtAuthGuard)
@@ -126,12 +127,27 @@ export class ConversationController {
         return this.conversationService.leaveGroup(user.userId, room);
     }
 
-    @Get(":id/request-join-room")
+    @Get(":id/request")
     @HttpCode(200)
     public async listRequestJoinRoom(
         @Param("id") room: ConversationIdDto["id"]
     ) {
         return this.conversationService.listRequestJoinRoom(room);
+    }
+
+    @Patch(":id/request/handle")
+    @HttpCode(200)
+    public async acceptRequest(
+        @Param("id") room: ConversationIdDto["id"],
+        @JwtDecode() user: JwtType,
+        @Body() dto: HandleRequestDto
+    ) {
+        return this.conversationService.handleRequest(
+            room,
+            dto.action,
+            dto.id,
+            user.userId
+        );
     }
 
     @Get("")

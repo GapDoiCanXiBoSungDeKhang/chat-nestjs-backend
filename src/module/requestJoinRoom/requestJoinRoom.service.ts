@@ -1,5 +1,5 @@
 import {Model} from "mongoose";
-import {Injectable} from "@nestjs/common";
+import {ForbiddenException, Injectable} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 
 import {ResponseJoinRoom, ResponseJoinRoomDocument} from "./schema/requestJoinRoom.schema";
@@ -31,6 +31,7 @@ export class RequestJoinRoomService {
     public async listRequestJoinRoom(room: string) {
         return this.responseJoinRoomModel.find({
             conversationId: convertStringToObjectId(room),
+            status: "pending"
         })
             .populate([
                 {path: "userId", select: "name avatar status"},
@@ -38,5 +39,18 @@ export class RequestJoinRoomService {
             ])
             .sort({createdAt: -1})
             .lean();
+    }
+
+    public async handleRequestJoinRoom(id: string) {
+        const request = await this.responseJoinRoomModel
+            .findById(convertStringToObjectId(id));
+
+        if (!request) {
+            throw new ForbiddenException("not found request!");
+        }
+        const userId = request.userId.toString();
+        await request.deleteOne();
+
+        return userId;
     }
 }
