@@ -13,10 +13,12 @@ import {MessageModule} from "../message/message.module";
 import {AttachmentModule} from "../attachment/attachment.module";
 import {LinkPreviewModule} from "../link-preview/link-preview.module";
 import {RequestJoinRoomModule} from "../requestJoinRoom/requestJoinRoom.module";
+import {FriendModule} from "../friend/friend.module";
 
 @Module({
     imports: [
         forwardRef(() => MessageModule),
+        forwardRef(() => FriendModule),
         UsersModule,
         AttachmentModule,
         LinkPreviewModule,

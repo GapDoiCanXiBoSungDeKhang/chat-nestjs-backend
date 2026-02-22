@@ -1,6 +1,6 @@
 import {
     BadRequestException,
-    ForbiddenException,
+    ForbiddenException, forwardRef, Inject,
     Injectable,
     NotFoundException,
 } from "@nestjs/common";
@@ -19,6 +19,7 @@ export class FriendService {
     constructor(
         @InjectModel(FriendRequest.name)
         private readonly friendRequestModel: Model<FriendRequestDocument>,
+        @Inject(forwardRef(() => ConversationService))
         private readonly conversationService: ConversationService,
         private readonly notificationService: NotificationService,
         private readonly chatGateway: ChatGateway,

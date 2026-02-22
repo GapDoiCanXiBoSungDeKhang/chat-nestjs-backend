@@ -27,4 +27,16 @@ export class RequestJoinRoomService {
         }));
         return this.responseJoinRoomModel.insertMany(response);
     }
+
+    public async listRequestJoinRoom(room: string) {
+        return this.responseJoinRoomModel.find({
+            conversationId: convertStringToObjectId(room),
+        })
+            .populate([
+                {path: "userId", select: "name avatar status"},
+                {path: "actor", select: "name avatar status"},
+            ])
+            .sort({createdAt: -1})
+            .lean();
+    }
 }

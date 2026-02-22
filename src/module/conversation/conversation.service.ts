@@ -12,12 +12,14 @@ import {Conversation, ConversationDocument} from "./schema/conversation.schema";
 
 import {UserService} from "../user/user.service";
 import {MessageService} from "../message/message.service";
-import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 import {AttachmentService} from "../attachment/attachment.service";
 import {AttachmentDocument} from "../attachment/schema/attachment.schema";
 import {LinkPreviewService} from "../link-preview/link-preview.service";
 import {LinkPreviewDocument} from "../link-preview/schema/link-preview.schema";
 import {RequestJoinRoomService} from "../requestJoinRoom/requestJoinRoom.service";
+import {FriendService} from "../friend/friend.service";
+
+import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 
 @Injectable()
 export class ConversationService {
@@ -27,9 +29,10 @@ export class ConversationService {
         private readonly userService: UserService,
         @Inject(forwardRef(() => MessageService))
         private readonly messageService: MessageService,
+        private readonly friendService: FriendService,
         private readonly attachmentService: AttachmentService,
         private readonly linkPreviewService: LinkPreviewService,
-        private readonly responseJoinRoomService: RequestJoinRoomService
+        private readonly requestJoinRoomService: RequestJoinRoomService
     ) {
     }
 
@@ -150,7 +153,7 @@ export class ConversationService {
         const actor = this.getUserParticipant(conversation, actorId);
 
         if (!["owner", "admin"].includes(actor.role)) {
-            return this.responseJoinRoomService.createResponse(
+            return this.requestJoinRoomService.createResponse(
                 actorId,
                 room,
                 uniqueIds,
@@ -269,6 +272,13 @@ export class ConversationService {
         await conversation.save();
 
         return conversation;
+    }
+
+    public async listRequestJoinRoom(room: string) {
+        const conversation = await this.findConversation(room);
+        return this.requestJoinRoomService.listRequestJoinRoom(
+            conversation._id.toString()
+        );
     }
 
     private checkCantRemoveMember(
@@ -390,7 +400,10 @@ export class ConversationService {
     }
 
     public async users(userId: string) {
-        return this.userService.listUser(userId);
+        const listIds = await this.friendService.friends(userId);
+        return this.userService.listUser(
+            listIds.map(uid => uid._id.toString())
+        );
     }
 
     public async updateConversation(

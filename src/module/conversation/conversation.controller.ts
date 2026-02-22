@@ -126,6 +126,14 @@ export class ConversationController {
         return this.conversationService.leaveGroup(user.userId, room);
     }
 
+    @Get(":id/request-join-room")
+    @HttpCode(200)
+    public async listRequestJoinRoom(
+        @Param("id") room: ConversationIdDto["id"]
+    ) {
+        return this.conversationService.listRequestJoinRoom(room);
+    }
+
     @Get("")
     @HttpCode(200)
     public async conversations(@JwtDecode() user: JwtType) {

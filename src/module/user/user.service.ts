@@ -46,9 +46,10 @@ export class UserService {
         );
     }
 
-    public async listUser(userId: string) {
+    public async listUser(userIds: string[]) {
+        const objIds = userIds.map(uid => convertStringToObjectId(uid));
         return this.userModel.find(
-            {_id: {$ne: convertStringToObjectId(userId)}},
+            {_id: {$in: objIds}},
             {
                 _id: 1,
                 name: 1
