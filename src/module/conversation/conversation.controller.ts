@@ -16,7 +16,7 @@ import {HandleRequestDto} from "./dto/handleRequest.dto";
 @UseGuards(JwtAuthGuard)
 export class ConversationController {
     constructor(
-        private conversationService: ConversationService
+        private readonly conversationService: ConversationService
     ) {
     }
 
@@ -127,12 +127,16 @@ export class ConversationController {
         return this.conversationService.leaveGroup(user.userId, room);
     }
 
-    @Get(":id/request")
+    @Get(":id/requests")
     @HttpCode(200)
     public async listRequestJoinRoom(
+        @JwtDecode() user: JwtType,
         @Param("id") room: ConversationIdDto["id"]
     ) {
-        return this.conversationService.listRequestJoinRoom(room);
+        return this.conversationService.listRequestJoinRoom(
+            room,
+            user.userId,
+        );
     }
 
     @Patch(":id/request/handle")
