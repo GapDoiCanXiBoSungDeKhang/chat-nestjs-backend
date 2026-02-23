@@ -46,6 +46,9 @@ export class Message {
     @Prop({default: null})
     editedAt?: Date;
 
+    @Prop({type: Types.ObjectId, ref: "User", default: null})
+    mentions?: Types.ObjectId;
+
     @Prop({
         type: [{type: Types.ObjectId, ref: "User"}],
         default: []

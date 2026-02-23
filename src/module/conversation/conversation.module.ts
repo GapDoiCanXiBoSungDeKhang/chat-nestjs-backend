@@ -14,11 +14,13 @@ import {AttachmentModule} from "../attachment/attachment.module";
 import {LinkPreviewModule} from "../link-preview/link-preview.module";
 import {RequestJoinRoomModule} from "../requestJoinRoom/requestJoinRoom.module";
 import {FriendModule} from "../friend/friend.module";
+import {ChatModule} from "../../gateway/chat.module";
 
 @Module({
     imports: [
         forwardRef(() => MessageModule),
         forwardRef(() => FriendModule),
+        ChatModule,
         UsersModule,
         AttachmentModule,
         LinkPreviewModule,

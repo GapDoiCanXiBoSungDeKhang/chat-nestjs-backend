@@ -20,12 +20,14 @@ import {RequestJoinRoomService} from "../requestJoinRoom/requestJoinRoom.service
 import {FriendService} from "../friend/friend.service";
 
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
+import {ChatGateway} from "../../gateway/chat.gateway";
 
 @Injectable()
 export class ConversationService {
     constructor(
         @InjectModel(Conversation.name)
         private readonly conversationModel: Model<ConversationDocument>,
+        private readonly chatGateway: ChatGateway,
         private readonly userService: UserService,
         @Inject(forwardRef(() => MessageService))
         private readonly messageService: MessageService,
@@ -153,17 +155,22 @@ export class ConversationService {
         const actor = this.getUserParticipant(conversation, actorId);
 
         if (!["owner", "admin"].includes(actor.role)) {
-            return this.requestJoinRoomService.createResponse(
+            const newRequest = await this.requestJoinRoomService.createResponse(
                 actorId,
                 room,
                 uniqueIds,
                 description,
             );
+
+            this.chatGateway.emitNewRequestJoinRoom(room, newRequest);
+            return newRequest;
         }
         conversation.participants.push(
             ...this.groupParticipants(userIds, actorId)
         );
         await conversation.save();
+        this.chatGateway.emitAddMembersGroup(room, conversation);
+
         return conversation;
     }
 
@@ -203,6 +210,8 @@ export class ConversationService {
 
         conversation.participants = newParticipants;
         await conversation.save();
+        this.chatGateway.emitRemoveMembersGroup(room, conversation);
+
         return conversation;
     }
 
@@ -239,6 +248,7 @@ export class ConversationService {
         const participant = this.getUserParticipant(conversation, userId);
         participant.role = role;
         await conversation.save();
+        this.chatGateway.emitChangeRoleMemberGroup(room, conversation);
 
         return conversation;
     }
@@ -260,6 +270,12 @@ export class ConversationService {
                 newOwner.role = "owner";
             } else {
                 await conversation.deleteOne();
+                this.chatGateway.emitLeftGroup(room, {
+                    conversationId: room,
+                    userId: userId,
+                    conversation: null,
+                    deleted: true
+                });
                 return {
                     status: "group is deleted!"
                 }
@@ -270,6 +286,7 @@ export class ConversationService {
         );
         conversation.participants = newParticipants;
         await conversation.save();
+        this.chatGateway.emitLeftGroup(room, conversation);
 
         return conversation;
     }
@@ -312,6 +329,13 @@ export class ConversationService {
             await conversation.save();
             return conversation;
         }
+
+        this.chatGateway.emitHandelRequestJoinRoom(room, {
+            conversationId: room,
+            requestId: id,
+            action,
+            userId
+        });
         return {
             status: "reject",
             message: "request have been rejected!"
@@ -392,12 +416,15 @@ export class ConversationService {
         if (existGroup) {
             return existGroup;
         }
-        return this.conversationModel.create({
+        const group = await this.conversationModel.create({
             createdBy: convertStringToObjectId(userId),
             participants: this.groupParticipants(uniqueIds, userId),
             type: "group",
             name,
         });
+        this.chatGateway.emitGroupCreated(group.id, group);
+
+        return group;
     }
 
     private arrayPopulate() {
