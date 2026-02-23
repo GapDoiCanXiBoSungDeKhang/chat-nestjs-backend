@@ -169,7 +169,10 @@ export class ConversationService {
             ...this.groupParticipants(userIds, actorId)
         );
         await conversation.save();
-        this.chatGateway.emitAddMembersGroup(room, conversation);
+        this.chatGateway.emitAddMembersGroup(room, {
+            addedUsers: uniqueIds,
+            ...conversation
+        });
 
         return conversation;
     }
@@ -210,7 +213,10 @@ export class ConversationService {
 
         conversation.participants = newParticipants;
         await conversation.save();
-        this.chatGateway.emitRemoveMembersGroup(room, conversation);
+        this.chatGateway.emitRemoveMembersGroup(room, {
+            removedUsers: userIds,
+            ...conversation
+        });
 
         return conversation;
     }
