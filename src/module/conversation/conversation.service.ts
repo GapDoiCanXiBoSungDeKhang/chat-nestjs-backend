@@ -470,10 +470,11 @@ export class ConversationService {
     }
 
     public async users(userId: string) {
-        const listIds = await this.friendService.friends(userId);
-        return this.userService.listUser(
-            listIds.map(uid => uid._id.toString())
-        );
+        // const listIds = await this.friendService.friends(userId);
+        // return this.userService.listUser(
+        //     listIds.map(uid => uid._id.toString())
+        // );
+        return this.userService.listUser(userId);
     }
 
     public async updateConversation(
