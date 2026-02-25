@@ -152,12 +152,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     emitToUser(userId: string, event: string, data: any) {
-        const socketIds = this.onlineUsers.get(userId);
-        if (socketIds?.size) {
-            for (const socketId of socketIds) {
-                this.server.to(socketId).emit(event, data);
-            }
-        }
+        this.server.to(this.userRoom(userId)).emit(event, data);
     }
 
     emitMessagePinned(conversationId: string, payload: any) {
