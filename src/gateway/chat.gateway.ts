@@ -34,10 +34,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return `user:${userId}`;
     }
 
+    private conversationRoom(userId: string) {
+        return `conversation:${userId}`;
+    }
+
     handleConnection(client: Socket) {
         const token = client.handshake.auth?.token ||
             client.handshake.query?.token;
-        
+
         if (!token) {
             client.disconnect(true);
             return;
@@ -77,7 +81,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         );
         if (!ok) return;
 
-        const room = `room:${conversationId}`;
+        const room = this.conversationRoom(conversationId);
         client.join(room);
     }
 
@@ -112,43 +116,43 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     emitNewMessage(conversationId: string, payload: any) {
-        this.server.to(`room:${conversationId}`).emit("new_message", payload);
+        this.server.to(this.conversationRoom(conversationId)).emit("new_message", payload);
     }
 
     emitMessageEdited(conversationId: string, payload: any) {
-        this.server.to(`room:${conversationId}`).emit("message_edited", payload);
+        this.server.to(this.conversationRoom(conversationId)).emit("message_edited", payload);
     }
 
     emitMessageDeleted(conversationId: string, payload: any) {
-        this.server.to(`room:${conversationId}`).emit("message_deleted", payload);
+        this.server.to(this.conversationRoom(conversationId)).emit("message_deleted", payload);
     }
 
     emitMessageReacted(conversationId: string, payload: any) {
-        this.server.to(`room:${conversationId}`).emit("message_reacted", payload);
+        this.server.to(this.conversationRoom(conversationId)).emit("message_reacted", payload);
     }
 
     emitMessageForwarded(conversationId: string, payload: any) {
-        this.server.to(`room:${conversationId}`).emit("message_forwarded", payload);
+        this.server.to(this.conversationRoom(conversationId)).emit("message_forwarded", payload);
     }
 
     emitMessageSeen(conversationId: string, payload: any) {
-        this.server.to(`room:${conversationId}`).emit("message_seen", payload);
+        this.server.to(this.conversationRoom(conversationId)).emit("message_seen", payload);
     }
 
     emitNewMessageFiles(conversationId: string, payload: any) {
-        this.server.to(`room:${conversationId}`).emit("new_message_file", payload);
+        this.server.to(this.conversationRoom(conversationId)).emit("new_message_file", payload);
     }
 
     emitNewMessageMedias(conversationId: string, payload: any) {
-        this.server.to(`room:${conversationId}`).emit("new_message_media", payload);
+        this.server.to(this.conversationRoom(conversationId)).emit("new_message_media", payload);
     }
 
     emitNewMessageVoice(conversationId: string, payload: any) {
-        this.server.to(`room:${conversationId}`).emit("new_message_voice", payload);
+        this.server.to(this.conversationRoom(conversationId)).emit("new_message_voice", payload);
     }
 
     emitNewMessageLinkPreview(conversationId: string, payload: any) {
-        this.server.to(`room:${conversationId}`).emit("new_message_linkPreview", payload);
+        this.server.to(this.conversationRoom(conversationId)).emit("new_message_linkPreview", payload);
     }
 
     emitToUser(userId: string, event: string, data: any) {
@@ -156,38 +160,38 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     emitMessagePinned(conversationId: string, payload: any) {
-        this.server.to(`room:${conversationId}`).emit("message_pinned", payload);
+        this.server.to(this.conversationRoom(conversationId)).emit("message_pinned", payload);
     }
 
     emitMessageUnpinned(conversationId: string, payload: any) {
-        this.server.to(`room:${conversationId}`).emit("message_unpinned", payload);
+        this.server.to(this.conversationRoom(conversationId)).emit("message_unpinned", payload);
     }
 
     emitGroupCreated(conversationId: string, payload: any) {
-        this.server.to(`room:${conversationId}`).emit("group:created", payload);
+        this.server.to(this.conversationRoom(conversationId)).emit("group:created", payload);
     }
 
     emitAddMembersGroup(conversationId: string, payload: any) {
-        this.server.to(`room:${conversationId}`).emit("group:member:added", payload);
+        this.server.to(this.conversationRoom(conversationId)).emit("group:member:added", payload);
     }
 
     emitRemoveMembersGroup(conversationId: string, payload: any) {
-        this.server.to(`room:${conversationId}`).emit("group:member:removed", payload);
+        this.server.to(this.conversationRoom(conversationId)).emit("group:member:removed", payload);
     }
 
     emitLeftGroup(conversationId: string, payload: any) {
-        this.server.to(`room:${conversationId}`).emit("group:member:left", payload);
+        this.server.to(this.conversationRoom(conversationId)).emit("group:member:left", payload);
     }
 
     emitChangeRoleMemberGroup(conversationId: string, payload: any) {
-        this.server.to(`room:${conversationId}`).emit("group:role:changed", payload);
+        this.server.to(this.conversationRoom(conversationId)).emit("group:role:changed", payload);
     }
 
     emitNewRequestJoinRoom(conversationId: string, payload: any) {
-        this.server.to(`room:${conversationId}`).emit("group:request:new", payload);
+        this.server.to(this.conversationRoom(conversationId)).emit("group:request:new", payload);
     }
 
     emitHandelRequestJoinRoom(conversationId: string, payload: any) {
-        this.server.to(`room:${conversationId}`).emit("group:request:handled", payload);
+        this.server.to(this.conversationRoom(conversationId)).emit("group:request:handled", payload);
     }
 }
