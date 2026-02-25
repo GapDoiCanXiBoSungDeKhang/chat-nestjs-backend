@@ -30,10 +30,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     ) {
     }
 
-    private onlineUsers = new Map<string, Set<string>>();
+    private userRoom(userId: string) {
+        return `user:${userId}`;
+    }
 
     handleConnection(client: Socket) {
-        const token = client.handshake.auth?.token || client.handshake.query?.token;
+        const token = client.handshake.auth?.token ||
+            client.handshake.query?.token;
+        
         if (!token) {
             client.disconnect(true);
             return;
@@ -42,14 +46,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         try {
             const payload = this.jwtService.verify(token);
             const userId = payload.sub;
+
             client.data.userId = userId;
 
-            if (!this.onlineUsers.has(userId)) {
-                this.onlineUsers.set(userId, new Set());
-                this.server.emit("user_online", {userId});
-            }
-
-            this.onlineUsers.get(userId)!.add(client.id);
+            client.join(this.userRoom(userId));
+            this.server.emit("user_online", {userId});
         } catch {
             client.disconnect(true);
         }
@@ -59,14 +60,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         const userId = client.data.userId;
         if (!userId) return;
 
-        const sockets = this.onlineUsers.get(userId);
-        if (!sockets) return;
-
-        sockets.delete(client.id);
-        if (sockets.size === 0) {
-            this.onlineUsers.delete(userId);
-            this.server.emit("user_offline", {userId});
-        }
+        this.server.emit("user_offline", {userId});
     }
 
     @SubscribeMessage("join_conversation")
