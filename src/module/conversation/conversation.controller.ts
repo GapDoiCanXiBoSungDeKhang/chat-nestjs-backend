@@ -114,6 +114,7 @@ export class ConversationController {
     ) {
         return this.conversationService.changeRole(
             user.userId,
+            user.name,
             room,
             dto.id,
             dto.role

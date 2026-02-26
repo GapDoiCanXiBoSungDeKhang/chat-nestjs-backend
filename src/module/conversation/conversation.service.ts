@@ -235,6 +235,7 @@ export class ConversationService {
 
     public async changeRole(
         actorId: string,
+        nameUser: string,
         room: string,
         userId: string,
         role: "admin" | "member",
@@ -266,7 +267,17 @@ export class ConversationService {
         const participant = this.getUserParticipant(conversation, userId);
         participant.role = role;
         await conversation.save();
-        this.chatGateway.emitChangeRoleMemberGroup(room, conversation);
+
+        const targetUser = await this.userService.getInfoById(userId);
+        const changedBy = {_id: actorId, name: nameUser};
+
+        this.chatGateway.emitChangeRoleMemberGroup(room, {
+            conversationId: room,
+            targetUser,
+            changedBy,
+            newRole: role,
+            conversation
+        });
 
         return conversation;
     }
