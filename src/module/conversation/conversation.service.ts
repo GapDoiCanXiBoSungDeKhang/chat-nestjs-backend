@@ -31,7 +31,7 @@ export class ConversationService {
         private readonly userService: UserService,
         @Inject(forwardRef(() => MessageService))
         private readonly messageService: MessageService,
-        private readonly friendService: FriendService,
+        // private readonly friendService: FriendService,
         private readonly attachmentService: AttachmentService,
         private readonly linkPreviewService: LinkPreviewService,
         private readonly requestJoinRoomService: RequestJoinRoomService
@@ -170,10 +170,15 @@ export class ConversationService {
         conversation.participants.push(...newMembers);
 
         await conversation.save();
+        const [addedUsers, addedBy] = await Promise.all([
+            this.userService.getInfoUserIds(uniqueIds),
+            this.userService.getInfoById(actorId)
+        ]);
+
         this.chatGateway.emitAddMembersGroup(room, {
             conversationId: room,
-            addedUsers: newMembers,
-            addedBy: actor,
+            addedUsers,
+            addedBy,
             conversation,
         });
 
@@ -217,7 +222,9 @@ export class ConversationService {
         conversation.participants = newParticipants;
         await conversation.save();
         this.chatGateway.emitRemoveMembersGroup(room, {
-            removedUsers: userIds,
+            conversationId: room,
+            removedUserIds: userIds,
+            removedBy: actorId,
             ...conversation
         });
 

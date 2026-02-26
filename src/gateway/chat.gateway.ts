@@ -178,7 +178,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     emitRemoveMembersGroup(conversationId: string, payload: any) {
-        this.server.to(this.conversationRoom(conversationId)).emit("group:member:removed", payload);
+        this.server.to(this.conversationRoom(conversationId)).emit("group_member_removed", payload);
     }
 
     emitLeftGroup(conversationId: string, payload: any) {

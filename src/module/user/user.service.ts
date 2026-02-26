@@ -57,6 +57,27 @@ export class UserService {
         ).lean();
     }
 
+    public async getInfoUserIds(userIds: string[]) {
+        const objIds = userIds.map((userId) => convertStringToObjectId(userId));
+        return this.userModel.find(
+            {_id: {$in: objIds}},
+            {
+                name: 1,
+                avatar: 1,
+                status: 1,
+            }
+        ).lean();
+    }
+
+    public async getInfoById(userId: string) {
+        return this.userModel.findById(
+            convertStringToObjectId(userId),
+            {
+                name: 1,
+            }
+        );
+    }
+
     public async getUserValid(userIds: string[]) {
         return this.userModel.find(
             {
