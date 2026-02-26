@@ -157,7 +157,8 @@ export class ConversationController {
             room,
             dto.action,
             dto.id,
-            user.userId
+            user.userId,
+            user.name
         );
     }
 

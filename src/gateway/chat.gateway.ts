@@ -194,6 +194,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     emitHandelRequestJoinRoom(conversationId: string, payload: any) {
-        this.server.to(this.conversationRoom(conversationId)).emit("group:request:handled", payload);
+        this.server.to(this.conversationRoom(conversationId)).emit("group_request_handled", payload);
     }
 }

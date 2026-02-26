@@ -351,7 +351,8 @@ export class ConversationService {
         room: string,
         action: "accept" | "reject",
         id: string,
-        actorId: string
+        actorId: string,
+        userName: string,
     ) {
         const conversation = await this.findConversation(room);
         const actor = this.getUserParticipant(conversation, actorId);
@@ -367,15 +368,16 @@ export class ConversationService {
             conversation.participants.push(...participant);
             await conversation.save();
 
+            const handledBy = {_id: actorId, name: userName};
+            this.chatGateway.emitHandelRequestJoinRoom(room, {
+                conversationId: room,
+                requestId: id,
+                action,
+                handledBy,
+                conversation
+            })
             return conversation;
         }
-
-        this.chatGateway.emitHandelRequestJoinRoom(room, {
-            conversationId: room,
-            requestId: id,
-            action,
-            userId
-        });
         return {
             status: "reject",
             message: "request have been rejected!"
