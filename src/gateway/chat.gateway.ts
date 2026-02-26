@@ -12,6 +12,7 @@ import {JwtService} from "@nestjs/jwt";
 import {Socket, Server} from "socket.io";
 
 import {ConversationService} from "../module/conversation/conversation.service";
+import {Types} from "mongoose";
 
 @WebSocketGateway({
     cors: {
@@ -169,31 +170,91 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     emitGroupCreated(userIds: string[], payload: any) {
         userIds.forEach((userId) => {
-            this.server.to(this.userRoom(userId)).emit("group_created", payload);
+            this.server
+                .to(this.userRoom(userId))
+                .emit("group_created", payload);
         });
     }
 
-    emitAddMembersGroup(conversationId: string, payload: any) {
-        this.server.to(this.conversationRoom(conversationId)).emit("group_member_added", payload);
+    emitAddMembersGroup(
+        conversationId: string,
+        newUserIds: string[],
+        payload: any
+    ) {
+        this.server
+            .to(this.conversationRoom(conversationId))
+            .emit("group_member_added", payload);
+
+        newUserIds.forEach((userId) => {
+            this.server
+                .to(this.userRoom(userId))
+                .emit("group_added", payload);
+        })
     }
 
-    emitRemoveMembersGroup(conversationId: string, payload: any) {
-        this.server.to(this.conversationRoom(conversationId)).emit("group_member_removed", payload);
+    emitRemoveMembersGroup(
+        conversationId: string,
+        removedUserIds: string[],
+        payload: any
+    ) {
+        this.server
+            .to(this.conversationRoom(conversationId))
+            .emit("group_member_removed", payload);
+
+        removedUserIds.forEach((userId) => {
+            this.server
+                .to(this.userRoom(userId))
+                .emit("group_removed", payload);
+        })
     }
 
-    emitLeftGroup(conversationId: string, payload: any) {
-        this.server.to(this.conversationRoom(conversationId)).emit("group_member_left", payload);
+    emitLeftGroup(
+        conversationId: string,
+        userId: string,
+        payload: any
+    ) {
+        this.server
+            .to(this.conversationRoom(conversationId))
+            .emit("group_member_left", payload);
+
+        this.server
+            .to(this.userRoom(userId))
+            .emit("group_left_self", payload);
     }
 
     emitChangeRoleMemberGroup(conversationId: string, payload: any) {
-        this.server.to(this.conversationRoom(conversationId)).emit("group_role_changed", payload);
+        this.server
+            .to(this.conversationRoom(conversationId))
+            .emit("group_role_changed", payload);
     }
 
-    emitNewRequestJoinRoom(conversationId: string, payload: any) {
-        this.server.to(this.conversationRoom(conversationId)).emit("group_join_requested", payload);
+    emitNewRequestJoinRoom(
+        participants: {
+            userId: Types.ObjectId
+            role: "owner" | "admin" | "member"
+        }[],
+        payload: any
+    ) {
+        participants.forEach(obj => {
+            if (["admin", "owner"].includes(obj.role)) {
+                this.server
+                    .to(this.userRoom(obj.userId.toString()))
+                    .emit("group_join_requested", payload);
+            }
+        });
     }
 
-    emitHandelRequestJoinRoom(conversationId: string, payload: any) {
-        this.server.to(this.conversationRoom(conversationId)).emit("group_request_handled", payload);
+    emitHandelRequestJoinRoom(
+        conversationId: string,
+        newUserId: string,
+        payload: any
+    ) {
+        this.server
+            .to(this.conversationRoom(conversationId))
+            .emit("group_request_handled", payload);
+
+        this.server
+            .to(this.userRoom(newUserId))
+            .emit("group_request_added", payload);
     }
 }

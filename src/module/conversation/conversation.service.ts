@@ -168,7 +168,7 @@ export class ConversationService {
                     { path: "actor", select: "name" }
                 ]);
 
-                this.chatGateway.emitNewRequestJoinRoom(room, {
+                this.chatGateway.emitNewRequestJoinRoom(conversation.participants, {
                     conversationId: room,
                     request,
                 });
@@ -184,12 +184,16 @@ export class ConversationService {
         const addedUsers = await this.userService.getInfoUserIds(uniqueIds);
         const addedBy = {_id: actorId, name: nameUser};
 
-        this.chatGateway.emitAddMembersGroup(room, {
-            conversationId: room,
-            addedUsers,
-            addedBy,
-            conversation,
-        });
+        this.chatGateway.emitAddMembersGroup(
+            room,
+            uniqueIds,
+            {
+                conversationId: room,
+                addedUsers,
+                addedBy,
+                conversation,
+            }
+        );
 
         return conversation;
     }
@@ -233,12 +237,16 @@ export class ConversationService {
         await conversation.save();
 
         const removedBy = {_id: actorId, name: userName};
-        this.chatGateway.emitRemoveMembersGroup(room, {
-            conversationId: room,
-            removedUserIds: userIds,
-            removedBy,
-            conversation
-        });
+        this.chatGateway.emitRemoveMembersGroup(
+            room,
+            userIds,
+            {
+                conversationId: room,
+                removedUserIds: userIds,
+                removedBy,
+                conversation
+            }
+        );
 
         return conversation;
     }
