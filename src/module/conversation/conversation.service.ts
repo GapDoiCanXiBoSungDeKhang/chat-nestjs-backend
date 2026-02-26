@@ -430,7 +430,7 @@ export class ConversationService {
         });
         await group.populate("createdBy", "name");
 
-        this.chatGateway.emitGroupCreated(group.id, {
+        this.chatGateway.emitGroupCreated(uniqueIds, {
             conversation: group,
             createdBy: {
                 _id: group.createdBy._id.toString(),
