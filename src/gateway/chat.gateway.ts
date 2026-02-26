@@ -197,6 +197,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         removedUserIds: string[],
         payload: any
     ) {
+        removedUserIds.forEach(userId => {
+            this.server.in(this.userRoom(userId)).socketsLeave(
+                this.conversationRoom(conversationId),
+            );
+        })
         this.server
             .to(this.conversationRoom(conversationId))
             .emit("group_member_removed", payload);
@@ -213,6 +218,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         userId: string,
         payload: any
     ) {
+        this.server.in(this.userRoom(userId)).socketsLeave(
+            this.conversationRoom(conversationId),
+        );
         this.server
             .to(this.conversationRoom(conversationId))
             .emit("group_member_left", payload);
@@ -235,13 +243,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }[],
         payload: any
     ) {
-        participants.forEach(obj => {
-            if (["admin", "owner"].includes(obj.role)) {
-                this.server
-                    .to(this.userRoom(obj.userId.toString()))
-                    .emit("group_join_requested", payload);
-            }
-        });
+        const rooms = participants
+            .filter(obj => obj.role !== "member")
+            .map(obj => obj.userId.toString());
+
+        this.server.to(rooms).emit("group_join_requested", payload);
     }
 
     emitHandelRequestJoinRoom(
