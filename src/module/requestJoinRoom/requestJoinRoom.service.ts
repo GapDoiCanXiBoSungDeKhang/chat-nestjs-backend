@@ -19,13 +19,13 @@ export class RequestJoinRoomService {
         userIds: string[],
         description: string
     ) {
-        const response = userIds.map(uid => ({
+        const data = userIds.map(uid => ({
             userId: convertStringToObjectId(uid),
             actor: convertStringToObjectId(ownerId),
             conversationId: convertStringToObjectId(conversationId),
             description
         }));
-        return this.responseJoinRoomModel.insertMany(response);
+        return this.responseJoinRoomModel.insertMany(data);
     }
 
     public async listRequestJoinRoom(room: string) {

@@ -156,15 +156,25 @@ export class ConversationService {
         const actor = this.getUserParticipant(conversation, actorId);
 
         if (!["owner", "admin"].includes(actor.role)) {
-            const newRequest = await this.requestJoinRoomService.createResponse(
+            const newRequests = await this.requestJoinRoomService.createResponse(
                 actorId,
                 room,
                 uniqueIds,
                 description,
             );
+            for (const request of newRequests) {
+                await request.populate([
+                    { path: "userId", select: "name avatar status" },
+                    { path: "actor", select: "name" }
+                ]);
 
-            this.chatGateway.emitNewRequestJoinRoom(room, newRequest);
-            return newRequest;
+                this.chatGateway.emitNewRequestJoinRoom(room, {
+                    conversationId: room,
+                    request,
+                });
+            }
+
+            return newRequests;
         }
 
         const newMembers = this.groupParticipants(userIds, actorId);
@@ -354,10 +364,9 @@ export class ConversationService {
 
         if (action === "accept") {
             const participant = this.groupParticipants([userId], actorId);
-            conversation.participants.push(
-                ...participant
-            );
+            conversation.participants.push(...participant);
             await conversation.save();
+
             return conversation;
         }
 

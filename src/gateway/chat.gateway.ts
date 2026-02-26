@@ -182,15 +182,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     emitLeftGroup(conversationId: string, payload: any) {
-        this.server.to(this.conversationRoom(conversationId)).emit("group:member:left", payload);
+        this.server.to(this.conversationRoom(conversationId)).emit("group_member_left", payload);
     }
 
     emitChangeRoleMemberGroup(conversationId: string, payload: any) {
-        this.server.to(this.conversationRoom(conversationId)).emit("group:role:changed", payload);
+        this.server.to(this.conversationRoom(conversationId)).emit("group_role_changed", payload);
     }
 
     emitNewRequestJoinRoom(conversationId: string, payload: any) {
-        this.server.to(this.conversationRoom(conversationId)).emit("group:request:new", payload);
+        this.server.to(this.conversationRoom(conversationId)).emit("group_join_requested", payload);
     }
 
     emitHandelRequestJoinRoom(conversationId: string, payload: any) {
