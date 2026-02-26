@@ -221,11 +221,13 @@ export class ConversationService {
 
         conversation.participants = newParticipants;
         await conversation.save();
+
+        const removedBy = await this.userService.getInfoById(actorId);
         this.chatGateway.emitRemoveMembersGroup(room, {
             conversationId: room,
             removedUserIds: userIds,
-            removedBy: actorId,
-            ...conversation
+            removedBy,
+            conversation
         });
 
         return conversation;
