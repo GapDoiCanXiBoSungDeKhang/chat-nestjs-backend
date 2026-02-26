@@ -165,13 +165,16 @@ export class ConversationService {
             this.chatGateway.emitNewRequestJoinRoom(room, newRequest);
             return newRequest;
         }
-        conversation.participants.push(
-            ...this.groupParticipants(userIds, actorId)
-        );
+
+        const newMembers = this.groupParticipants(userIds, actorId);
+        conversation.participants.push(...newMembers);
+
         await conversation.save();
         this.chatGateway.emitAddMembersGroup(room, {
-            addedUsers: uniqueIds,
-            ...conversation
+            conversationId: room,
+            addedUsers: newMembers,
+            addedBy: actor,
+            conversation,
         });
 
         return conversation;
