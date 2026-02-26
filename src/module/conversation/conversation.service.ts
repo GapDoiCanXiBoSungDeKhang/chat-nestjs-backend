@@ -131,6 +131,7 @@ export class ConversationService {
     public async addMembers(
         room: string,
         actorId: string,
+        nameUser: string,
         userIds: string[],
         description: string,
     ) {
@@ -170,10 +171,8 @@ export class ConversationService {
         conversation.participants.push(...newMembers);
 
         await conversation.save();
-        const [addedUsers, addedBy] = await Promise.all([
-            this.userService.getInfoUserIds(uniqueIds),
-            this.userService.getInfoById(actorId)
-        ]);
+        const addedUsers = await this.userService.getInfoUserIds(uniqueIds);
+        const addedBy = {_id: actorId, name: nameUser};
 
         this.chatGateway.emitAddMembersGroup(room, {
             conversationId: room,
@@ -188,6 +187,7 @@ export class ConversationService {
     public async removeMembers(
         room: string,
         actorId: string,
+        userName: string,
         userIds: string[],
     ) {
         const ok = await this.checkListUser(userIds);
@@ -222,7 +222,7 @@ export class ConversationService {
         conversation.participants = newParticipants;
         await conversation.save();
 
-        const removedBy = await this.userService.getInfoById(actorId);
+        const removedBy = {_id: actorId, name: userName};
         this.chatGateway.emitRemoveMembersGroup(room, {
             conversationId: room,
             removedUserIds: userIds,
@@ -271,7 +271,11 @@ export class ConversationService {
         return conversation;
     }
 
-    public async leaveGroup(userId: string, room: string) {
+    public async leaveGroup(
+        userId: string,
+        userName: string,
+        room: string
+    ) {
         const conversation = await this.findConversation(room);
         const actor = this.getUserParticipant(conversation, userId);
 
@@ -288,15 +292,7 @@ export class ConversationService {
                 newOwner.role = "owner";
             } else {
                 await conversation.deleteOne();
-                this.chatGateway.emitLeftGroup(room, {
-                    conversationId: room,
-                    userId: userId,
-                    conversation: null,
-                    deleted: true
-                });
-                return {
-                    status: "group is deleted!"
-                }
+                return {status: "group is deleted!"}
             }
         }
         const newParticipants = conversation.participants.filter(
@@ -304,7 +300,13 @@ export class ConversationService {
         );
         conversation.participants = newParticipants;
         await conversation.save();
-        this.chatGateway.emitLeftGroup(room, conversation);
+
+        const leftUser = {_id: userId, name: userName};
+        this.chatGateway.emitLeftGroup(room, {
+            conversationId: room,
+            leftUser,
+            conversation
+        });
 
         return conversation;
     }

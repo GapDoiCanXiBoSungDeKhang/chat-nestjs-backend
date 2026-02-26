@@ -84,6 +84,7 @@ export class ConversationController {
         return this.conversationService.addMembers(
             room,
             user.userId,
+            user.name,
             dto.userIds,
             dto.description
         )
@@ -99,6 +100,7 @@ export class ConversationController {
         return this.conversationService.removeMembers(
             room,
             user.userId,
+            user.name,
             dto.userIds,
         )
     }
@@ -124,7 +126,11 @@ export class ConversationController {
         @JwtDecode() user: JwtType,
         @Param("id") room: ConversationIdDto["id"],
     ) {
-        return this.conversationService.leaveGroup(user.userId, room);
+        return this.conversationService.leaveGroup(
+            user.userId,
+            user.name,
+            room
+        );
     }
 
     @Get(":id/requests")
