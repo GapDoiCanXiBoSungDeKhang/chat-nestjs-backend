@@ -331,11 +331,15 @@ export class ConversationService {
         await conversation.save();
 
         const leftUser = {_id: userId, name: userName};
-        this.chatGateway.emitLeftGroup(room, {
-            conversationId: room,
-            leftUser,
-            conversation
-        });
+        this.chatGateway.emitLeftGroup(
+            room,
+            userId,
+                {
+                conversationId: room,
+                leftUser,
+                conversation
+            }
+        );
 
         return conversation;
     }
@@ -377,13 +381,16 @@ export class ConversationService {
             await conversation.save();
 
             const handledBy = {_id: actorId, name: userName};
-            this.chatGateway.emitHandelRequestJoinRoom(room, {
-                conversationId: room,
-                requestId: id,
-                action,
-                handledBy,
-                conversation
-            })
+            this.chatGateway.emitHandelRequestJoinRoom(
+                room,
+                userId,
+                {
+                    conversationId: room,
+                    requestId: id,
+                    action,
+                    handledBy,
+                    conversation
+                })
             return conversation;
         }
         return {
