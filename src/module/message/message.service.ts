@@ -524,19 +524,33 @@ export class MessageService {
         const conObjectId = convertStringToObjectId(conversationId);
         const userObjectId = convertStringToObjectId(userId);
 
-        await this.messageModel.updateMany({
-            conversationId: conObjectId,
-            seenBy: {$ne: userObjectId}
-        }, {
-            $addToSet: {seenBy: userObjectId}
-        });
+        await this.messageModel.updateMany(
+            {
+                conversationId: conObjectId,
+                seenBy: { $ne: userObjectId },
+            },
+            {
+                $addToSet: { seenBy: userObjectId },
+            },
+        );
 
+        const lastMessage = await this.messageModel
+            .findOne({ conversationId: conObjectId })
+            .sort({ createdAt: -1 })
+            .lean();
+
+        if (!lastMessage) {
+            return { success: false };
+        }
+
+        const userInfo = await this.userService.getInfoById(userId);
         this.chatGateway.emitMessageSeen(conversationId, {
             conversationId,
-            userId,
-            seenAt: new Date()
+            messageId: lastMessage._id.toString(),
+            seenBy: userInfo,
         });
-        return {success: true};
+
+        return { success: true };
     }
 
     public async delete(

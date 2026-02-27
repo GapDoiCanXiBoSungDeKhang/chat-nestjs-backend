@@ -74,6 +74,7 @@ export class UserService {
             convertStringToObjectId(userId),
             {
                 name: 1,
+                avatar: 1,
             }
         );
         if (!user) {
