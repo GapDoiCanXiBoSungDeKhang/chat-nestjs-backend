@@ -688,7 +688,7 @@ export class MessageService {
 
             return {
                 type,
-                content: `${content} ${user.name} vào nhóm!`,
+                content: `${content} ${user.name}!`,
                 senderId: userObjectId,
                 conversationId: convObjectId,
                 seenBy: [userObjectId],

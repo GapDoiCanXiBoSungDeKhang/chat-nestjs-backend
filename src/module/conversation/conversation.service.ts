@@ -17,7 +17,7 @@ import {AttachmentDocument} from "../attachment/schema/attachment.schema";
 import {LinkPreviewService} from "../link-preview/link-preview.service";
 import {LinkPreviewDocument} from "../link-preview/schema/link-preview.schema";
 import {RequestJoinRoomService} from "../requestJoinRoom/requestJoinRoom.service";
-import {FriendService} from "../friend/friend.service";
+// import {FriendService} from "../friend/friend.service";
 
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 import {ChatGateway} from "../../gateway/chat.gateway";
@@ -36,6 +36,14 @@ export class ConversationService {
         private readonly linkPreviewService: LinkPreviewService,
         private readonly requestJoinRoomService: RequestJoinRoomService
     ) {
+    }
+
+    private matchRoleToTransVN(text: string) {
+        const match: Record<string, string> = {
+            "admin": "quản trị",
+            "member": "thành viên"
+        }
+        return match[text];
     }
 
     public async create(myUserId: string, userId: string) {
@@ -182,7 +190,7 @@ export class ConversationService {
 
         await conversation.save();
         const addedBy = {_id: actorId, name: nameUser};
-        const content = `${nameUser} đã thêm`;
+        const content = `${nameUser} đã thêm vào nhóm,`;
 
         const [addedUsers, newMessageSystem] = await Promise.all([
             this.userService.getInfoUserIds(uniqueIds),
@@ -247,6 +255,14 @@ export class ConversationService {
         await conversation.save();
 
         const removedBy = {_id: actorId, name: userName};
+        const content = `${userName} đã xóa khỏi nhóm,`;
+        const newMessageSystem = this.messageService.newMessageSystem(
+            content,
+            userIds,
+            room
+        );
+
+        this.chatGateway.emitSystemRoom(room, newMessageSystem);
         this.chatGateway.emitRemoveMembersGroup(
             room,
             userIds,
@@ -296,9 +312,18 @@ export class ConversationService {
         participant.role = role;
         await conversation.save();
 
-        const targetUser = await this.userService.getInfoById(userId);
         const changedBy = {_id: actorId, name: nameUser};
+        const content = `${nameUser} đã đổi quyền thành ${this.matchRoleToTransVN(role)}, `
+        const [targetUser, newMessageSystem] = await Promise.all([
+            this.userService.getInfoById(userId),
+            await this.messageService.newMessageSystem(
+                content,
+                [userId],
+                room
+            )
+        ]);
 
+        this.chatGateway.emitSystemRoom(room, newMessageSystem);
         this.chatGateway.emitChangeRoleMemberGroup(room, {
             conversationId: room,
             targetUser,
