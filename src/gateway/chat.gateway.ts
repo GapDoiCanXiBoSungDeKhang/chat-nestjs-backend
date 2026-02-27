@@ -245,7 +245,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     ) {
         const rooms = participants
             .filter(obj => obj.role !== "member")
-            .map(obj => obj.userId.toString());
+            .map(obj => this.userRoom(obj.userId.toString()));
 
         this.server.to(rooms).emit("group_join_requested", payload);
     }

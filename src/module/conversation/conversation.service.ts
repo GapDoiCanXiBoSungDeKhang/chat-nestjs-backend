@@ -195,6 +195,7 @@ export class ConversationService {
         const [addedUsers, newMessageSystem] = await Promise.all([
             this.userService.getInfoUserIds(uniqueIds),
             this.messageService.newMessageSystem(
+                actorId,
                 content,
                 uniqueIds,
                 room
@@ -257,6 +258,7 @@ export class ConversationService {
         const removedBy = {_id: actorId, name: userName};
         const content = `${userName} đã xóa khỏi nhóm,`;
         const newMessageSystem = this.messageService.newMessageSystem(
+            actorId,
             content,
             userIds,
             room
@@ -317,6 +319,7 @@ export class ConversationService {
         const [targetUser, newMessageSystem] = await Promise.all([
             this.userService.getInfoById(userId),
             await this.messageService.newMessageSystem(
+                actorId,
                 content,
                 [userId],
                 room
@@ -366,6 +369,15 @@ export class ConversationService {
         await conversation.save();
 
         const leftUser = {_id: userId, name: userName};
+        const content = `người đã rời khỏi nhóm,`;
+
+        const newMessageSystem = await this.messageService.newMessageSystem(
+            userId,
+            content,
+            [userId],
+            room
+        );
+        this.chatGateway.emitSystemRoom(room, newMessageSystem);
         this.chatGateway.emitLeftGroup(
             room,
             userId,
@@ -416,6 +428,15 @@ export class ConversationService {
             await conversation.save();
 
             const handledBy = {_id: actorId, name: userName};
+            const content = `${userName} chấp nhân yêu cầu thêm mới,`;
+
+            const newMessageSystem = await this.messageService.newMessageSystem(
+                actorId,
+                content,
+                [userId],
+                room
+            );
+            this.chatGateway.emitSystemRoom(room, newMessageSystem);
             this.chatGateway.emitHandelRequestJoinRoom(
                 room,
                 userId,
@@ -425,7 +446,8 @@ export class ConversationService {
                     action,
                     handledBy,
                     conversation
-                })
+                }
+            );
             return conversation;
         }
         return {

@@ -674,26 +674,23 @@ export class MessageService {
     }
 
     public async newMessageSystem(
+        actorId: string,
         content: string,
         userIds: string[],
         conversationId: string,
-        type?: "system",
     ) {
         const convObjectId = convertStringToObjectId(conversationId);
+        const userObjectId = convertStringToObjectId(actorId);
 
         const users = await this.userService.getInfoUserIds(userIds);
 
-        const dataMap = users.map((user) => {
-            const userObjectId = user._id;
-
-            return {
-                type,
-                content: `${content} ${user.name}!`,
-                senderId: userObjectId,
-                conversationId: convObjectId,
-                seenBy: [userObjectId],
-            };
-        });
+        const dataMap = users.map((user) => ({
+            type: "system",
+            content: `${content} ${user.name}!`,
+            senderId: userObjectId,
+            conversationId: convObjectId,
+            seenBy: [userObjectId],
+        }));
 
         return this.messageModel.insertMany(dataMap);
     }
