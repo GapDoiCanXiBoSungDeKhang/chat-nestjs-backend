@@ -11,6 +11,7 @@ import {UploadModule} from "../../shared/upload/upload.module";
 import {CloudModule} from "../../shared/cloud/cloud.module";
 import {AttachmentModule} from "../attachment/attachment.module";
 import {LinkPreviewModule} from "../link-preview/link-preview.module";
+import {UsersModule} from "../user/user.module";
 
 @Module({
     imports: [
@@ -20,6 +21,7 @@ import {LinkPreviewModule} from "../link-preview/link-preview.module";
         UploadModule,
         ChatModule,
         NotificationModule,
+        UsersModule,
         forwardRef(() => ConversationModule),
         MongooseModule.forFeature([{
             name: Message.name,

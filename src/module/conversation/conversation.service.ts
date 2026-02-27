@@ -181,9 +181,19 @@ export class ConversationService {
         conversation.participants.push(...newMembers);
 
         await conversation.save();
-        const addedUsers = await this.userService.getInfoUserIds(uniqueIds);
         const addedBy = {_id: actorId, name: nameUser};
+        const content = `${nameUser} đã thêm`;
 
+        const [addedUsers, newMessageSystem] = await Promise.all([
+            this.userService.getInfoUserIds(uniqueIds),
+            this.messageService.newMessageSystem(
+                content,
+                uniqueIds,
+                room
+            )
+        ]);
+
+        this.chatGateway.emitSystemRoom(room, newMessageSystem);
         this.chatGateway.emitAddMembersGroup(
             room,
             uniqueIds,

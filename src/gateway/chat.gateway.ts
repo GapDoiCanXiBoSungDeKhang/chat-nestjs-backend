@@ -263,4 +263,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             .to(this.userRoom(newUserId))
             .emit("group_request_added", payload);
     }
+
+    emitSystemRoom(
+        conversationId: string,
+        payload: any
+    ) {
+        this.server
+            .to(this.conversationRoom(conversationId))
+            .emit("message_system_room", payload);
+    }
 }

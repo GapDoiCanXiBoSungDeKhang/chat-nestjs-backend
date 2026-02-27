@@ -15,6 +15,7 @@ import {NotificationService} from "../notification/notification.service";
 import {ChatGateway} from "../../gateway/chat.gateway";
 import {AttachmentService} from "../attachment/attachment.service";
 import {LinkPreviewService} from "../link-preview/link-preview.service";
+import {UserService} from "../user/user.service";
 
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 import {extractValidUrls} from "../../shared/ultis/extractUrl.ulti";
@@ -30,6 +31,7 @@ export class MessageService {
         private readonly attachmentService: AttachmentService,
         private readonly linkPreviewService: LinkPreviewService,
         private readonly chatGateway: ChatGateway,
+        private readonly userService: UserService,
     ) {
     }
 
@@ -669,5 +671,30 @@ export class MessageService {
         });
 
         return messages;
+    }
+
+    public async newMessageSystem(
+        content: string,
+        userIds: string[],
+        conversationId: string,
+        type?: "system",
+    ) {
+        const convObjectId = convertStringToObjectId(conversationId);
+
+        const users = await this.userService.getInfoUserIds(userIds);
+
+        const dataMap = users.map((user) => {
+            const userObjectId = user._id;
+
+            return {
+                type,
+                content: `${content} ${user.name} vào nhóm!`,
+                senderId: userObjectId,
+                conversationId: convObjectId,
+                seenBy: [userObjectId],
+            };
+        });
+
+        return this.messageModel.insertMany(dataMap);
     }
 }
