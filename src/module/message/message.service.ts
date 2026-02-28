@@ -11,7 +11,6 @@ import {Model, Types} from "mongoose";
 
 import {Message, MessageDocument} from "./schema/message.schema";
 import {ConversationService} from "../conversation/conversation.service";
-import {NotificationService} from "../notification/notification.service";
 import {ChatGateway} from "../../gateway/chat.gateway";
 import {AttachmentService} from "../attachment/attachment.service";
 import {LinkPreviewService} from "../link-preview/link-preview.service";
@@ -27,7 +26,6 @@ export class MessageService {
         private readonly messageModel: Model<MessageDocument>,
         @Inject(forwardRef(() => ConversationService))
         private readonly conversationService: ConversationService,
-        private readonly notificationService: NotificationService,
         private readonly attachmentService: AttachmentService,
         private readonly linkPreviewService: LinkPreviewService,
         private readonly chatGateway: ChatGateway,
@@ -100,7 +98,6 @@ export class MessageService {
             conversationId,
             message.id
         );
-        await this.Notification(conversationId, message, userId);
 
         return {message, getLinks};
     }
@@ -170,26 +167,6 @@ export class MessageService {
         return mgs;
     }
 
-    private async Notification(
-        conversationId: string,
-        message: MessageDocument,
-        userId: string,
-    ) {
-        const receiverId = await this.conversationService.getOtherUserParticipant(conversationId, userId);
-        setImmediate(() => {
-            this.notificationService.create({
-                userId: receiverId,
-                type: "message",
-                refId: message.conversationId,
-                payload: {
-                    conversationId: message.conversationId,
-                    senderId: userId,
-                    content: message.content?.slice(0, 30),
-                },
-            });
-        });
-    }
-
     public async uploadFiles(
         files: Express.Multer.File[],
         conversationId: string,
@@ -223,7 +200,6 @@ export class MessageService {
             conversationId,
             message.id
         );
-        await this.Notification(conversationId, message, userId);
 
         return {message, attachments};
     }
@@ -262,7 +238,6 @@ export class MessageService {
             conversationId,
             message.id
         );
-        await this.Notification(conversationId, message, userId);
 
         return {message, attachments};
     }
@@ -301,7 +276,6 @@ export class MessageService {
             conversationId,
             message.id
         );
-        await this.Notification(conversationId, message, userId);
 
         return {message, attachments};
     }
@@ -627,14 +601,6 @@ export class MessageService {
             throw new ForbiddenException("Nothing conversation active!");
         }
 
-        const receiverMap = new Map<string, Types.ObjectId>();
-        for (const conv of conversations) {
-            const other = conv.participants.find(
-                p => p.userId.toString() !== userId
-            );
-            receiverMap.set(conv._id.toString(), other!.userId);
-        }
-
         const docs = conversations.map(conv => ({
             conversationId: conv._id,
             senderId: userObjectId,
@@ -663,26 +629,6 @@ export class MessageService {
                 );
             }),
         );
-
-        setImmediate(() => {
-            for (const m of messages) {
-                const receiverId = receiverMap.get(
-                    m.conversationId.toString()
-                );
-                if (!receiverId) return;
-
-                this.notificationService.create({
-                    userId: receiverId,
-                    type: "message",
-                    refId: m.conversationId,
-                    payload: {
-                        conversationId: m.conversationId,
-                        senderId: userObjectId,
-                        contend: originalMessage.content?.slice(0, 30),
-                    },
-                });
-            }
-        });
 
         return messages;
     }

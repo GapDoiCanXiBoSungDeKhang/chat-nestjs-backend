@@ -9,7 +9,6 @@ import {Model} from "mongoose";
 
 import {FriendRequest, FriendRequestDocument} from "./schema/friendRequest.schema";
 import {ConversationService} from "../conversation/conversation.service";
-import {NotificationService} from "../notification/notification.service";
 import {ChatGateway} from "../../gateway/chat.gateway";
 
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
@@ -21,7 +20,6 @@ export class FriendService {
         private readonly friendRequestModel: Model<FriendRequestDocument>,
         @Inject(forwardRef(() => ConversationService))
         private readonly conversationService: ConversationService,
-        private readonly notificationService: NotificationService,
         private readonly chatGateway: ChatGateway,
     ) {
     }
@@ -65,25 +63,13 @@ export class FriendService {
             to: convertStringToObjectId(toId),
             message
         });
-        await request.populate("from", "name avatar");
+        await request.populate("from", "name avatar status");
 
-        const notification = await this.notificationService.create({
-            userId: convertStringToObjectId(toId),
-            type: "friend_request",
-            refId: request._id,
-            payload: {
-                _id: request._id,
-                from: {
-                    _id: request.from._id,
-                    name: request.from.name,
-                    avatar: request.from.avatar,
-                },
-                message: request.message,
-                createdAt: request.createdAt,
-            }
-        });
-
-        this.chatGateway.emitToUser(toId, "friend_request_received", notification.payload);
+        this.chatGateway.emitToUser(
+            toId,
+            "friend_request_received",
+            {request}
+        );
 
         return request;
     }
@@ -115,23 +101,14 @@ export class FriendService {
 
         await req.populate("to", "name avatar status");
 
-        const notification = await this.notificationService.create({
-            userId: req.from,
-            type: "friend_accepted",
-            refId: req._id,
-            payload: {
-                requestId: req._id,
-                user: {
-                    _id: req.to._id,
-                    name: req.to.name,
-                    avatar: req.to.avatar,
-                    status: req.to.status,
-                },
-                conversation
+        this.chatGateway.emitToUser(
+            req.from.toString(),
+            "friend_request_accepted",
+            {
+                friend: req.to,
+                conversationId: conversation.id
             }
-        });
-
-        this.chatGateway.emitToUser(req.from.toString(), "friend_request_accepted", notification.payload);
+        );
 
         return {
             req,

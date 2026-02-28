@@ -9,7 +9,6 @@ import {ConversationModule} from "./module/conversation/conversation.module";
 import {MessageModule} from "./module/message/message.module";
 import {ChatModule} from "./gateway/chat.module";
 import {FriendModule} from "./module/friend/friend.module";
-import {NotificationModule} from "./module/notification/notification.module";
 import {AttachmentModule} from "./module/attachment/attachment.module";
 
 @Module({
@@ -26,8 +25,7 @@ import {AttachmentModule} from "./module/attachment/attachment.module";
         MessageModule,
         FriendModule,
         ChatModule,
-        AttachmentModule,
-        NotificationModule
+        AttachmentModule
     ]
 })
 export class AppModule {

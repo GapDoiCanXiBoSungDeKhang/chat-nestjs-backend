@@ -5,7 +5,6 @@ import {Message, MessageSchema} from "./schema/message.schema";
 import {ConversationModule} from "../conversation/conversation.module";
 import {MessageService} from "./message.service";
 import {MessageController} from "./message.controller";
-import {NotificationModule} from "../notification/notification.module";
 import {ChatModule} from "../../gateway/chat.module";
 import {UploadModule} from "../../shared/upload/upload.module";
 import {CloudModule} from "../../shared/cloud/cloud.module";
@@ -20,7 +19,6 @@ import {UsersModule} from "../user/user.module";
         CloudModule,
         UploadModule,
         ChatModule,
-        NotificationModule,
         UsersModule,
         forwardRef(() => ConversationModule),
         MongooseModule.forFeature([{
