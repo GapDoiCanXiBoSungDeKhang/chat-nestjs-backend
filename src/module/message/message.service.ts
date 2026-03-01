@@ -62,6 +62,7 @@ export class MessageService {
         conversationId: string,
         content: string,
         replyTo?: string,
+        mentions?: string[],
     ) {
         const convObjectId = convertStringToObjectId(conversationId);
         const senderId = convertStringToObjectId(userId);
@@ -69,15 +70,23 @@ export class MessageService {
         const replyToObjectId = await this.buildReplyTo(replyTo);
         let getLinks;
 
+        const validateMentions = await this.conversationService.validateMentions(
+            conversationId,
+            mentions
+        );
+
         const message = await this.messageModel.create({
             conversationId: convObjectId,
             senderId,
             seenBy: [senderId],
             type: "text",
             content,
+            mentions: validateMentions,
             ...(replyToObjectId && {replyTo: replyToObjectId}),
         });
+
         await message.populate(this.getArrayPopulate());
+
         const urls = extractValidUrls(content);
         if (urls.length) {
             getLinks = await Promise.all(
@@ -93,6 +102,7 @@ export class MessageService {
         }
         this.chatGateway.emitNewMessage(conversationId, message);
         this.chatGateway.emitNewMessageLinkPreview(conversationId, getLinks);
+        this.chatGateway.emitMentions(validateMentions, message);
 
         await this.conversationService.updateConversation(
             conversationId,

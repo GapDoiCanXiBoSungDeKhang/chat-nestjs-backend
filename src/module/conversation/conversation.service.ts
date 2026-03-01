@@ -136,6 +136,21 @@ export class ConversationService {
         return !!existingConversation;
     }
 
+    public async validateMentions(
+        conversationId: string,
+        mentions?: string[]
+    ) {
+        if (mentions?.length) return [];
+        const conversation = await this.findConversation(conversationId);
+
+        const newSetMentions = new Set(
+            conversation.participants.map(
+                obj => obj.userId.toString()
+            )
+        );
+        return mentions!.filter(uid => newSetMentions.has(uid));
+    }
+
     public async addMembers(
         room: string,
         actorId: string,

@@ -8,4 +8,8 @@ export class CreateMessageDto {
     @IsOptional()
     @IsMongoId()
     replyTo?: string;
+
+    @IsOptional()
+    @IsMongoId({each: true})
+    mentions?: string[];
 }

@@ -156,6 +156,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.server.to(this.conversationRoom(conversationId)).emit("new_message_linkPreview", payload);
     }
 
+    emitMentions(mentions: string[], payload: any) {
+        this.server.to(mentions).emit("notification_mentions", payload);
+    }
+
     emitToUser(userId: string, event: string, data: any) {
         this.server.to(this.userRoom(userId)).emit(event, data);
     }

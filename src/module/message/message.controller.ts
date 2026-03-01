@@ -34,10 +34,10 @@ import {UnreactEmojiDto} from "./dto/unreactEmoji.dto";
 import {UploadFilesDto} from "./dto/uploadFiles.dto";
 import {LinkPreviewDto} from "./dto/linkPreview.dto";
 import {SearchMessageDto} from "./dto/search.dto";
-
-import {createMulterOptions} from "../../shared/upload/upload.config";
 import {PinMessageDto} from "./dto/pinMessage.dto";
 import {PaginationDto} from "./dto/pagination.dto";
+
+import {createMulterOptions} from "../../shared/upload/upload.config";
 
 @Controller("messages")
 @UseGuards(JwtAuthGuard, ConversationParticipantGuard)
