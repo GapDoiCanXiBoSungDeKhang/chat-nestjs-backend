@@ -664,4 +664,14 @@ export class MessageService {
 
         return this.messageModel.insertMany(dataMap);
     }
+
+    public async deleteManyMessagesConversationGroup(
+        conversationId: string,
+    ) {
+        const convObjectId = convertStringToObjectId(conversationId);
+
+        await this.messageModel.deleteMany({
+            conversationId: convObjectId
+        })
+    }
 }

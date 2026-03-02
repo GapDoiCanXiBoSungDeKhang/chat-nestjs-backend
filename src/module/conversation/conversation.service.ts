@@ -377,6 +377,8 @@ export class ConversationService {
                 newOwner.role = "owner";
             } else {
                 await conversation.deleteOne();
+                await this.messageService.deleteManyMessagesConversationGroup(room);
+
                 return {status: "group is deleted!"}
             }
         }
@@ -653,23 +655,6 @@ export class ConversationService {
             );
         }
         return obj;
-    }
-
-    public async getOtherUserParticipant(
-        conversationId: string,
-        userId: string
-    ) {
-        const conversation = await this.findConversation(conversationId);
-        const other = conversation.participants.find(
-            p => p.userId.toString() !== userId
-        );
-        if (!other) {
-            throw new ForbiddenException(
-                "Invalid private conversation"
-            );
-        }
-
-        return other.userId;
     }
 
     public async findUserParticipants(
