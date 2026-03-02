@@ -157,7 +157,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     emitMentions(mentions: string[], payload: any) {
-        this.server.to(mentions).emit("notification_mentions", payload);
+        this.server.to(mentions).emit("mention_received", payload);
     }
 
     emitToUser(userId: string, event: string, data: any) {
