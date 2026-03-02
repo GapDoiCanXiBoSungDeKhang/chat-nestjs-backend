@@ -17,9 +17,11 @@ import {AttachmentDocument} from "../attachment/schema/attachment.schema";
 import {LinkPreviewService} from "../link-preview/link-preview.service";
 import {LinkPreviewDocument} from "../link-preview/schema/link-preview.schema";
 import {RequestJoinRoomService} from "../requestJoinRoom/requestJoinRoom.service";
+import {AnnouncementService} from "../announcements/announcement.service";
 // import {FriendService} from "../friend/friend.service";
 
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
+
 import {ChatGateway} from "../../gateway/chat.gateway";
 
 @Injectable()
@@ -34,6 +36,7 @@ export class ConversationService {
         // private readonly friendService: FriendService,
         private readonly attachmentService: AttachmentService,
         private readonly linkPreviewService: LinkPreviewService,
+        private readonly announcementService: AnnouncementService,
         private readonly requestJoinRoomService: RequestJoinRoomService
     ) {
     }
@@ -627,7 +630,7 @@ export class ConversationService {
         return updatedConversation;
     }
 
-    public async findConversation(room: string) {
+    private async findConversation(room: string) {
         const conversation = await this.conversationModel.findById(
             convertStringToObjectId(room),
         );
@@ -694,6 +697,20 @@ export class ConversationService {
                 participants: 1,
             }
         );
+    }
+
+    public async createAnnouncement(
+        conversationId: string,
+        userId: string,
+        content: string,
+    ) {
+        const validateConversation = await this.findConversation(conversationId);
+
+        return this.announcementService.createAnnouncement(
+            validateConversation.id,
+            userId,
+            content,
+        )
     }
 
     public async findById(conversationId: string) {

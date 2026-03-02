@@ -2,6 +2,8 @@ import {Module} from "@nestjs/common";
 import {MongooseModule} from "@nestjs/mongoose";
 import {Announcement, announcementSchema} from "./schema/announcement.schema";
 
+import {AnnouncementService} from "./announcement.service";
+
 @Module({
     imports: [
         MongooseModule.forFeature([{
@@ -10,7 +12,7 @@ import {Announcement, announcementSchema} from "./schema/announcement.schema";
             collection: "announcements"
         }])
     ],
-    providers: [],
-    exports: []
+    providers: [AnnouncementService],
+    exports: [AnnouncementService]
 })
 export class AnnouncementModule {}

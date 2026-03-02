@@ -15,6 +15,7 @@ import {LinkPreviewModule} from "../link-preview/link-preview.module";
 import {RequestJoinRoomModule} from "../requestJoinRoom/requestJoinRoom.module";
 import {FriendModule} from "../friend/friend.module";
 import {ChatModule} from "../../gateway/chat.module";
+import {AnnouncementModule} from "../announcements/announcement.module";
 
 @Module({
     imports: [
@@ -24,6 +25,7 @@ import {ChatModule} from "../../gateway/chat.module";
         UsersModule,
         AttachmentModule,
         LinkPreviewModule,
+        AnnouncementModule,
         RequestJoinRoomModule,
         MongooseModule.forFeature([{
             name: Conversation.name,

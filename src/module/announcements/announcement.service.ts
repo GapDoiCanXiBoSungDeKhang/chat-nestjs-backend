@@ -13,8 +13,6 @@ export class AnnouncementService {
     constructor(
         @InjectModel(Announcement.name)
         private readonly announcementModel: Model<AnnouncementDocument>,
-        private readonly conversationService: ConversationService,
-        private readonly userService: UserService,
     ) {
     }
 
@@ -23,12 +21,11 @@ export class AnnouncementService {
         pinnedBy: string,
         content: string,
     ) {
-        const validateConversation = await this.conversationService.findConversation(conversationId);
-
+        const convObjectId = convertStringToObjectId(conversationId)
         const userObjectId = convertStringToObjectId(pinnedBy);
 
         return this.announcementModel.create({
-            conversationId: validateConversation._id,
+            conversationId: convObjectId,
             pinnedBy: userObjectId,
             status: "active",
             content

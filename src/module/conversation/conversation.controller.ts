@@ -11,6 +11,7 @@ import {AddMemberDto} from "./dto/addMember.dto";
 import {RemoveMemberDto} from "./dto/removeMember.dto";
 import {ChangeRoleDto} from "./dto/changeRole.dto";
 import {HandleRequestDto} from "./dto/handleRequest.dto";
+import {AnnouncementDto} from "./dto/announcement.dto";
 
 @Controller("conversations")
 @UseGuards(JwtAuthGuard)
@@ -160,6 +161,20 @@ export class ConversationController {
             user.userId,
             user.name
         );
+    }
+
+    @Post(":id/announcement")
+    @HttpCode(201)
+    public async announcement(
+        @Param("id") room: ConversationIdDto["id"],
+        @JwtDecode() user: JwtType,
+        @Body() dto: AnnouncementDto
+    ) {
+        return this.conversationService.createAnnouncement(
+            room,
+            user.userId,
+            dto.content
+        )
     }
 
     @Get("")
