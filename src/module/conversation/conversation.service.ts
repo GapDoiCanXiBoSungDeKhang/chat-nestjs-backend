@@ -140,7 +140,7 @@ export class ConversationService {
         conversationId: string,
         mentions?: string[]
     ) {
-        if (mentions?.length) return [];
+        if (!mentions || !mentions?.length) return [];
         const conversation = await this.findConversation(conversationId);
 
         const newSetMentions = new Set(

@@ -58,6 +58,7 @@ export class MessageController {
             room,
             dto.content,
             dto?.replyTo,
+            dto?.mentions
         );
     }
 
