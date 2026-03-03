@@ -698,6 +698,18 @@ export class ConversationService {
         )
     }
 
+    public async announcements(
+        conversationId: string,
+    ) {
+        const findConversation = await this.findConversation(conversationId);
+        return this.announcementService.announcements(findConversation.id);
+    }
+
+    public async pins(conversationId: string) {
+        const findConversation = await this.findConversation(conversationId);
+        return this.messageService.filterMessageHavePins(findConversation.id);
+    }
+
     public async findById(conversationId: string) {
         return this.conversationModel.findById(
             convertStringToObjectId(conversationId),

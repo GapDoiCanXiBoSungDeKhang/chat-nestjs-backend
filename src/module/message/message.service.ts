@@ -674,4 +674,14 @@ export class MessageService {
             conversationId: convObjectId
         })
     }
+
+    public async filterMessageHavePins(conversationId: string) {
+        return this.messageModel.find({
+            conversationId: convertStringToObjectId(conversationId),
+            isPinned: true
+        })
+            .populate(this.getArrayPopulate())
+            .sort({createdAt: -1})
+            .lean();
+    }
 }

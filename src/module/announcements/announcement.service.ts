@@ -31,4 +31,13 @@ export class AnnouncementService {
             content
         });
     }
+
+    public async announcements(conversationId: string) {
+        return this.announcementModel.find({
+            conversationId: convertStringToObjectId(conversationId)
+        })
+            .populate("pinnedBy", "name status avatar")
+            .sort({createdAt: -1})
+            .lean();
+    }
 }

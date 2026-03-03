@@ -173,11 +173,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     emitGroupCreated(userIds: string[], payload: any) {
-        userIds.forEach((userId) => {
-            this.server
-                .to(this.userRoom(userId))
-                .emit("group_created", payload);
-        });
+        this.server
+            .to(userIds.map(uid => this.userRoom(uid)))
+            .emit("group_created", payload);
     }
 
     emitAddMembersGroup(

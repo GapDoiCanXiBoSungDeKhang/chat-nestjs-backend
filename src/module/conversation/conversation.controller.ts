@@ -177,6 +177,22 @@ export class ConversationController {
         )
     }
 
+    @Get(":id/announcements")
+    @HttpCode(201)
+    public async announcements(
+        @Param("id") room: ConversationIdDto["id"],
+    ) {
+        return this.conversationService.announcements(room);
+    }
+
+    @Get(":id/pins")
+    @HttpCode(201)
+    public async pins(
+        @Param("id") room: ConversationIdDto["id"],
+    ) {
+        return this.conversationService.pins(room);
+    }
+
     @Get("")
     @HttpCode(200)
     public async conversations(@JwtDecode() user: JwtType) {
