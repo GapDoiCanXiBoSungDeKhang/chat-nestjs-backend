@@ -73,6 +73,7 @@ export class UserService {
         const user = await this.userModel.findById(
             convertStringToObjectId(userId),
             {
+                _id: 1,
                 name: 1,
                 avatar: 1,
             }
