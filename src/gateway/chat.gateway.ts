@@ -199,20 +199,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         removedUserIds: string[],
         payload: any
     ) {
-        removedUserIds.forEach(userId => {
-            this.server.in(this.userRoom(userId)).socketsLeave(
-                this.conversationRoom(conversationId),
-            );
-        })
+        this.server.in(removedUserIds.map(uid => this.userRoom(uid))).socketsLeave(
+            this.conversationRoom(conversationId),
+        );
         this.server
             .to(this.conversationRoom(conversationId))
             .emit("group_member_removed", payload);
 
-        removedUserIds.forEach((userId) => {
-            this.server
-                .to(this.userRoom(userId))
-                .emit("group_removed", payload);
-        })
+        this.server
+            .to(removedUserIds.map(uid => this.userRoom(uid)))
+            .emit("group_removed", payload);
     }
 
     emitLeftGroup(
@@ -273,5 +269,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.server
             .to(this.conversationRoom(conversationId))
             .emit("message_system_room", payload);
+    }
+
+    emitAnnouncement(
+        conversationId: string,
+        payload: any
+    ) {
+        this.server
+            .to(this.conversationRoom(conversationId))
+            .emit("announcement_created", payload);
     }
 }

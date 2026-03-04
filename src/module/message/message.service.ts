@@ -102,7 +102,11 @@ export class MessageService {
         }
         this.chatGateway.emitNewMessage(conversationId, message);
         this.chatGateway.emitNewMessageLinkPreview(conversationId, getLinks);
-        this.chatGateway.emitMentions(validateMentions, message);
+        this.chatGateway.emitMentions(validateMentions, {
+            message,
+            conversation: conversationId,
+            mentions: mentions || [],
+        });
 
         await this.conversationService.updateConversation(
             conversationId,

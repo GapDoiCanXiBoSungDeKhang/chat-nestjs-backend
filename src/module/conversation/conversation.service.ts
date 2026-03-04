@@ -691,11 +691,18 @@ export class ConversationService {
     ) {
         const validateConversation = await this.findConversation(conversationId);
 
-        return this.announcementService.createAnnouncement(
+        const newAnnouncement = await this.announcementService.createAnnouncement(
             validateConversation.id,
             userId,
             content,
-        )
+        );
+
+        this.chatGateway.emitAnnouncement(conversationId, {
+            conversationId,
+            announcement: newAnnouncement,
+        });
+
+        return newAnnouncement;
     }
 
     public async announcements(
