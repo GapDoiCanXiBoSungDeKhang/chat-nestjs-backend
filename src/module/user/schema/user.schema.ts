@@ -24,9 +24,6 @@ export class User {
     @Prop({default: "offline"})
     status!: "online" | "offline";
 
-    @Prop({default: false})
-    isOnline!: boolean;
-
     @Prop({default: null})
     lastSeen!: Date;
 
@@ -51,4 +48,7 @@ UserSchema.set("toJSON", {
         return ret;
     },
 });
+
+UserSchema.index({email: 1}, {unique: true});
+UserSchema.index({phone: 1}, {unique: true});
 
