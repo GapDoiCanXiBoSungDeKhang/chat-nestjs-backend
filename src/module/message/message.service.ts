@@ -101,7 +101,9 @@ export class MessageService {
             );
         }
         this.chatGateway.emitNewMessage(conversationId, message);
-        this.chatGateway.emitNewMessageLinkPreview(conversationId, getLinks);
+        if (getLinks && getLinks.length) {
+            this.chatGateway.emitNewMessageLinkPreview(conversationId, getLinks);
+        }
         this.chatGateway.emitMentions(validateMentions, {
             message,
             conversation: conversationId,
@@ -170,6 +172,7 @@ export class MessageService {
         }
         mgs.isPinned = false;
         mgs.pinByUser = null;
+        mgs.pinnedAt = null;
         await mgs.save();
 
         this.chatGateway.emitMessageUnpinned(conversationId, {
@@ -335,7 +338,7 @@ export class MessageService {
 
     public async messages(
         conversationId: string,
-        limit: number = 19,
+        limit: number = 29,
         before?: string
     ) {
         const query: any = {

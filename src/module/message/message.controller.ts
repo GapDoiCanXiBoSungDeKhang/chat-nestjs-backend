@@ -173,14 +173,7 @@ export class MessageController {
             body.id
         )
     }
-
-    @Get(":id/chucmungnammoi")
-    public ChucMungNamMoiHappyNewYeah() {
-        return {
-            message: "Chúc mừng năm mới, happy new yeah!",
-        }
-    }
-
+    
     @Get(":id")
     public async getMessages(
         @Param("id") room: ConversationIdDto["id"],

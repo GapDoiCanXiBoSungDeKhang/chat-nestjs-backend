@@ -74,7 +74,7 @@ export class Message {
     pinByUser?: Types.ObjectId | null;
 
     @Prop({default: null})
-    pinnedAt?: Date;
+    pinnedAt?: Date | null;
 
     @Prop({type: Types.ObjectId, ref: "Message", default: null})
     forwardedFrom?: Types.ObjectId;
