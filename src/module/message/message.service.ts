@@ -17,7 +17,7 @@ import {LinkPreviewService} from "../link-preview/link-preview.service";
 import {UserService} from "../user/user.service";
 
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
-import {extractValidUrls} from "../../shared/ultis/extractUrl.ulti";
+import {extractValidUrls} from "../../shared/utils/extractUrl.util";
 
 @Injectable()
 export class MessageService {

@@ -1,6 +1,8 @@
 import {Module} from "@nestjs/common";
 import {ConfigModule} from "@nestjs/config";
 import {MongooseModule} from "@nestjs/mongoose";
+import {ThrottlerModule, ThrottlerGuard} from "@nestjs/throttler";
+import {APP_GUARD} from "@nestjs/core";
 
 import {mongooseConfig} from "./config/db.config";
 import {UsersModule} from "./module/user/user.module";
@@ -19,6 +21,12 @@ import {AttachmentModule} from "./module/attachment/attachment.module";
         MongooseModule.forRootAsync({
             useFactory: mongooseConfig
         }),
+        ThrottlerModule.forRoot([
+            {
+                limit: 10,
+                ttl: 60000
+            },
+        ]),
         AuthModule,
         UsersModule,
         ConversationModule,
@@ -26,6 +34,12 @@ import {AttachmentModule} from "./module/attachment/attachment.module";
         FriendModule,
         ChatModule,
         AttachmentModule
+    ],
+    providers: [
+        {
+            provide: APP_GUARD,
+            useClass: ThrottlerGuard,
+        }
     ]
 })
 export class AppModule {

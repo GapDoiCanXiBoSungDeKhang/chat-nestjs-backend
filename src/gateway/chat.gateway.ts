@@ -91,7 +91,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         @ConnectedSocket() client: Socket,
         @MessageBody() data: { conversationId: string }
     ) {
-        client.leave(`room:${data.conversationId}`);
+        client.leave(this.conversationRoom(data.conversationId));
     }
 
     @SubscribeMessage("typing_start")
@@ -99,7 +99,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         @ConnectedSocket() client: Socket,
         @MessageBody() data: { conversationId: string }
     ) {
-        client.to(`room:${data.conversationId}`).emit("user_typing", {
+        client.to(this.conversationRoom(data.conversationId)).emit("user_typing", {
             conversationId: data.conversationId,
             userId: client.data.userId,
         });
@@ -110,7 +110,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         @ConnectedSocket() client: Socket,
         @MessageBody() data: { conversationId: string }
     ) {
-        client.to(`room:${data.conversationId}`).emit("user_stopped_typing", {
+        client.to(this.conversationRoom(data.conversationId)).emit("user_stopped_typing", {
             conversationId: data.conversationId,
             userId: client.data.userId,
         });

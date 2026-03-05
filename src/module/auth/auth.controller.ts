@@ -1,4 +1,5 @@
 import {Body, Controller, HttpCode, Post, UseGuards} from "@nestjs/common";
+import {Throttle} from "@nestjs/throttler";
 
 import {InputRegisterUserDto} from "./dto/inputRegister.dto";
 import {AuthService} from "./auth.service";
@@ -25,6 +26,7 @@ export class AuthController {
     }
 
     @UseGuards(LocalAuthGuard)
+    @Throttle({default: {limit: 5, ttl: 60000 }})
     @Post("login")
     @HttpCode(200)
     public async login(@User() user: UserDocument) {
