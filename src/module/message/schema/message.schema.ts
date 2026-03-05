@@ -11,7 +11,7 @@ export class Message {
     @Prop({type: Types.ObjectId, ref: "User", required: true})
     senderId!: Types.ObjectId;
 
-    @Prop({type: String})
+    @Prop({type: String, required: true})
     content?: string;
 
     @Prop({
@@ -36,9 +36,6 @@ export class Message {
 
     @Prop({type: Types.ObjectId, ref: "Message", default: null})
     replyTo?: Types.ObjectId;
-
-    @Prop({type: Number, default: 0})
-    attachmentCount!: number;
 
     @Prop({default: false})
     isEdited!: boolean;
@@ -83,6 +80,7 @@ export class Message {
 export const MessageSchema = SchemaFactory.createForClass(Message);
 
 MessageSchema.index({conversationId: 1, createdAt: -1});
+MessageSchema.index({ conversationId: 1, isPinned: 1 });
 MessageSchema.index({conversationId: 1, deletedFor: 1, createdAt: -1});
 MessageSchema.index({conversationId: 1, seenBy: 1});
 MessageSchema.index({"reactions.userId": 1});

@@ -28,8 +28,8 @@ export class MessageService {
         private readonly conversationService: ConversationService,
         private readonly attachmentService: AttachmentService,
         private readonly linkPreviewService: LinkPreviewService,
-        private readonly chatGateway: ChatGateway,
         private readonly userService: UserService,
+        private readonly chatGateway: ChatGateway,
     ) {
     }
 
@@ -199,7 +199,6 @@ export class MessageService {
             conversationId: convObjectId,
             senderId,
             seenBy: [senderId],
-            attachmentCount: files.length,
             type: "file",
             ...(replyToObjectId && {replyTo: replyToObjectId}),
         });
@@ -237,7 +236,6 @@ export class MessageService {
             senderId,
             seenBy: [senderId],
             type: "media",
-            attachmentCount: files.length,
             ...(replyToObjectId && {replyTo: replyToObjectId}),
         });
 
@@ -275,7 +273,6 @@ export class MessageService {
             senderId,
             seenBy: [senderId],
             type: "voice",
-            attachmentCount: 1,
             ...(replyToObjectId && {replyTo: replyToObjectId}),
         });
 
