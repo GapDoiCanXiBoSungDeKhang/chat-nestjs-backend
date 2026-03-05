@@ -19,7 +19,12 @@ export class Conversation {
         type: [
             {
                 userId: {type: Types.ObjectId, ref: "User"},
-                role: {type: String, enum: ["owner", "admin", "member"]},
+                role: {
+                    _id: false,
+                    type: String,
+                    enum: ["owner", "admin", "member"],
+                    default: "member"
+                },
             },
         ],
         required: true,
