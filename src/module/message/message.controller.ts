@@ -173,7 +173,7 @@ export class MessageController {
             body.id
         )
     }
-    
+
     @Get(":id")
     public async getMessages(
         @Param("id") room: ConversationIdDto["id"],

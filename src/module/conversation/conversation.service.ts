@@ -18,7 +18,6 @@ import {LinkPreviewService} from "../link-preview/link-preview.service";
 import {LinkPreviewDocument} from "../link-preview/schema/link-preview.schema";
 import {RequestJoinRoomService} from "../requestJoinRoom/requestJoinRoom.service";
 import {AnnouncementService} from "../announcements/announcement.service";
-// import {FriendService} from "../friend/friend.service";
 
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 
@@ -275,7 +274,7 @@ export class ConversationService {
 
         const removedBy = {_id: actorId, name: userName};
         const content = `${userName} đã xóa khỏi nhóm,`;
-        const newMessageSystem = this.messageService.newMessageSystem(
+        const newMessageSystem = await this.messageService.newMessageSystem(
             actorId,
             content,
             userIds,
@@ -584,7 +583,7 @@ export class ConversationService {
         const conversations = await this.conversationModel
             .find({"participants.userId": convertStringToObjectId(myUserId)})
             .populate(this.arrayPopulate())
-            .sort({updateAt: -1})
+            .sort({updatedAt: -1})
             .lean();
 
         const conversationIds = conversations.map(conv => conv._id);
