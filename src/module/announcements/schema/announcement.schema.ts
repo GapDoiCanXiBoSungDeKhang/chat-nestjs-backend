@@ -1,4 +1,5 @@
 import {Schema, SchemaFactory, Prop} from "@nestjs/mongoose";
+import {Document} from "mongoose";
 import {Types} from "mongoose";
 
 export type AnnouncementDocument = Announcement & Document;
@@ -22,3 +23,4 @@ export const announcementSchema = SchemaFactory.createForClass(Announcement);
 
 announcementSchema.index({conversationId: 1, createdAt: -1});
 announcementSchema.index({pinnedBy: 1, createdAt: -1});
+announcementSchema.index({conversationId: 1, status: 1});

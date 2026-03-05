@@ -1,10 +1,10 @@
 import {SchemaFactory, Schema, Prop} from "@nestjs/mongoose";
 import {Document, Types} from "mongoose";
 
-export type ResponseJoinRoomDocument = Document & ResponseJoinRoom;
+export type RequestJoinRoomDocument = Document & RequestJoinRoom;
 
 @Schema({timestamps: true})
-export class ResponseJoinRoom {
+export class RequestJoinRoom {
     @Prop({type: Types.ObjectId, ref: "User", required: true})
     userId!: Types.ObjectId;
 
@@ -25,6 +25,10 @@ export class ResponseJoinRoom {
     description!: string;
 }
 
-export const RequestJoinRoomSchema = SchemaFactory.createForClass(ResponseJoinRoom);
+export const RequestJoinRoomSchema = SchemaFactory.createForClass(RequestJoinRoom);
 
 RequestJoinRoomSchema.index({conversationId: 1, createdAt: 1});
+RequestJoinRoomSchema.index(
+    { userId: 1, conversationId: 1 },
+    { unique: true, partialFilterExpression: { status: "pending" } }
+);

@@ -439,7 +439,7 @@ export class ConversationService {
             throw new ForbiddenException("User role must be a owner or admin!");
         }
         const userId = await this.requestJoinRoomService
-            .handleRequestJoinRoom(id);
+            .handleRequestJoinRoom(id, action);
 
         if (action === "accept") {
             const participant = this.groupParticipants([userId], actorId);

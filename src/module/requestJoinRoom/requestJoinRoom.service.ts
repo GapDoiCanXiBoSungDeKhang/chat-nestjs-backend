@@ -2,14 +2,14 @@ import {Model} from "mongoose";
 import {ForbiddenException, Injectable} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 
-import {ResponseJoinRoom, ResponseJoinRoomDocument} from "./schema/requestJoinRoom.schema";
+import {RequestJoinRoom, RequestJoinRoomDocument} from "./schema/requestJoinRoom.schema";
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 
 @Injectable()
 export class RequestJoinRoomService {
     constructor(
-        @InjectModel(ResponseJoinRoom.name)
-        private readonly responseJoinRoomModel: Model<ResponseJoinRoomDocument>,
+        @InjectModel(RequestJoinRoom.name)
+        private readonly requestJoinRoomModel: Model<RequestJoinRoomDocument>,
     ) {
     }
 
@@ -25,11 +25,11 @@ export class RequestJoinRoomService {
             conversationId: convertStringToObjectId(conversationId),
             description
         }));
-        return this.responseJoinRoomModel.insertMany(data);
+        return this.requestJoinRoomModel.insertMany(data);
     }
 
     public async listRequestJoinRoom(room: string) {
-        return this.responseJoinRoomModel.find({
+        return this.requestJoinRoomModel.find({
             conversationId: convertStringToObjectId(room),
             status: "pending"
         })
@@ -41,15 +41,15 @@ export class RequestJoinRoomService {
             .lean();
     }
 
-    public async handleRequestJoinRoom(id: string) {
-        const request = await this.responseJoinRoomModel
+    public async handleRequestJoinRoom(id: string, action: "accept" | "reject") {
+        const request = await this.requestJoinRoomModel
             .findById(convertStringToObjectId(id));
 
         if (!request) {
             throw new ForbiddenException("not found request!");
         }
         const userId = request.userId.toString();
-        await request.deleteOne();
+        request.status = action;
 
         return userId;
     }

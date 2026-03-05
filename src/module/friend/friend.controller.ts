@@ -7,7 +7,7 @@ import {JwtType} from "../../common/types/jwtTypes.type";
 
 import {JwtDecode} from "../../common/decorators/jwt.decorator";
 import {SendRequestDto} from "./dto/sendRequest.dto";
-import {ResRequestIdDto, ResResponseActionDto} from "./dto/responeRequest.dto";
+import {ResRequestIdDto, ResResponseActionDto} from "./dto/requestRequest.dto";
 import {UnfriendDto} from "./dto/unfriend.dto";
 
 @Controller("friends")
