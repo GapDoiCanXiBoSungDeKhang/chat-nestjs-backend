@@ -32,7 +32,6 @@ export class ConversationService {
         private readonly userService: UserService,
         @Inject(forwardRef(() => MessageService))
         private readonly messageService: MessageService,
-        // private readonly friendService: FriendService,
         private readonly attachmentService: AttachmentService,
         private readonly linkPreviewService: LinkPreviewService,
         private readonly announcementService: AnnouncementService,
@@ -49,15 +48,10 @@ export class ConversationService {
     }
 
     public async create(myUserId: string, userId: string) {
-        const uniqueIds = Array.from(
-            new Set([userId, myUserId])
-        )
+        const uniqueIds = Array.from(new Set([userId, myUserId]))
         const ok = await this.checkListUser(uniqueIds);
-        if (!ok) {
-            throw new ForbiddenException(
-                "Owner or user not found!"
-            )
-        }
+        if (!ok) throw new ForbiddenException("Owner or user not found!");
+
         const existConversation = await this.conversationModel.findOne({
             type: "private",
             participants: {
@@ -78,21 +72,14 @@ export class ConversationService {
         attachments: T[]
     ): Record<number, Record<number, T[]>> {
         const hashTable: Record<number, Record<number, T[]>> = {};
-
         for (const att of attachments) {
             const date = new Date(att.createdAt);
             const month = date.getMonth() + 1;
             const year = date.getFullYear();
-
-            if (!hashTable[year]) {
-                hashTable[year] = {};
-            }
-            if (!hashTable[year][month]) {
-                hashTable[year][month] = [];
-            }
+            if (!hashTable[year]) hashTable[year] = {};
+            if (!hashTable[year][month]) hashTable[year][month] = [];
             hashTable[year][month].push(att);
         }
-
         return hashTable;
     }
 
@@ -129,12 +116,10 @@ export class ConversationService {
         members: string[]
     ) {
         const mbObjectIds = members.map(uid => convertStringToObjectId(uid));
-
         const existingConversation = await this.conversationModel.findOne({
             _id: convertStringToObjectId(conversationId),
             "participants.userId": {$in: mbObjectIds}
         });
-
         return !!existingConversation;
     }
 
@@ -144,11 +129,8 @@ export class ConversationService {
     ) {
         if (!mentions || !mentions?.length) return [];
         const conversation = await this.findConversation(conversationId);
-
         const newSetMentions = new Set(
-            conversation.participants.map(
-                obj => obj.userId.toString()
-            )
+            conversation.participants.map(obj => obj.userId.toString())
         );
         return mentions!.filter(uid => newSetMentions.has(uid));
     }
@@ -173,24 +155,19 @@ export class ConversationService {
             throw new ForbiddenException("User must be less than 1");
         }
         if (alreadyExists) {
-            throw new ForbiddenException(
-                "Some users already exist in group!"
-            );
+            throw new ForbiddenException("Some users already exist in group!");
         }
         const conversation = await this.findConversation(room);
         const actor = this.getUserParticipant(conversation, actorId);
 
         if (!["owner", "admin"].includes(actor.role)) {
             const newRequests = await this.requestJoinRoomService.createResponse(
-                actorId,
-                room,
-                uniqueIds,
-                description,
+                actorId, room, uniqueIds, description,
             );
             for (const request of newRequests) {
                 await request.populate([
-                    { path: "userId", select: "name avatar status" },
-                    { path: "actor", select: "name" }
+                    {path: "userId", select: "name avatar status"},
+                    {path: "actor", select: "name"}
                 ]);
 
                 this.chatGateway.emitNewRequestJoinRoom(conversation.participants, {
@@ -201,35 +178,26 @@ export class ConversationService {
 
             return newRequests;
         }
-
         const newMembers = this.groupParticipants(userIds, actorId);
         conversation.participants.push(...newMembers);
-
         await conversation.save();
+
         const addedBy = {_id: actorId, name: nameUser};
         const content = `${nameUser} đã thêm vào nhóm,`;
-
         const [addedUsers, newMessageSystem] = await Promise.all([
             this.userService.getInfoUserIds(uniqueIds),
             this.messageService.newMessageSystem(
-                actorId,
-                content,
-                uniqueIds,
-                room
+                actorId, content, uniqueIds, room
             )
         ]);
 
         this.chatGateway.emitSystemRoom(room, newMessageSystem);
-        this.chatGateway.emitAddMembersGroup(
-            room,
-            uniqueIds,
-            {
-                conversationId: room,
-                addedUsers,
-                addedBy,
-                conversation,
-            }
-        );
+        this.chatGateway.emitAddMembersGroup(room, uniqueIds, {
+            conversationId: room,
+            addedUsers,
+            addedBy,
+            conversation,
+        });
 
         return conversation;
     }
@@ -250,35 +218,25 @@ export class ConversationService {
         const conversation = await this.findConversation(room);
         const actor = this.getUserParticipant(conversation, actorId);
         const checkCanRemoveMem = this.checkCantRemoveMember(
-            conversation,
-            userIds,
-            actorId
+            conversation, userIds, actorId
         );
 
         if (!["owner", "admin"].includes(actor.role)) {
-            throw new ForbiddenException(
-                "User role must be a owner or admin!"
-            );
+            throw new ForbiddenException("User role must be a owner or admin!");
         }
         if (!checkCanRemoveMem) {
-            throw new ForbiddenException(
-                "Can't remove member for this conversation!"
-            );
+            throw new ForbiddenException("Can't remove member for this conversation!");
         }
         const uniqueIds = new Set(userIds);
         const newParticipants = conversation.participants
             .filter(obj => !uniqueIds.has(obj.userId.toString()));
-
         conversation.participants = newParticipants;
         await conversation.save();
 
         const removedBy = {_id: actorId, name: userName};
         const content = `${userName} đã xóa khỏi nhóm,`;
         const newMessageSystem = await this.messageService.newMessageSystem(
-            actorId,
-            content,
-            userIds,
-            room
+            actorId, content, userIds, room
         );
 
         this.chatGateway.emitSystemRoom(room, newMessageSystem);
@@ -304,28 +262,20 @@ export class ConversationService {
         role: "admin" | "member",
     ) {
         const ok = await this.checkListUser([userId]);
-        if (!ok) {
-            throw new ForbiddenException("User not found!");
-        }
+        if (!ok) throw new ForbiddenException("User not found!");
         const conversation = await this.findConversation(room);
+
         const actor = this.getUserParticipant(conversation, actorId);
-        const obj = this.getUserParticipant(
-            conversation,
-            userId
-        );
+        const obj = this.getUserParticipant(conversation, userId);
 
         if (!["owner", "admin"].includes(actor.role)) {
             throw new ForbiddenException("User role must be a owner or admin!")
         }
         if (actorId === userId) {
-            throw new ForbiddenException(
-                "You can't change role for this you!"
-            )
+            throw new ForbiddenException("You can't change role for this you!")
         }
         if (actor.role === "admin" && obj.role === "owner") {
-            throw new ForbiddenException(
-                "You can't change role for this user!"
-            );
+            throw new ForbiddenException("You can't change role for this user!");
         }
         const participant = this.getUserParticipant(conversation, userId);
         participant.role = role;
@@ -336,10 +286,7 @@ export class ConversationService {
         const [targetUser, newMessageSystem] = await Promise.all([
             this.userService.getInfoById(userId),
             await this.messageService.newMessageSystem(
-                actorId,
-                content,
-                [userId],
-                room
+                actorId, content, [userId], room
             )
         ]);
 
@@ -368,9 +315,7 @@ export class ConversationService {
                 p => p.userId.toString() !== userId && p.role === "admin"
             );
             if (!newOwner) {
-                newOwner = conversation.participants.find(
-                    p => p.userId.toString() !== userId
-                );
+                newOwner = conversation.participants.find(p => p.userId.toString() !== userId);
             }
             if (newOwner) {
                 newOwner.role = "owner";
@@ -391,21 +336,14 @@ export class ConversationService {
         const content = `người đã rời khỏi nhóm,`;
 
         const newMessageSystem = await this.messageService.newMessageSystem(
-            userId,
-            content,
-            [userId],
-            room
+            userId, content, [userId], room
         );
         this.chatGateway.emitSystemRoom(room, newMessageSystem);
-        this.chatGateway.emitLeftGroup(
-            room,
-            userId,
-                {
-                conversationId: room,
-                leftUser,
-                conversation
-            }
-        );
+        this.chatGateway.emitLeftGroup(room, userId, {
+            conversationId: room,
+            leftUser,
+            conversation
+        });
 
         return conversation;
     }
@@ -416,13 +354,10 @@ export class ConversationService {
     ) {
         const conversation = await this.findConversation(room);
         const actor = this.getUserParticipant(conversation, actorId);
-
         if (!["owner", "admin"].includes(actor.role)) {
             throw new ForbiddenException("User role must be a owner or admin!")
         }
-        return this.requestJoinRoomService.listRequestJoinRoom(
-            conversation._id.toString()
-        );
+        return this.requestJoinRoomService.listRequestJoinRoom(conversation._id.toString());
     }
 
     public async handleRequest(
@@ -438,35 +373,26 @@ export class ConversationService {
         if (!["owner", "admin"].includes(actor.role)) {
             throw new ForbiddenException("User role must be a owner or admin!");
         }
-        const userId = await this.requestJoinRoomService
-            .handleRequestJoinRoom(id, action);
-
+        const userId = await this.requestJoinRoomService.handleRequestJoinRoom(id, action);
         if (action === "accept") {
             const participant = this.groupParticipants([userId], actorId);
             conversation.participants.push(...participant);
             await conversation.save();
 
             const handledBy = {_id: actorId, name: userName};
-            const content = `${userName} chấp nhân yêu cầu thêm mới,`;
+            const content = `${userName} chấp nhận yêu cầu thêm mới,`;
 
             const newMessageSystem = await this.messageService.newMessageSystem(
-                actorId,
-                content,
-                [userId],
-                room
+                actorId, content, [userId], room
             );
             this.chatGateway.emitSystemRoom(room, newMessageSystem);
-            this.chatGateway.emitHandelRequestJoinRoom(
-                room,
-                userId,
-                {
-                    conversationId: room,
-                    requestId: id,
-                    action,
-                    handledBy,
-                    conversation
-                }
-            );
+            this.chatGateway.emitHandelRequestJoinRoom(room, userId, {
+                conversationId: room,
+                requestId: id,
+                action,
+                handledBy,
+                conversation
+            });
             return conversation;
         }
         return {
@@ -480,21 +406,12 @@ export class ConversationService {
         members: string[],
         actorId: string
     ) {
-        const uids = new Set(
-            conversation.participants
-                .map(uid => uid.userId.toString())
-        );
+        const uids = new Set(conversation.participants.map(uid => uid.userId.toString()));
         for (const uid of members) {
-            if (!uids.has(uid)) {
-                return false;
-            }
-            if (uid === actorId) {
-                return false;
-            }
+            if (!uids.has(uid)) return false;
+            if (uid === actorId) return false;
             const obj = this.getUserParticipant(conversation, uid)
-            if (obj.role === "owner") {
-                return false;
-            }
+            if (obj.role === "owner") return false;
         }
         return true;
     }
@@ -527,28 +444,15 @@ export class ConversationService {
         groupIds: string[],
     ) {
         const uniqueIds = Array.from(new Set([userId, ...groupIds]));
-
         const ok = await this.checkListUser(uniqueIds);
-        if (!ok) {
-            throw new ForbiddenException(
-                "Some user not found.",
-            );
-        }
-        if (uniqueIds.length < 3) {
-            throw new ForbiddenException(
-                "Group must be at least 3 members"
-            );
-        }
+        if (!ok) throw new ForbiddenException("Some user not found.");
+        if (uniqueIds.length < 3) throw new ForbiddenException("Group must be at least 3 members");
         const existGroup = await this.conversationModel.findOne({
             name,
             type: "group",
-            participants: {
-                $all: this.convertMapCheckElement(uniqueIds)
-            }
+            participants: {$all: this.convertMapCheckElement(uniqueIds)}
         });
-        if (existGroup) {
-            return existGroup;
-        }
+        if (existGroup) return existGroup;
         const group = await this.conversationModel.create({
             createdBy: convertStringToObjectId(userId),
             participants: this.groupParticipants(uniqueIds, userId),
@@ -669,17 +573,8 @@ export class ConversationService {
 
     public async conversationsIds(conversationIds: string[]) {
         return this.conversationModel.find(
-            {
-                _id: {
-                    $in: conversationIds.map(conv =>
-                        convertStringToObjectId(conv)
-                    )
-                }
-            },
-            {
-                _id: 1,
-                participants: 1,
-            }
+            {_id: {$in: conversationIds.map(conv => convertStringToObjectId(conv))}},
+            {_id: 1, participants: 1}
         );
     }
 
@@ -689,18 +584,13 @@ export class ConversationService {
         content: string,
     ) {
         const validateConversation = await this.findConversation(conversationId);
-
         const newAnnouncement = await this.announcementService.createAnnouncement(
-            validateConversation.id,
-            userId,
-            content,
+            validateConversation.id, userId, content,
         );
-
         this.chatGateway.emitAnnouncement(conversationId, {
             conversationId,
             announcement: newAnnouncement,
         });
-
         return newAnnouncement;
     }
 
@@ -719,9 +609,7 @@ export class ConversationService {
     public async findById(conversationId: string) {
         return this.conversationModel.findById(
             convertStringToObjectId(conversationId),
-            {
-                _id: 1
-            }
+            {_id: 1}
         );
     }
 }

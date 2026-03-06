@@ -1,4 +1,4 @@
-import {CanActivate, ConflictException, ExecutionContext, Injectable} from "@nestjs/common";
+import {CanActivate, ExecutionContext, ForbiddenException, Injectable} from "@nestjs/common";
 
 import {ConversationService} from "../conversation.service";
 
@@ -14,13 +14,13 @@ export class ConversationParticipantGuard implements CanActivate {
         const userId = req.user.userId;
         const conversationId = req.params.id;
 
-        const findUser = await this.conversationService
+        const isMember = await this.conversationService
             .findUserParticipants(
                 userId,
                 conversationId,
             );
-        if (!findUser) {
-            throw new ConflictException("User does not in private conversation");
+        if (!isMember) {
+            throw new ForbiddenException("User does not in private conversation");
         }
         return true;
     }

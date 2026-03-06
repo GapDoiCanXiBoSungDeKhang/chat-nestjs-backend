@@ -44,4 +44,3 @@ ConversationSchema.index({_id: 1, "participants.userId": 1});
 ConversationSchema.index({type: 1, "participants.userId": 1});
 ConversationSchema.index({type: 1, name: 1, "participants.userId": 1});
 ConversationSchema.index({"participants.userId": 1, updatedAt: -1});
-ConversationSchema.index({"participants.userId": 1});

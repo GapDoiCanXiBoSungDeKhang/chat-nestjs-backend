@@ -50,6 +50,7 @@ export class RequestJoinRoomService {
         }
         const userId = request.userId.toString();
         request.status = action;
+        await request.save();
 
         return userId;
     }
