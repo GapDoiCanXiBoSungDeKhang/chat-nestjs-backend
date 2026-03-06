@@ -3,8 +3,6 @@ import {Injectable} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 
 import {Announcement, AnnouncementDocument} from "./schema/announcement.schema";
-import {ConversationService} from "../conversation/conversation.service";
-import {UserService} from "../user/user.service";
 
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 
