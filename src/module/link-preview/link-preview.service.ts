@@ -1,5 +1,5 @@
 import {Model, Types} from "mongoose";
-import {Injectable} from "@nestjs/common";
+import {ForbiddenException, Injectable} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import axios from "axios";
 import * as cheerio from "cheerio";
@@ -14,41 +14,57 @@ export class LinkPreviewService {
     ) {
     }
 
+    private async fetchMetadata(url: string): Promise<{
+        title?: string;
+        description?: string;
+        image?: string;
+    } | null> {
+        try {
+            const {data} = await axios.get(url, {
+                timeout: 5000,
+                headers: {"User-Agent": "Mozilla/5.0 (compatible; ChatBot/1.0)"},
+            });
+            const $ = cheerio.load(data);
+            const meta = (prop: string) =>
+                $(`meta[property='${prop}']`).attr("content") ||
+                $(`meta[name='${prop}']`).attr("content");
+
+            return {
+                title: meta("og:title") || $("title").text() || undefined,
+                description: meta("og:description") || undefined,
+                image: meta("og:image") || undefined,
+            };
+        } catch (err) {
+            throw new ForbiddenException("Error parsing link preview");
+        }
+    }
+
     public async fetchLink(
         url: string,
         messageId: string,
         conversationId: string,
         userId: string,
     ) {
-        const cached = await this.linkPreviewModel.findOne({url}).lean();
-        if (cached) return cached;
-
         const senderId = convertStringToObjectId(userId);
         const conversationObjectId = convertStringToObjectId(conversationId);
         const messageObjectId = convertStringToObjectId(messageId);
 
-        const {data} = await axios.get(url, {
-            timeout: 5000,
-            headers: {
-                "User-Agent": "Mozilla/5.0 (compatible; ChatBot/1.0)",
-            }
-        });
-        const $ = cheerio.load(data);
+        const existingMeta = await this.linkPreviewModel
+            .findOne({url}, {title: 1, description: 1, image: 1})
+            .lean();
 
-        const meta = (prop: string) =>
-            $(`meta[property='${prop}']`).attr("content") ||
-            $(`meta[name='${prop}']`).attr("content");
+        const metadata = existingMeta ?? await this.fetchMetadata(url);
+        if (!metadata) return null;
 
-        const preview = {
+        return this.linkPreviewModel.create({
             senderId,
             messageId: messageObjectId,
             conversationId: conversationObjectId,
             url,
-            title: meta("og:title") || $("title").text(),
-            description: meta("og:description"),
-            image: meta("og:image"),
-        };
-        return this.linkPreviewModel.create(preview);
+            title: metadata.title,
+            description: metadata.description,
+            image: metadata.image,
+        });
     }
 
     public async getLinkPreviews(ids: Types.ObjectId[]) {
@@ -67,10 +83,11 @@ export class LinkPreviewService {
             }, {});
     }
 
-    public async getLinkPreview(room: string) {
-        return this.linkPreviewModel.find({
-            conversationId: convertStringToObjectId(room),
-        })
+    public async getLinkPreview(room: string, limit = 50) {
+        return this.linkPreviewModel
+            .find({conversationId: convertStringToObjectId(room)})
+            .sort({createdAt: -1})
+            .limit(limit)
             .lean();
     }
 }
