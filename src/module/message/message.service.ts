@@ -35,14 +35,11 @@ export class MessageService {
 
     private async buildReplyTo(replyTo?: string) {
         if (!replyTo) return undefined;
-
         const message = await this.messageModel.findById(
             convertStringToObjectId(replyTo),
             {_id: 1}
         );
-
         if (!message) throw new NotFoundException("Reply message not found");
-
         return convertStringToObjectId(replyTo);
     }
 
@@ -68,7 +65,6 @@ export class MessageService {
         const senderId = convertStringToObjectId(userId);
 
         const replyToObjectId = await this.buildReplyTo(replyTo);
-        let getLinks;
 
         const validateMentions = await this.conversationService.validateMentions(
             conversationId,
@@ -87,35 +83,32 @@ export class MessageService {
 
         await message.populate(this.getArrayPopulate());
 
+        this.chatGateway.emitNewMessage(conversationId, message);
+
         const urls = extractValidUrls(content);
         if (urls.length) {
-            getLinks = await Promise.all(
+            const getLinks = (await Promise.all(
                 urls.map(url =>
-                    this.linkPreviewService.fetchLink(
-                        url,
-                        message.id,
-                        conversationId,
-                        userId,
-                    )
+                    this.linkPreviewService.fetchLink(url, message.id, conversationId, userId)
                 ),
-            );
-        }
-        this.chatGateway.emitNewMessage(conversationId, message);
-        if (getLinks && getLinks.length) {
-            this.chatGateway.emitNewMessageLinkPreview(conversationId, getLinks);
-        }
-        this.chatGateway.emitMentions(validateMentions, {
-            message,
-            conversation: conversationId,
-            mentions: mentions || [],
-        });
+            )).filter(Boolean);
 
-        await this.conversationService.updateConversation(
-            conversationId,
-            message.id
-        );
+            if (getLinks.length) {
+                this.chatGateway.emitNewMessageLinkPreview(conversationId, getLinks);
+            }
+        }
 
-        return {message, getLinks};
+        if (mentions?.length) {
+            this.chatGateway.emitMentions(validateMentions, {
+                message,
+                conversation: conversationId,
+                mentions: mentions || [],
+            });
+        }
+
+        await this.conversationService.updateConversation(conversationId, message.id);
+
+        return {message};
     }
 
     public async search(q: string, conversationId: string) {
@@ -127,7 +120,8 @@ export class MessageService {
         const res = await this.messageModel.find(
             {
                 $text: {$search: q},
-                conversationId: conversationObjectId
+                conversationId: conversationObjectId,
+                isDeleted: true
             },
             {score: {$meta: "textScore"}}
         )
@@ -211,11 +205,7 @@ export class MessageService {
             conversationId
         );
         this.chatGateway.emitNewMessageFiles(conversationId, {message, attachments});
-
-        await this.conversationService.updateConversation(
-            conversationId,
-            message.id
-        );
+        await this.conversationService.updateConversation(conversationId, message.id);
 
         return {message, attachments};
     }
@@ -228,7 +218,6 @@ export class MessageService {
     ) {
         const convObjectId = convertStringToObjectId(conversationId);
         const senderId = convertStringToObjectId(userId);
-
         const replyToObjectId = await this.buildReplyTo(replyTo);
 
         const message = await this.messageModel.create({
@@ -238,21 +227,13 @@ export class MessageService {
             type: "media",
             ...(replyToObjectId && {replyTo: replyToObjectId}),
         });
-
         await message.populate(this.getArrayPopulate());
 
         const attachments = await this.attachmentService.uploadMedias(
-            files,
-            message.id,
-            userId,
-            conversationId
+            files, message.id, userId, conversationId
         );
         this.chatGateway.emitNewMessageMedias(conversationId, {message, attachments});
-
-        await this.conversationService.updateConversation(
-            conversationId,
-            message.id
-        );
+        await this.conversationService.updateConversation(conversationId, message.id);
 
         return {message, attachments};
     }
@@ -275,21 +256,13 @@ export class MessageService {
             type: "voice",
             ...(replyToObjectId && {replyTo: replyToObjectId}),
         });
-
         await message.populate(this.getArrayPopulate());
 
         const attachments = await this.attachmentService.uploadVoice(
-            file,
-            message.id,
-            userId,
-            conversationId
+            file, message.id, userId, conversationId
         );
         this.chatGateway.emitNewMessageVoice(conversationId, {message, attachments});
-
-        await this.conversationService.updateConversation(
-            conversationId,
-            message.id
-        );
+        await this.conversationService.updateConversation(conversationId, message.id);
 
         return {message, attachments};
     }
@@ -299,10 +272,7 @@ export class MessageService {
         content: string,
         id: string
     ) {
-        const message = await this.messageModel.findById(
-            convertStringToObjectId(id)
-        );
-
+        const message = await this.messageModel.findById(convertStringToObjectId(id));
         if (!message) throw new NotFoundException("Message not found");
         if (message.senderId.toString() !== userId) {
             throw new ForbiddenException("Can't edit message");
@@ -325,27 +295,17 @@ export class MessageService {
                 {path: "seenBy", select: "name avatar"},
             ]);
 
-        this.chatGateway.emitMessageEdited(
-            message.conversationId.toString(),
-            populated
-        );
-
+        this.chatGateway.emitMessageEdited(message.conversationId.toString(), populated);
         return populated;
     }
 
     public async messages(
         conversationId: string,
-        limit: number = 29,
+        limit: number = 20,
         before?: string
     ) {
-        const query: any = {
-            conversationId: convertStringToObjectId(conversationId)
-        };
-
-        if (before) {
-            query._id = {$lt: convertStringToObjectId(before)};
-        }
-
+        const query: any = {conversationId: convertStringToObjectId(conversationId)};
+        if (before) query._id = {$lt: convertStringToObjectId(before)};
         const messages = await this.messageModel
             .find(query)
             .populate([
@@ -365,29 +325,24 @@ export class MessageService {
         const messageIdsAttachments = messages
             .filter(m => ["file", "media", "voice"].includes(m.type))
             .map(m => m._id);
-
         const messageIds = messages.map(m => m._id);
 
-        const groupAttachments =
-            await this.attachmentService.groupAttachmentsById(messageIdsAttachments);
-
-        const groupLinks =
-            await this.linkPreviewService.groupLinkPreviewsById(messageIds);
+        const [groupAttachments, groupLinks] = await Promise.all([
+            this.attachmentService.groupAttachmentsById(messageIdsAttachments),
+            this.linkPreviewService.groupLinkPreviewsById(messageIds),
+        ]);
 
         const enriched = messages.map(m => {
             const id = m._id.toString();
-
             if (groupAttachments[id]) {
                 m.attachments =
                     m.type === "voice"
                         ? [groupAttachments[id][0]]
                         : groupAttachments[id];
             }
-
             if (groupLinks[id]) {
                 m.linkPreviews = groupLinks[id];
             }
-
             return m;
         });
 
@@ -401,9 +356,7 @@ export class MessageService {
     public async findByIdCheck(messageId: string) {
         return this.messageModel.findById(
             convertStringToObjectId(messageId),
-            {
-                conversationId: 1
-            }
+            {conversationId: 1}
         );
     }
 
@@ -416,44 +369,23 @@ export class MessageService {
         const userObjectId = convertStringToObjectId(userId);
 
         const updated = await this.messageModel.updateOne(
-            {
-                _id: messageObjectId,
-                "reactions.userId": userObjectId
-            },
-            {
-                $set: {
-                    "reactions.$.emoji": emoji
-                },
-            }
+            {_id: messageObjectId, "reactions.userId": userObjectId},
+            {$set: {"reactions.$.emoji": emoji}}
         );
 
         if (updated.matchedCount === 0) {
             await this.messageModel.findByIdAndUpdate(
                 messageObjectId,
-                {
-                    $addToSet: {
-                        reactions: {
-                            userId: userObjectId,
-                            emoji
-                        },
-                    },
-                },
+                {$addToSet: {reactions: {userId: userObjectId, emoji}}},
             );
         }
 
         const messageEdit = await this.messageModel.findById(messageObjectId);
-        if (!messageEdit) {
-            throw new ConflictException("message not found!");
-        }
-        this.chatGateway.emitMessageReacted(
-            messageEdit.conversationId.toString(),
-            {
-                messageId,
-                userId,
-                emoji,
-                action: "add"
-            }
-        );
+        if (!messageEdit) throw new ConflictException("message not found!");
+
+        this.chatGateway.emitMessageReacted(messageEdit.conversationId.toString(), {
+            messageId, userId, emoji, action: "add"
+        });
         return messageEdit;
     }
 
@@ -465,30 +397,14 @@ export class MessageService {
         const userObjectId = convertStringToObjectId(userId);
 
         const message = await this.messageModel.findOneAndUpdate(
-            {
-                _id: messageObjectId,
-                "reactions.userId": userObjectId,
-            },
-            {
-                $pull: {
-                    reactions: {userId: userObjectId},
-                },
-            },
+            {_id: messageObjectId, "reactions.userId": userObjectId},
+            {$pull: {reactions: {userId: userObjectId}}},
             {new: true},
         );
-        if (!message) {
-            throw new NotFoundException("Reaction not found");
-        }
-        this.chatGateway.emitMessageReacted(
-            message.conversationId.toString(),
-            {
-                messageId,
-                userId,
-                emoji: null,
-                action: "remove"
-            }
-        );
-
+        if (!message) throw new NotFoundException("Reaction not found");
+        this.chatGateway.emitMessageReacted(message.conversationId.toString(), {
+            messageId, userId, emoji: null, action: "remove"
+        });
         return message;
     }
 
@@ -499,9 +415,7 @@ export class MessageService {
         const filter = await this.messageModel.find({
             conversationId: {$in: conversationIds},
             seenBy: {$ne: convertStringToObjectId(userId)}
-        }, {
-            conversationId: 1,
-        });
+        }, {conversationId: 1});
         return filter.map(mgs => mgs.conversationId);
     }
 
@@ -513,13 +427,8 @@ export class MessageService {
         const userObjectId = convertStringToObjectId(userId);
 
         await this.messageModel.updateMany(
-            {
-                conversationId: conObjectId,
-                seenBy: { $ne: userObjectId },
-            },
-            {
-                $addToSet: { seenBy: userObjectId },
-            },
+            {conversationId: conObjectId, seenBy: { $ne: userObjectId }},
+            {$addToSet: { seenBy: userObjectId }},
         );
 
         const lastMessage = await this.messageModel
@@ -527,9 +436,7 @@ export class MessageService {
             .sort({ createdAt: -1 })
             .lean();
 
-        if (!lastMessage) {
-            return { success: false };
-        }
+        if (!lastMessage) return { success: false };
 
         const userInfo = await this.userService.getInfoById(userId);
         this.chatGateway.emitMessageSeen(conversationId, {
@@ -554,31 +461,15 @@ export class MessageService {
             let result = null;
             if (scope === "self") {
                 result = await this.messageModel.findOneAndUpdate(
-                    {
-                        _id: objectId,
-                        deletedFor: {$ne: userObjectId},
-                    },
-                    {
-                        $addToSet: {
-                            deletedFor: userObjectId,
-                        },
-                    },
+                    {_id: objectId, deletedFor: {$ne: userObjectId}},
+                    {$addToSet: {deletedFor: userObjectId}},
                     {new: true},
                 );
             }
             if (scope === "everyone") {
                 result = await this.messageModel.findOneAndUpdate(
-                    {
-                        _id: objectId,
-                        senderId: userObjectId,
-                        isDeleted: {$ne: true},
-                    },
-                    {
-                        $set: {
-                            isDeleted: true,
-                            content: "Message deleted",
-                        },
-                    },
+                    {_id: objectId, senderId: userObjectId, isDeleted: {$ne: true}},
+                    {$set: {isDeleted: true, content: "Message deleted"}},
                     {new: true},
                 );
             }
@@ -605,12 +496,15 @@ export class MessageService {
     ) {
         const objectId = convertStringToObjectId(id);
         const originalMessage = await this.messageModel.findById(objectId);
-        if (!originalMessage) {
-            throw new NotFoundException("message not found!");
+
+        if (!originalMessage) throw new NotFoundException("message not found!");
+        if (originalMessage.isDeleted) {
+            throw new ForbiddenException("Cannot forward this message!");
         }
+
         const userObjectId = convertStringToObjectId(userId);
 
-        const conversations = await this.conversationService.conversationsIds(conversationIds);
+        const conversations = await this.conversationService.conversationsIdsForUser(conversationIds, userId);
         if (!conversations.length) {
             throw new ForbiddenException("Nothing conversation active!");
         }
@@ -631,16 +525,11 @@ export class MessageService {
                     m.conversationId.toString(),
                     m._id.toString(),
                 );
-
                 await m.populate([
                     {path: "senderId", select: "name avatar"},
                     {path: "seenBy", select: "name avatar"},
                 ]);
-
-                this.chatGateway.emitMessageForwarded(
-                    m.conversationId.toString(),
-                    m,
-                );
+                this.chatGateway.emitMessageForwarded(m.conversationId.toString(), m);
             }),
         );
 
@@ -673,10 +562,7 @@ export class MessageService {
         conversationId: string,
     ) {
         const convObjectId = convertStringToObjectId(conversationId);
-
-        await this.messageModel.deleteMany({
-            conversationId: convObjectId
-        })
+        await this.messageModel.deleteMany({conversationId: convObjectId})
     }
 
     public async filterMessageHavePins(conversationId: string) {

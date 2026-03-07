@@ -1,4 +1,4 @@
-import {IsMongoId, IsNumber, IsOptional} from "class-validator";
+import {IsMongoId, IsNumber, IsOptional, Max, Min} from "class-validator";
 import {Type} from "class-transformer";
 
 export class PaginationDto {
@@ -9,5 +9,7 @@ export class PaginationDto {
     @IsOptional()
     @Type(() => Number)
     @IsNumber()
+    @Min(1)
+    @Max(100)
     limit: number = 20;
 }

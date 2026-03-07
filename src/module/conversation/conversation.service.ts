@@ -571,9 +571,12 @@ export class ConversationService {
             }));
     }
 
-    public async conversationsIds(conversationIds: string[]) {
+    public async conversationsIdsForUser(conversationIds: string[], userId: string) {
         return this.conversationModel.find(
-            {_id: {$in: conversationIds.map(conv => convertStringToObjectId(conv))}},
+            {
+                _id: {$in: conversationIds.map(conv => convertStringToObjectId(conv))},
+                "participants.userId": convertStringToObjectId(userId),
+            },
             {_id: 1, participants: 1}
         );
     }
