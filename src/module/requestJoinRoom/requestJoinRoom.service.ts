@@ -48,7 +48,11 @@ export class RequestJoinRoomService {
         if (!request) {
             throw new ForbiddenException("not found request!");
         }
+        if (request.status !== "pending") {
+            throw new ForbiddenException("Request already handled!")
+        }
         const userId = request.userId.toString();
+
         request.status = action;
         await request.save();
 
