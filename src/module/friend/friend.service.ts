@@ -12,6 +12,7 @@ import {ConversationService} from "../conversation/conversation.service";
 import {ChatGateway} from "../../gateway/chat.gateway";
 
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
+import {UserService} from "../user/user.service";
 
 @Injectable()
 export class FriendService {
@@ -21,6 +22,7 @@ export class FriendService {
         @Inject(forwardRef(() => ConversationService))
         private readonly conversationService: ConversationService,
         private readonly chatGateway: ChatGateway,
+        private readonly userService: UserService,
     ) {
     }
 
@@ -30,14 +32,8 @@ export class FriendService {
     ) {
         return this.friendRequestModel.findOne({
             $or: [
-                {
-                    from: convertStringToObjectId(fromId),
-                    to: convertStringToObjectId(toId)
-                },
-                {
-                    from: convertStringToObjectId(toId),
-                    to: convertStringToObjectId(fromId)
-                },
+                {from: convertStringToObjectId(fromId), to: convertStringToObjectId(toId)},
+                {from: convertStringToObjectId(toId), to: convertStringToObjectId(fromId)},
             ],
         });
     }
@@ -50,6 +46,11 @@ export class FriendService {
         if (fromId === toId) {
             throw new ForbiddenException("User not is a user");
         }
+        const targetUser = await this.userService.findById(toId);
+        if (!targetUser) {
+            throw new NotFoundException("User not found");
+        }
+
         const exits = await this.friendExits(fromId, toId);
         if (exits) {
             if (exits.status === "accepted")
@@ -64,12 +65,7 @@ export class FriendService {
             message
         });
         await request.populate("from", "name avatar status");
-
-        this.chatGateway.emitToUser(
-            toId,
-            "friend_request_received",
-            {request}
-        );
+        this.chatGateway.emitToUser(toId, "friend_request_received", {request});
 
         return request;
     }
@@ -101,19 +97,12 @@ export class FriendService {
 
         await req.populate("to", "name avatar status");
 
-        this.chatGateway.emitToUser(
-            req.from.toString(),
-            "friend_request_accepted",
-            {
-                friend: req.to,
-                conversationId: conversation.id
-            }
-        );
+        this.chatGateway.emitToUser(req.from.toString(), "friend_request_accepted", {
+            friend: req.to,
+            conversationId: conversation.id
+        });
 
-        return {
-            req,
-            conversation
-        };
+        return {req, conversation};
     }
 
     public async rejectedRequest(
@@ -136,10 +125,7 @@ export class FriendService {
 
     public async request(userId: string) {
         return this.friendRequestModel
-            .find({
-                to: convertStringToObjectId(userId),
-                status: "pending"
-            })
+            .find({to: convertStringToObjectId(userId), status: "pending"})
             .populate("from", "name avatar")
             .sort({createdAt: -1})
             .lean();
@@ -156,10 +142,8 @@ export class FriendService {
             })
             .populate("from to", "name avatar status")
 
-        return friends.map(
-            r => r.from._id.toString() === userId
-                ? r.to
-                : r.from
+        return friends.map(r =>
+            r.from._id.toString() === userId ? r.to : r.from
         );
     }
 
@@ -168,14 +152,8 @@ export class FriendService {
             .findOne({
                 status: "accepted",
                 $or: [
-                    {
-                        from: convertStringToObjectId(userId),
-                        to: convertStringToObjectId(targetUserId)
-                    },
-                    {
-                        from: convertStringToObjectId(targetUserId),
-                        to: convertStringToObjectId(userId)
-                    }
+                    {from: convertStringToObjectId(userId), to: convertStringToObjectId(targetUserId)},
+                    {from: convertStringToObjectId(targetUserId), to: convertStringToObjectId(userId)}
                 ]
             });
 
@@ -183,8 +161,6 @@ export class FriendService {
             throw new NotFoundException("Not friend");
         }
         await relation.deleteOne();
-        return {
-            success: true
-        }
+        return {success: true}
     }
 }

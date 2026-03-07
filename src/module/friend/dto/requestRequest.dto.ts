@@ -3,7 +3,6 @@ import {IsNotEmpty, IsMongoId, IsString, IsEnum} from "class-validator";
 enum action {
     "accepted" = "accepted",
     "rejected" = "rejected",
-    "pending" = "pending",
 }
 
 export class ResRequestIdDto {

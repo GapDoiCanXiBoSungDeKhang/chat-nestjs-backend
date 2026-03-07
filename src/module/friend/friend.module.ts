@@ -6,10 +6,12 @@ import {FriendService} from "./friend.service";
 import {FriendController} from "./friend.controller";
 import {ConversationModule} from "../conversation/conversation.module";
 import {ChatModule} from "../../gateway/chat.module";
+import {UsersModule} from "../user/user.module";
 
 @Module({
     imports: [
         forwardRef(() => ConversationModule),
+        UsersModule,
         ChatModule,
         MongooseModule.forFeature([{
             name: FriendRequest.name,
