@@ -94,4 +94,11 @@ export class UserService {
                 }
             }).lean();
     }
+
+    public async updateStatus(userId: string, status: string) {
+        await this.userModel.findByIdAndUpdate(
+            convertStringToObjectId(userId),
+            {status: status},
+        );
+    }
 }

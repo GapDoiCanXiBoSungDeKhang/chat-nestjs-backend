@@ -4,43 +4,53 @@ import {
     ConnectedSocket,
     OnGatewayConnection,
     OnGatewayDisconnect,
+    OnGatewayInit,
     SubscribeMessage,
-    MessageBody
+    MessageBody,
 } from "@nestjs/websockets";
-import {forwardRef, Inject} from "@nestjs/common";
+import {forwardRef, Inject, Logger} from "@nestjs/common";
 import {JwtService} from "@nestjs/jwt";
 import {Socket, Server} from "socket.io";
 
 import {ConversationService} from "../module/conversation/conversation.service";
+import {UserService} from "../module/user/user.service";
+import {MessageEmitService} from "./services/messageEmit.service";
+import {GroupEmitService} from "./services/groupEmit.service";
+import {PresenceEmitService} from "./services/presenceEmit.service";
 import {Types} from "mongoose";
+import {gatewayRooms} from "./gateway.rooms";
 
 @WebSocketGateway({
-    cors: {
-        origin: "*",
-        credentials: true,
-    }
+    cors: {origin: "*", credentials: true},
 })
-export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class ChatGateway
+    implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     server!: Server;
+
+    private readonly logger = new Logger(ChatGateway.name);
 
     constructor(
         private readonly jwtService: JwtService,
         @Inject(forwardRef(() => ConversationService))
         private readonly conversationService: ConversationService,
+        private readonly userService: UserService,
+        private readonly messageEmit: MessageEmitService,
+        private readonly groupEmit: GroupEmitService,
+        private readonly presenceEmit: PresenceEmitService,
     ) {
     }
 
-    private userRoom(userId: string) {
-        return `user:${userId}`;
+    afterInit(server: Server) {
+        this.messageEmit.setServer(server);
+        this.groupEmit.setServer(server);
+        this.presenceEmit.setServer(server);
+        this.logger.log("ChatGateway initialized");
     }
 
-    private conversationRoom(userId: string) {
-        return `conversation:${userId}`;
-    }
-
-    handleConnection(client: Socket) {
-        const token = client.handshake.auth?.token ||
+    async handleConnection(client: Socket) {
+        const token =
+            client.handshake.auth?.token ||
             client.handshake.query?.token;
 
         if (!token) {
@@ -50,233 +60,174 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
         try {
             const payload = this.jwtService.verify(token);
-            const userId = payload.sub;
+            const userId: string = payload.sub;
 
             client.data.userId = userId;
+            client.join(gatewayRooms.user(userId));
 
-            client.join(this.userRoom(userId));
-            this.server.emit("user_online", {userId});
+            await this.userService.updateStatus(userId, "online");
+            this.presenceEmit.userOnline(userId);
+
+            this.logger.debug(`Client connected: ${userId}`);
         } catch {
             client.disconnect(true);
         }
     }
 
-    handleDisconnect(client: Socket) {
-        const userId = client.data.userId;
+    async handleDisconnect(client: Socket) {
+        const userId: string = client.data.userId;
         if (!userId) return;
 
-        this.server.emit("user_offline", {userId});
+        await this.userService.updateStatus(userId, "offline");
+        this.presenceEmit.userOffline(userId);
+
+        this.logger.debug(`Client disconnected: ${userId}`);
     }
 
     @SubscribeMessage("join_conversation")
     async joinConversation(
         @ConnectedSocket() client: Socket,
-        @MessageBody() data: { conversationId: string }
+        @MessageBody() data: { conversationId: string },
     ) {
-        const userId = client.data.userId;
-        const {conversationId} = data;
-
+        const userId: string = client.data.userId;
         const ok = await this.conversationService.findUserParticipants(
             userId,
-            conversationId
+            data.conversationId,
         );
         if (!ok) return;
 
-        const room = this.conversationRoom(conversationId);
-        client.join(room);
+        client.join(gatewayRooms.conversation(data.conversationId));
     }
 
     @SubscribeMessage("leave_conversation")
     leaveConversation(
         @ConnectedSocket() client: Socket,
-        @MessageBody() data: { conversationId: string }
+        @MessageBody() data: { conversationId: string },
     ) {
-        client.leave(this.conversationRoom(data.conversationId));
+        client.leave(gatewayRooms.conversation(data.conversationId));
     }
 
     @SubscribeMessage("typing_start")
-    typingStart(
+    async typingStart(
         @ConnectedSocket() client: Socket,
-        @MessageBody() data: { conversationId: string }
+        @MessageBody() data: { conversationId: string },
     ) {
-        client.to(this.conversationRoom(data.conversationId)).emit("user_typing", {
-            conversationId: data.conversationId,
-            userId: client.data.userId,
-        });
+        const userId: string = client.data.userId;
+        const ok = await this.conversationService.findUserParticipants(
+            userId,
+            data.conversationId,
+        );
+        if (!ok) return;
+
+        client
+            .to(gatewayRooms.conversation(data.conversationId))
+            .emit("user_typing", {conversationId: data.conversationId, userId});
     }
 
     @SubscribeMessage("typing_stop")
     typingStop(
         @ConnectedSocket() client: Socket,
-        @MessageBody() data: { conversationId: string }
+        @MessageBody() data: { conversationId: string },
     ) {
-        client.to(this.conversationRoom(data.conversationId)).emit("user_stopped_typing", {
-            conversationId: data.conversationId,
-            userId: client.data.userId,
-        });
+        const userId: string = client.data.userId;
+        client
+            .to(gatewayRooms.conversation(data.conversationId))
+            .emit("user_stopped_typing", {conversationId: data.conversationId, userId});
     }
 
-    emitNewMessage(conversationId: string, payload: any) {
-        this.server.to(this.conversationRoom(conversationId)).emit("new_message", payload);
+
+    emitNewMessage(cid: string, p: any) {
+        this.messageEmit.newMessage(cid, p);
     }
 
-    emitMessageEdited(conversationId: string, payload: any) {
-        this.server.to(this.conversationRoom(conversationId)).emit("message_edited", payload);
+    emitNewMessageFiles(cid: string, p: any) {
+        this.messageEmit.newMessageFile(cid, p);
     }
 
-    emitMessageDeleted(conversationId: string, payload: any) {
-        this.server.to(this.conversationRoom(conversationId)).emit("message_deleted", payload);
+    emitNewMessageMedias(cid: string, p: any) {
+        this.messageEmit.newMessageMedia(cid, p);
     }
 
-    emitMessageReacted(conversationId: string, payload: any) {
-        this.server.to(this.conversationRoom(conversationId)).emit("message_reacted", payload);
+    emitNewMessageVoice(cid: string, p: any) {
+        this.messageEmit.newMessageVoice(cid, p);
     }
 
-    emitMessageForwarded(conversationId: string, payload: any) {
-        this.server.to(this.conversationRoom(conversationId)).emit("message_forwarded", payload);
+    emitNewMessageLinkPreview(cid: string, p: any) {
+        this.messageEmit.newMessageLinkPreview(cid, p);
     }
 
-    emitMessageSeen(conversationId: string, payload: any) {
-        this.server.to(this.conversationRoom(conversationId)).emit("message_seen", payload);
+    emitMessageEdited(cid: string, p: any) {
+        this.messageEmit.messageEdited(cid, p);
     }
 
-    emitNewMessageFiles(conversationId: string, payload: any) {
-        this.server.to(this.conversationRoom(conversationId)).emit("new_message_file", payload);
+    emitMessageDeleted(cid: string, p: any) {
+        this.messageEmit.messageDeleted(cid, p);
     }
 
-    emitNewMessageMedias(conversationId: string, payload: any) {
-        this.server.to(this.conversationRoom(conversationId)).emit("new_message_media", payload);
+    emitMessageReacted(cid: string, p: any) {
+        this.messageEmit.messageReacted(cid, p);
     }
 
-    emitNewMessageVoice(conversationId: string, payload: any) {
-        this.server.to(this.conversationRoom(conversationId)).emit("new_message_voice", payload);
+    emitMessageForwarded(cid: string, p: any) {
+        this.messageEmit.messageForwarded(cid, p);
     }
 
-    emitNewMessageLinkPreview(conversationId: string, payload: any) {
-        this.server.to(this.conversationRoom(conversationId)).emit("new_message_linkPreview", payload);
+    emitMessageSeen(cid: string, p: any) {
+        this.messageEmit.messageSeen(cid, p);
     }
 
-    emitMentions(mentions: string[], payload: any) {
-        this.server.to(mentions).emit("mention_received", payload);
+    emitMessagePinned(cid: string, p: any) {
+        this.messageEmit.messagePinned(cid, p);
     }
 
-    emitToUser(userId: string, event: string, data: any) {
-        this.server.to(this.userRoom(userId)).emit(event, data);
+    emitMessageUnpinned(cid: string, p: any) {
+        this.messageEmit.messageUnpinned(cid, p);
     }
 
-    emitMessagePinned(conversationId: string, payload: any) {
-        this.server.to(this.conversationRoom(conversationId)).emit("message_pinned", payload);
+    emitMentions(uids: string[], p: any) {
+        this.messageEmit.messageMention(uids, p);
     }
 
-    emitMessageUnpinned(conversationId: string, payload: any) {
-        this.server.to(this.conversationRoom(conversationId)).emit("message_unpinned", payload);
+    emitSystemRoom(cid: string, p: any) {
+        this.messageEmit.messageSystemRoom(cid, p);
     }
 
-    emitGroupCreated(userIds: string[], payload: any) {
-        this.server
-            .to(userIds.map(uid => this.userRoom(uid)))
-            .emit("group_created", payload);
+    emitAnnouncement(cid: string, p: any) {
+        this.messageEmit.announcementCreated(cid, p);
     }
 
-    emitAddMembersGroup(
-        conversationId: string,
-        newUserIds: string[],
-        payload: any
-    ) {
-        this.server
-            .to(this.conversationRoom(conversationId))
-            .emit("group_member_added", payload);
-
-        newUserIds.forEach((userId) => {
-            this.server
-                .to(this.userRoom(userId))
-                .emit("group_added", payload);
-        })
+    emitGroupCreated(uids: string[], p: any) {
+        this.groupEmit.groupCreated(uids, p);
     }
 
-    emitRemoveMembersGroup(
-        conversationId: string,
-        removedUserIds: string[],
-        payload: any
-    ) {
-        this.server.in(removedUserIds.map(uid => this.userRoom(uid))).socketsLeave(
-            this.conversationRoom(conversationId),
-        );
-        this.server
-            .to(this.conversationRoom(conversationId))
-            .emit("group_member_removed", payload);
-
-        this.server
-            .to(removedUserIds.map(uid => this.userRoom(uid)))
-            .emit("group_removed", payload);
+    emitAddMembersGroup(cid: string, newUids: string[], p: any) {
+        this.groupEmit.membersAdded(cid, newUids, p);
     }
 
-    emitLeftGroup(
-        conversationId: string,
-        userId: string,
-        payload: any
-    ) {
-        this.server.in(this.userRoom(userId)).socketsLeave(
-            this.conversationRoom(conversationId),
-        );
-        this.server
-            .to(this.conversationRoom(conversationId))
-            .emit("group_member_left", payload);
-
-        this.server
-            .to(this.userRoom(userId))
-            .emit("group_left_self", payload);
+    emitRemoveMembersGroup(cid: string, removedUids: string[], p: any) {
+        this.groupEmit.membersRemoved(cid, removedUids, p);
     }
 
-    emitChangeRoleMemberGroup(conversationId: string, payload: any) {
-        this.server
-            .to(this.conversationRoom(conversationId))
-            .emit("group_role_changed", payload);
+    emitLeftGroup(cid: string, uid: string, p: any) {
+        this.groupEmit.memberLeft(cid, uid, p);
+    }
+
+    emitChangeRoleMemberGroup(cid: string, p: any) {
+        this.groupEmit.roleChanged(cid, p);
     }
 
     emitNewRequestJoinRoom(
-        participants: {
-            userId: Types.ObjectId
-            role: "owner" | "admin" | "member"
-        }[],
-        payload: any
+        participants: { userId: Types.ObjectId; role: "owner" | "admin" | "member" }[],
+        p: any
     ) {
-        const rooms = participants
-            .filter(obj => obj.role !== "member")
-            .map(obj => this.userRoom(obj.userId.toString()));
-
-        this.server.to(rooms).emit("group_join_requested", payload);
+        this.groupEmit.joinRequested(participants, p);
     }
 
-    emitHandelRequestJoinRoom(
-        conversationId: string,
-        newUserId: string,
-        payload: any
-    ) {
-        this.server
-            .to(this.conversationRoom(conversationId))
-            .emit("group_request_handled", payload);
-
-        this.server
-            .to(this.userRoom(newUserId))
-            .emit("group_request_added", payload);
+    emitHandelRequestJoinRoom(cid: string, uid: string, p: any) {
+        this.groupEmit.requestHandled(cid, uid, p);
     }
 
-    emitSystemRoom(
-        conversationId: string,
-        payload: any
-    ) {
-        this.server
-            .to(this.conversationRoom(conversationId))
-            .emit("message_system_room", payload);
-    }
-
-    emitAnnouncement(
-        conversationId: string,
-        payload: any
-    ) {
-        this.server
-            .to(this.conversationRoom(conversationId))
-            .emit("announcement_created", payload);
+    emitToUser(uid: string, event: string, p: any) {
+        this.presenceEmit.toUser(uid, event, p);
     }
 }

@@ -4,10 +4,15 @@ import {ConfigService} from "@nestjs/config";
 
 import {ChatGateway} from "./chat.gateway";
 import {ConversationModule} from "../module/conversation/conversation.module";
+import {UsersModule} from "../module/user/user.module";
+import {MessageEmitService} from "./services/messageEmit.service";
+import {GroupEmitService} from "./services/groupEmit.service";
+import {PresenceEmitService} from "./services/presenceEmit.service";
 
 @Module({
     imports: [
         forwardRef(() => ConversationModule),
+        UsersModule,
         JwtModule.registerAsync({
             inject: [ConfigService],
             useFactory: (config: ConfigService) => ({
@@ -15,7 +20,12 @@ import {ConversationModule} from "../module/conversation/conversation.module";
             })
         })
     ],
-    providers: [ChatGateway],
+    providers: [
+        ChatGateway,
+        MessageEmitService,
+        GroupEmitService,
+        PresenceEmitService
+    ],
     exports: [ChatGateway]
 })
 export class ChatModule {
