@@ -6,9 +6,12 @@ import {UserService} from "./user.service";
 
 import {User, UserSchema} from "./schema/user.schema";
 import {BlockedUser, BlockedUserSchema} from "./schema/blockedUser.schema";
+import {BlockGuard} from "./guard/block.guard";
+import {ConversationModule} from "../conversation/conversation.module";
 
 @Module({
     imports: [
+        ConversationModule,
         MongooseModule.forFeature([
             {
                 name: User.name,
@@ -22,9 +25,15 @@ import {BlockedUser, BlockedUserSchema} from "./schema/blockedUser.schema";
             }
         ]),
     ],
-    providers: [UserService],
+    providers: [
+        UserService,
+        BlockGuard
+    ],
     controllers: [UserController],
-    exports: [UserService],
+    exports: [
+        UserService,
+        BlockGuard
+    ],
 })
 export class UsersModule {
 }

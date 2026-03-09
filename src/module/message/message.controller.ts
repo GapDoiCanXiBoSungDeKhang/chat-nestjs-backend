@@ -19,6 +19,7 @@ import {MessageService} from "./message.service";
 import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
 import {ConversationParticipantGuard} from "../conversation/guard/conversationParticipant.guard";
 import {MessageConversationGuard} from "../conversation/guard/messageConversation.guard";
+import {BlockGuard} from "../user/guard/block.guard";
 
 import {JwtDecode} from "../../common/decorators/jwt.decorator";
 import {JwtType} from "../../common/types/jwtTypes.type";
@@ -40,7 +41,7 @@ import {PaginationDto} from "./dto/pagination.dto";
 import {createMulterOptions} from "../../shared/upload/upload.config";
 
 @Controller("messages")
-@UseGuards(JwtAuthGuard, ConversationParticipantGuard)
+@UseGuards(JwtAuthGuard, BlockGuard, ConversationParticipantGuard)
 export class MessageController {
     constructor(
         private readonly messageService: MessageService

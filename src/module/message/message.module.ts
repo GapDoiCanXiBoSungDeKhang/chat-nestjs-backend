@@ -19,7 +19,7 @@ import {UsersModule} from "../user/user.module";
         CloudModule,
         UploadModule,
         ChatModule,
-        UsersModule,
+        forwardRef(() => UsersModule),
         forwardRef(() => ConversationModule),
         MongooseModule.forFeature([{
             name: Message.name,

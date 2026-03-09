@@ -535,7 +535,7 @@ export class ConversationService {
         return updatedConversation;
     }
 
-    private async findConversation(room: string) {
+    public async findConversation(room: string) {
         const conversation = await this.conversationModel.findById(
             convertStringToObjectId(room),
         );

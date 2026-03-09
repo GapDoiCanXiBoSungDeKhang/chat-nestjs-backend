@@ -12,7 +12,7 @@ import {PresenceEmitService} from "./services/presenceEmit.service";
 @Module({
     imports: [
         forwardRef(() => ConversationModule),
-        UsersModule,
+        forwardRef(() => UsersModule),
         JwtModule.registerAsync({
             inject: [ConfigService],
             useFactory: (config: ConfigService) => ({

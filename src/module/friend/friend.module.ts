@@ -11,7 +11,7 @@ import {UsersModule} from "../user/user.module";
 @Module({
     imports: [
         forwardRef(() => ConversationModule),
-        UsersModule,
+        forwardRef(() => UsersModule),
         ChatModule,
         MongooseModule.forFeature([{
             name: FriendRequest.name,

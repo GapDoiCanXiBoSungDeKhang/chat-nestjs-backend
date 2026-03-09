@@ -135,4 +135,16 @@ export class UserService {
             .populate("blockedId", "name status avatar")
             .lean();
     }
+
+    public async isBlocked(myUserId: string, userId: string) {
+        const objMyId = convertStringToObjectId(myUserId);
+        const objUserId = convertStringToObjectId(userId);
+        const record = await this.blockUserModel.findOne({
+            $or: [
+                {blockerId: objMyId, blockedId: objUserId},
+                {blockerId: objUserId, blockedId: objMyId},
+            ],
+        });
+        return !!record;
+    }
 }

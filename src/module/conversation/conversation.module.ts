@@ -22,7 +22,7 @@ import {AnnouncementModule} from "../announcements/announcement.module";
         forwardRef(() => MessageModule),
         forwardRef(() => FriendModule),
         ChatModule,
-        UsersModule,
+        forwardRef(() => UsersModule),
         AttachmentModule,
         LinkPreviewModule,
         AnnouncementModule,
