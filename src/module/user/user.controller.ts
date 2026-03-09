@@ -1,4 +1,4 @@
-import {Controller, Get, HttpCode, Param, Post, UseGuards} from "@nestjs/common";
+import {Controller, Delete, Get, HttpCode, Param, Post, UseGuards} from "@nestjs/common";
 
 import {UserService} from "./user.service";
 
@@ -28,5 +28,14 @@ export class UserController {
         @JwtDecode() user: JwtType
     ) {
         return this.userService.blockUser(user.userId, userId);
+    }
+
+    @Delete("block/:userId")
+    @HttpCode(200)
+    public async deleteUser(
+        @Param("userId") userId: BlockedUser["userId"],
+        @JwtDecode() user: JwtType
+    ) {
+        return this.userService.unblockUser(user.userId, userId);
     }
 }

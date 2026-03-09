@@ -107,11 +107,24 @@ export class UserService {
 
     public async blockUser(myUserId: string, userId: string) {
         if (myUserId === userId) throw new BadRequestException("Can't block yourself");
+        const checkExitsUser = await this.findById(userId);
+        if (!checkExitsUser) throw new NotFoundException("User not found");
         await this.blockUserModel.findOneAndUpdate(
             {blockerId: convertStringToObjectId(myUserId), blockedId: convertStringToObjectId(userId)},
             {},
             {upsert: true}
         );
+        return {success: true};
+    }
+
+    public async unblockUser(myUserId: string, userId: string) {
+        if (myUserId === userId) throw new BadRequestException("Can't unblock yourself");
+        const checkExitsUser = await this.findById(userId);
+        if (!checkExitsUser) throw new NotFoundException("User not found");
+        await this.blockUserModel.deleteOne({
+            blockerId: convertStringToObjectId(myUserId),
+            blockedId: convertStringToObjectId(userId),
+        });
         return {success: true};
     }
 }
