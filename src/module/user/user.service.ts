@@ -1,16 +1,19 @@
-import {Injectable, NotFoundException} from "@nestjs/common";
+import {BadRequestException, Injectable, NotFoundException} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import {Model, Types} from "mongoose";
 
 import {User, UserDocument} from "./schema/user.schema";
 import {registerDto} from "../auth/dto/register.dto";
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
+import {BlockedUser, BlockedUserDocument} from "./schema/blockedUser.schema";
 
 @Injectable()
 export class UserService {
     constructor(
         @InjectModel(User.name)
-        private readonly userModel: Model<UserDocument>
+        private readonly userModel: Model<UserDocument>,
+        @InjectModel(BlockedUser.name)
+        private readonly blockUserModel: Model<BlockedUserDocument>
     ) {
     }
 
@@ -100,5 +103,15 @@ export class UserService {
             convertStringToObjectId(userId),
             {status: status},
         );
+    }
+
+    public async blockUser(myUserId: string, userId: string) {
+        if (myUserId === userId) throw new BadRequestException("Can't block yourself");
+        await this.blockUserModel.findOneAndUpdate(
+            {blockerId: convertStringToObjectId(myUserId), blockedId: convertStringToObjectId(userId)},
+            {},
+            {upsert: true}
+        );
+        return {success: true};
     }
 }
