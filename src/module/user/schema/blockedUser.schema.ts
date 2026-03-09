@@ -15,4 +15,4 @@ export class BlockedUser {
 export const BlockedUserSchema = SchemaFactory.createForClass(BlockedUser);
 
 BlockedUserSchema.index({blockerId: 1, blockedId: 1}, {unique: true});
-BlockedUserSchema.index({blockedId: 1});
+BlockedUserSchema.index({blockerId: 1});

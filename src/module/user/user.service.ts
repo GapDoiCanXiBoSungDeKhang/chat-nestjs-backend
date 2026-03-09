@@ -127,4 +127,12 @@ export class UserService {
         });
         return {success: true};
     }
+
+    public async getBlocked(myUserId: string) {
+        return this.blockUserModel.find({
+            blockerId: convertStringToObjectId(myUserId),
+        })
+            .populate("blockedId", "name status avatar")
+            .lean();
+    }
 }

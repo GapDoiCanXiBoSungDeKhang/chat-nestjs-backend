@@ -38,4 +38,13 @@ export class UserController {
     ) {
         return this.userService.unblockUser(user.userId, userId);
     }
+
+    @Get("blocked")
+    @HttpCode(200)
+    public async getBlockedUsers(
+        @Param("userId") userId: BlockedUser["userId"],
+        @JwtDecode() user: JwtType
+    ) {
+        return this.userService.getBlocked(user.userId);
+    }
 }
