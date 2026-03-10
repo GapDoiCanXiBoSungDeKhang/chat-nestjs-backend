@@ -23,6 +23,8 @@ import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.help
 
 import {ChatGateway} from "../../gateway/chat.gateway";
 
+import {MuteDuration} from "./dto/muteDuration.dto";
+
 @Injectable()
 export class ConversationService {
     constructor(
@@ -541,11 +543,7 @@ export class ConversationService {
     ) {
         const updatedConversation = await this.conversationModel.findByIdAndUpdate(
             convertStringToObjectId(conversationId),
-            {
-                $set: {
-                    lastMessage: convertStringToObjectId(messageId),
-                },
-            },
+            {$set: {lastMessage: convertStringToObjectId(messageId)}},
             {new: true}
         );
         if (!updatedConversation) {
@@ -630,5 +628,30 @@ export class ConversationService {
             convertStringToObjectId(conversationId),
             {_id: 1}
         );
+    }
+
+    public async muteConversation(conversationId: string, userId: string, duration: MuteDuration) {
+        const durationMap: Record<MuteDuration, number | null> = {
+            "1h":      60 * 60 * 1000,
+            "8h":  8 * 60 * 60 * 1000,
+            "24h":24 * 60 * 60 * 1000,
+            "forever": null,
+        };
+        const ms = durationMap[duration];
+        const mutedUntil = ms ? new Date(Date.now() + ms) : null;
+
+        const result = await this.conversationModel.updateOne({
+            _id: convertStringToObjectId(conversationId),
+            "participants.userId": convertStringToObjectId(userId),
+        }, {
+            $set: {
+                "participants.$.isMuted": true,
+                "participants.$.mutedUntil": mutedUntil
+            }
+        });
+
+        if (!result.matchedCount)
+            throw new NotFoundException("Conversation not found or you are not a member!");
+        return {success: true, mutedUntil}
     }
 }

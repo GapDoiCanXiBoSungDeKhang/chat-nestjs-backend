@@ -1,9 +1,10 @@
-import {Controller, Post, HttpCode, UseGuards, Body, Get, Param, Patch, Delete, Query} from "@nestjs/common";
+import {Controller, Post, UseGuards, Body, Get, Param, Patch, Delete, Query} from "@nestjs/common";
 import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
 
 import {JwtDecode} from "../../common/decorators/jwt.decorator";
 import {JwtType} from "../../common/types/jwtTypes.type";
 import {ConversationService} from "./conversation.service";
+
 import {CreatePrivateConversationDto} from "./dto/createPrivate.dto";
 import {CreateGroupDto} from "./dto/createGroup.dto";
 import {ConversationIdDto} from "./dto/conversationId.dto";
@@ -13,6 +14,7 @@ import {ChangeRoleDto} from "./dto/changeRole.dto";
 import {HandleRequestDto} from "./dto/handleRequest.dto";
 import {AnnouncementDto} from "./dto/announcement.dto";
 import {IsArchived} from "./dto/isArchived.dto";
+import {MuteDurationDto} from "./dto/muteDuration.dto";
 
 @Controller("conversations")
 @UseGuards(JwtAuthGuard)
@@ -197,5 +199,14 @@ export class ConversationController {
     @Delete(":id/archive")
     unarchive(@Param("id") room: ConversationIdDto["id"], @JwtDecode() user: JwtType) {
         return this.conversationService.archiveConversation(room, user.userId, false);
+    }
+
+    @Post(":id/mute")
+    mute(
+        @Param("id") room: ConversationIdDto["id"],
+        @JwtDecode() user: JwtType,
+        @Body() dto: MuteDurationDto
+    ) {
+        return this.conversationService.muteConversation(room, user.userId, dto.duration);
     }
 }

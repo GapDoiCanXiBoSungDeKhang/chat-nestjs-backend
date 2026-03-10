@@ -17,7 +17,7 @@ export class RequestJoinRoomService {
         ownerId: string,
         conversationId: string,
         userIds: string[],
-        description: string
+        description?: string
     ) {
         const data = userIds.map(uid => ({
             userId: convertStringToObjectId(uid),
