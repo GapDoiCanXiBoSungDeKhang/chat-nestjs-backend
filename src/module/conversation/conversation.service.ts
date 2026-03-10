@@ -435,6 +435,9 @@ export class ConversationService {
         return userIds.map(uid => ({
             userId: convertStringToObjectId(uid),
             role: uid === ownerId ? "owner" : "member",
+            isArchived: false,
+            isMuted: false,
+            mutedUntil: null
         }));
     }
 
@@ -487,12 +490,11 @@ export class ConversationService {
         const conversations = await this.conversationModel
             .find({ "participants.userId": convertStringToObjectId(myUserId) })
             .populate(this.arrayPopulate())
-            .sort({ updatedAt: -1 })
+            .sort({updatedAt: -1})
             .lean();
-
         const filteredConversations = conversations.filter(conv => {
             const me = conv.participants.find(
-                p => p.userId.toString() === myUserId
+                p => p.userId._id.toString() === myUserId
             );
             return includeArchived ? me?.isArchived === true : !me?.isArchived;
         });
@@ -509,6 +511,20 @@ export class ConversationService {
             ...conv,
             unreadCount: hashMap.get(conv._id.toString()) || 0,
         }));
+    }
+
+    public async archiveConversation(conversationId: string, userId: string, archive: boolean) {
+        const result = await this.conversationModel.updateOne({
+            _id: convertStringToObjectId(conversationId),
+            "participants.userId": convertStringToObjectId(userId),
+        }, {
+            $set: {"participants.$.isArchived": archive},
+        });
+
+        if (!result.matchedCount) {
+            throw new NotFoundException("Conversation not found or you are not a member!");
+        }
+        return {success: true, archived: archive};
     }
 
     public async users(userId: string) {

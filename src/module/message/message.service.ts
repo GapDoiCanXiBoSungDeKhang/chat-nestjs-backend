@@ -415,7 +415,7 @@ export class MessageService {
         const filter = await this.messageModel.find({
             conversationId: {$in: conversationIds},
             seenBy: {$ne: convertStringToObjectId(userId)}
-        }, {conversationId: 1});
+        }, {conversationId: 1}).lean();
         return filter.map(mgs => mgs.conversationId);
     }
 

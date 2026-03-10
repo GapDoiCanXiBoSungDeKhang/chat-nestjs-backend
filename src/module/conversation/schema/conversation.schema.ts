@@ -18,6 +18,7 @@ export class Conversation {
     @Prop({
         type: [
             {
+                _id: false,
                 userId: {type: Types.ObjectId, ref: "User"},
                 role: {
                     _id: false,
@@ -35,6 +36,9 @@ export class Conversation {
     participants!: {
         userId: Types.ObjectId,
         role: "owner" | "admin" | "member",
+        isArchived: Boolean,
+        isMuted: Boolean,
+        mutedUntil: Date | null,
     }[];
 
     @Prop({type: Types.ObjectId, ref: "Message"})

@@ -23,7 +23,6 @@ export class ConversationController {
     }
 
     @Post("private")
-    @HttpCode(201)
     public async createConversation(
         @JwtDecode() user: JwtType,
         @Body() dto: CreatePrivateConversationDto
@@ -32,7 +31,6 @@ export class ConversationController {
     }
 
     @Get(":id/info")
-    @HttpCode(200)
     public async getInfoPrivate(
         @Param("id") room: ConversationIdDto["id"]
     ) {
@@ -40,7 +38,6 @@ export class ConversationController {
     }
 
     @Get(":id/info/media")
-    @HttpCode(200)
     public async getInfoMedia(
         @Param("id") room: ConversationIdDto["id"]
     ) {
@@ -48,7 +45,6 @@ export class ConversationController {
     }
 
     @Get(":id/info/file")
-    @HttpCode(200)
     public async getInfoFile(
         @Param("id") room: ConversationIdDto["id"]
     ) {
@@ -56,7 +52,6 @@ export class ConversationController {
     }
 
     @Get(":id/info/link-preview")
-    @HttpCode(200)
     public async getInfoLinkPreview(
         @Param("id") room: ConversationIdDto["id"]
     ) {
@@ -64,7 +59,6 @@ export class ConversationController {
     }
 
     @Post("group")
-    @HttpCode(201)
     public async createConversationGroup(
         @JwtDecode() user: JwtType,
         @Body() dto: CreateGroupDto
@@ -77,7 +71,6 @@ export class ConversationController {
     }
 
     @Patch(":id/members/add")
-    @HttpCode(200)
     public async addMember(
         @JwtDecode() user: JwtType,
         @Param("id") room: ConversationIdDto["id"],
@@ -93,7 +86,6 @@ export class ConversationController {
     }
 
     @Delete(":id/members/remove")
-    @HttpCode(200)
     public async removeMember(
         @JwtDecode() user: JwtType,
         @Param("id") room: ConversationIdDto["id"],
@@ -108,7 +100,6 @@ export class ConversationController {
     }
 
     @Patch(":id/members/role")
-    @HttpCode(200)
     public async changeRole(
         @JwtDecode() user: JwtType,
         @Param("id") room: ConversationIdDto["id"],
@@ -124,7 +115,6 @@ export class ConversationController {
     }
 
     @Delete(":id/members/leave")
-    @HttpCode(200)
     public async leaveGroup(
         @JwtDecode() user: JwtType,
         @Param("id") room: ConversationIdDto["id"],
@@ -137,7 +127,6 @@ export class ConversationController {
     }
 
     @Get(":id/requests")
-    @HttpCode(200)
     public async listRequestJoinRoom(
         @JwtDecode() user: JwtType,
         @Param("id") room: ConversationIdDto["id"]
@@ -149,7 +138,6 @@ export class ConversationController {
     }
 
     @Patch(":id/request/handle")
-    @HttpCode(200)
     public async acceptRequest(
         @Param("id") room: ConversationIdDto["id"],
         @JwtDecode() user: JwtType,
@@ -165,7 +153,6 @@ export class ConversationController {
     }
 
     @Post(":id/announcement")
-    @HttpCode(201)
     public async announcement(
         @Param("id") room: ConversationIdDto["id"],
         @JwtDecode() user: JwtType,
@@ -179,7 +166,6 @@ export class ConversationController {
     }
 
     @Get(":id/announcements")
-    @HttpCode(201)
     public async announcements(
         @Param("id") room: ConversationIdDto["id"],
     ) {
@@ -187,7 +173,6 @@ export class ConversationController {
     }
 
     @Get(":id/pins")
-    @HttpCode(201)
     public async pins(
         @Param("id") room: ConversationIdDto["id"],
     ) {
@@ -195,14 +180,17 @@ export class ConversationController {
     }
 
     @Get("")
-    @HttpCode(200)
     public async conversations(@JwtDecode() user: JwtType, @Query() query?: IsArchived) {
-        return this.conversationService.getAllConversations(user.userId, query?.isArchived);
+        return this.conversationService.getAllConversations(user.userId, query?.archived);
     }
 
     @Get("list-user")
-    @HttpCode(201)
     public async users(@JwtDecode() user: JwtType) {
         return this.conversationService.users(user.userId);
+    }
+
+    @Post(":id/archive")
+    archive(@Param("id") room: ConversationIdDto["id"], @JwtDecode() user: JwtType) {
+        return this.conversationService.archiveConversation(room, user.userId, true);
     }
 }

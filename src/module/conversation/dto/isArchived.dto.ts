@@ -5,5 +5,5 @@ export class IsArchived {
     @Transform(({value}) => value === "true")
     @IsOptional()
     @IsBoolean()
-    isArchived?: boolean;
+    archived?: boolean;
 }

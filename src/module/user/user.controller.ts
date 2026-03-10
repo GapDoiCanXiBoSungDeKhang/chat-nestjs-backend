@@ -16,13 +16,11 @@ export class UserController {
     }
 
     @Get()
-    @HttpCode(200)
     public async getUsers() {
         return this.userService.users();
     }
 
     @Post("block/:userId")
-    @HttpCode(201)
     public async blockUser(
         @Param("userId") userId: BlockedUser["userId"],
         @JwtDecode() user: JwtType
@@ -31,7 +29,6 @@ export class UserController {
     }
 
     @Delete("block/:userId")
-    @HttpCode(200)
     public async deleteUser(
         @Param("userId") userId: BlockedUser["userId"],
         @JwtDecode() user: JwtType
@@ -40,7 +37,6 @@ export class UserController {
     }
 
     @Get("blocked")
-    @HttpCode(200)
     public async getBlockedUsers(
         @Param("userId") userId: BlockedUser["userId"],
         @JwtDecode() user: JwtType
