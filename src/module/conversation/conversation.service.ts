@@ -571,11 +571,8 @@ export class ConversationService {
         const obj = conversation.participants.find(
             conv => conv.userId.toString() === userId
         );
-        if (!obj) {
-            throw new ForbiddenException(
-                "Participant not found user needed!"
-            );
-        }
+        if (!obj)
+            throw new ForbiddenException("Participant not found user needed!");
         return obj;
     }
 

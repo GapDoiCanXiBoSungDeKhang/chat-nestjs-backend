@@ -193,4 +193,9 @@ export class ConversationController {
     archive(@Param("id") room: ConversationIdDto["id"], @JwtDecode() user: JwtType) {
         return this.conversationService.archiveConversation(room, user.userId, true);
     }
+
+    @Delete(":id/archive")
+    unarchive(@Param("id") room: ConversationIdDto["id"], @JwtDecode() user: JwtType) {
+        return this.conversationService.archiveConversation(room, user.userId, false);
+    }
 }
