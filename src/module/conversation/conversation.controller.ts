@@ -1,4 +1,4 @@
-import {Controller, Post, HttpCode, UseGuards, Body, Get, Param, Patch, Delete} from "@nestjs/common";
+import {Controller, Post, HttpCode, UseGuards, Body, Get, Param, Patch, Delete, Query} from "@nestjs/common";
 import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
 
 import {JwtDecode} from "../../common/decorators/jwt.decorator";
@@ -12,6 +12,7 @@ import {RemoveMemberDto} from "./dto/removeMember.dto";
 import {ChangeRoleDto} from "./dto/changeRole.dto";
 import {HandleRequestDto} from "./dto/handleRequest.dto";
 import {AnnouncementDto} from "./dto/announcement.dto";
+import {IsArchived} from "./dto/isArchived.dto";
 
 @Controller("conversations")
 @UseGuards(JwtAuthGuard)
@@ -87,7 +88,7 @@ export class ConversationController {
             user.userId,
             user.name,
             dto.userIds,
-            dto.description
+            dto?.description
         )
     }
 
@@ -195,8 +196,8 @@ export class ConversationController {
 
     @Get("")
     @HttpCode(200)
-    public async conversations(@JwtDecode() user: JwtType) {
-        return this.conversationService.getAllConversations(user.userId);
+    public async conversations(@JwtDecode() user: JwtType, @Query() query?: IsArchived) {
+        return this.conversationService.getAllConversations(user.userId, query?.isArchived);
     }
 
     @Get("list-user")

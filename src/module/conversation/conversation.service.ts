@@ -140,7 +140,7 @@ export class ConversationService {
         actorId: string,
         nameUser: string,
         userIds: string[],
-        description: string,
+        description?: string,
     ) {
         const uniqueIds = Array.from(new Set(userIds));
 
@@ -483,29 +483,32 @@ export class ConversationService {
         ];
     }
 
-    public async getAllConversations(myUserId: string) {
+    public async getAllConversations(myUserId: string, includeArchived = false) {
         const conversations = await this.conversationModel
-            .find({"participants.userId": convertStringToObjectId(myUserId)})
+            .find({ "participants.userId": convertStringToObjectId(myUserId) })
             .populate(this.arrayPopulate())
-            .sort({updatedAt: -1})
+            .sort({ updatedAt: -1 })
             .lean();
 
-        const conversationIds = conversations.map(conv => conv._id);
-        const mgsIds = await this.messageService
-            .filterMessageConversationNotSeen(
-                conversationIds,
-                myUserId
+        const filteredConversations = conversations.filter(conv => {
+            const me = conv.participants.find(
+                p => p.userId.toString() === myUserId
             );
+            return includeArchived ? me?.isArchived === true : !me?.isArchived;
+        });
+        const conversationIds = filteredConversations.map(conv => conv._id);
+        const mgsIds = await this.messageService.filterMessageConversationNotSeen(conversationIds, myUserId);
 
         const hashMap = new Map<string, number>();
         for (const convMgs of mgsIds) {
             const id = convMgs.toString();
             hashMap.set(id, (hashMap.get(id) || 0) + 1);
         }
-        return conversations.map(conv => ({
+
+        return filteredConversations.map(conv => ({
             ...conv,
             unreadCount: hashMap.get(conv._id.toString()) || 0,
-        }))
+        }));
     }
 
     public async users(userId: string) {

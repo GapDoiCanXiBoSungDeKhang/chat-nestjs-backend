@@ -25,6 +25,9 @@ export class Conversation {
                     enum: ["owner", "admin", "member"],
                     default: "member"
                 },
+                isArchived: {type: Boolean, default: false},
+                isMuted: {type: Boolean, default: false},
+                mutedUntil: {type: Date, default: null},
             },
         ],
         required: true,
