@@ -209,4 +209,9 @@ export class ConversationController {
     ) {
         return this.conversationService.muteConversation(room, user.userId, dto.duration);
     }
+
+    @Delete(":id/mute")
+    unmute(@Param("id") room: ConversationIdDto["id"], @JwtDecode() user: JwtType) {
+        return this.conversationService.unmuteConversation(room, user.userId);
+    }
 }

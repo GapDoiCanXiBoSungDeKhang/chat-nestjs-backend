@@ -654,4 +654,20 @@ export class ConversationService {
             throw new NotFoundException("Conversation not found or you are not a member!");
         return {success: true, mutedUntil}
     }
+
+    public async unmuteConversation(conversationId: string, userId: string) {
+        const result = await this.conversationModel.updateOne({
+            _id: convertStringToObjectId(conversationId),
+            "participants.userId": convertStringToObjectId(userId),
+        }, {
+            $set: {
+                "participants.$.isMuted": false,
+                "participants.$.mutedUntil": null
+            }
+        });
+
+        if (!result.matchedCount)
+            throw new NotFoundException("Conversation not found or you are not a member!");
+        return {success: true}
+    }
 }
