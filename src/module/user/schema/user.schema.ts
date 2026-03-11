@@ -20,10 +20,7 @@ export class User {
 
     @Prop({default: null})
     avatar?: string;
-
-    @Prop({default: "offline"})
-    status!: "online" | "offline";
-
+    
     @Prop({default: null})
     lastSeen!: Date;
 
