@@ -1,0 +1,32 @@
+import {forwardRef, Module} from "@nestjs/common";
+import {JwtModule} from "@nestjs/jwt";
+import {ConfigService} from "@nestjs/config";
+
+import {ChatGateway} from "./chat.gateway";
+import {ConversationModule} from "../module/conversation/conversation.module";
+import {UsersModule} from "../module/user/user.module";
+import {MessageEmitService} from "./services/messageEmit.service";
+import {GroupEmitService} from "./services/groupEmit.service";
+import {PresenceEmitService} from "./services/presenceEmit.service";
+
+@Module({
+    imports: [
+        forwardRef(() => ConversationModule),
+        forwardRef(() => UsersModule),
+        JwtModule.registerAsync({
+            inject: [ConfigService],
+            useFactory: (config: ConfigService) => ({
+                secret: config.get<string>("JWT_SECRET")
+            })
+        })
+    ],
+    providers: [
+        ChatGateway,
+        MessageEmitService,
+        GroupEmitService,
+        PresenceEmitService
+    ],
+    exports: [ChatGateway]
+})
+export class ChatModule {
+}
