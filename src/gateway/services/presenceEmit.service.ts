@@ -12,12 +12,34 @@ export class PresenceEmitService {
         this.server = server;
     }
 
-    userOnline(userId: string) {
-        this.server.emit(SOCKET_EVENTS.USER_ONLINE, {userId});
+    public userOnline(userId: string) {
+        this.server.emit(SOCKET_EVENTS.USER_STATUS_CHANGED, {
+            userId,
+            status: "online",
+            lastSeen: null,
+        });
     }
 
-    userOffline(userId: string) {
-        this.server.emit(SOCKET_EVENTS.USER_OFFLINE, {userId});
+    public userOffline(userId: string, lastSeen: Date) {
+        this.server.emit(SOCKET_EVENTS.USER_STATUS_CHANGED, {
+            userId,
+            status: "offline",
+            lastSeen,
+        });
+    }
+
+    public statusChanged(
+        userId: string,
+        status: "online" | "away" | "busy" | "offline",
+        customStatusMessage: string | null,
+        lastSeen: Date | null,
+    ) {
+        this.server.emit(SOCKET_EVENTS.USER_STATUS_CHANGED, {
+            userId,
+            status,
+            customStatusMessage,
+            lastSeen,
+        });
     }
 
     toUser(userId: string, event: string, payload: any) {

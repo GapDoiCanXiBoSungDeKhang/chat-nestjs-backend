@@ -1,9 +1,8 @@
 export const SOCKET_EVENTS = {
-    USER_ONLINE:            "user_online",
-    USER_OFFLINE:           "user_offline",
-
     USER_TYPING:            "user_typing",
     USER_STOPPED_TYPING:    "user_stopped_typing",
+
+    USER_STATUS_CHANGED: "user_status_changed",
 
     NEW_MESSAGE:            "new_message",
     NEW_MESSAGE_FILE:       "new_message_file",
@@ -19,6 +18,7 @@ export const SOCKET_EVENTS = {
     MESSAGE_UNPINNED:       "message_unpinned",
     MESSAGE_MENTION:        "mention_received",
     MESSAGE_SYSTEM_ROOM:    "message_system_room",
+    ANNOUNCEMENT_CREATED:   "announcement_created",
 
     GROUP_CREATED:          "group_created",
     GROUP_MEMBER_ADDED:     "group_member_added",
@@ -34,7 +34,6 @@ export const SOCKET_EVENTS = {
     GROUP_REQUEST_ADDED:    "group_request_added",
     GROUP_REQUEST_REJECTED: "group_request_rejected",
 
-    ANNOUNCEMENT_CREATED:   "announcement_created",
 
     FRIEND_REQUEST_RECEIVED: "friend_request_received",
     FRIEND_REQUEST_ACCEPTED: "friend_request_accepted",

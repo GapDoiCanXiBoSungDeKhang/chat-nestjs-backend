@@ -99,10 +99,17 @@ export class UserService {
             }).lean();
     }
 
-    public async updateStatus(userId: string, status: string) {
+    public async setOnline(userId: string) {
         await this.userModel.findByIdAndUpdate(
             convertStringToObjectId(userId),
-            {status: status},
+            { status: "online", lastSeen: null }
+        );
+    }
+
+    public async setOffline(userId: string) {
+        await this.userModel.findByIdAndUpdate(
+            convertStringToObjectId(userId),
+            { status: "offline", lastSeen: new Date() }
         );
     }
 

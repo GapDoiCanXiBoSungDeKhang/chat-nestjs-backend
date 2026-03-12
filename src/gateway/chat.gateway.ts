@@ -65,7 +65,7 @@ export class ChatGateway
             client.data.userId = userId;
             client.join(gatewayRooms.user(userId));
 
-            await this.userService.updateStatus(userId, "online");
+            await this.userService.setOnline(userId);
             this.presenceEmit.userOnline(userId);
 
             this.logger.debug(`Client connected: ${userId}`);
@@ -78,8 +78,9 @@ export class ChatGateway
         const userId: string = client.data.userId;
         if (!userId) return;
 
-        await this.userService.updateStatus(userId, "offline");
-        this.presenceEmit.userOffline(userId);
+        await this.userService.setOffline(userId);
+        const lastSeen = new Date();
+        this.presenceEmit.userOffline(userId, lastSeen);
 
         this.logger.debug(`Client disconnected: ${userId}`);
     }
