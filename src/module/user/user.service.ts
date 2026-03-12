@@ -7,6 +7,7 @@ import {registerDto} from "../auth/dto/register.dto";
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 import {BlockedUser, BlockedUserDocument} from "./schema/blockedUser.schema";
 import {UpdateStatusDto} from "./dto/updateStatus.dto";
+import {ChatGateway} from "../../gateway/chat.gateway";
 
 @Injectable()
 export class UserService {
@@ -14,7 +15,8 @@ export class UserService {
         @InjectModel(User.name)
         private readonly userModel: Model<UserDocument>,
         @InjectModel(BlockedUser.name)
-        private readonly blockUserModel: Model<BlockedUserDocument>
+        private readonly blockUserModel: Model<BlockedUserDocument>,
+        private readonly chatGateway: ChatGateway,
     ) {
     }
 
@@ -167,12 +169,12 @@ export class UserService {
             { new: true, select: "status customStatusMessage lastSeen" }
         );
         if (!updated) throw new NotFoundException("User not found");
-        // this.chatGateway.emitStatusChanged(
-        //     user.userId,
-        //     updated.status,
-        //     updated.customStatusMessage ?? null,
-        //     updated.lastSeen ?? null,
-        // );
+        this.chatGateway.emitStatusChanged(
+            userId,
+            updated.status,
+            updated.customStatusMessage ?? null,
+            updated.lastSeen ?? null,
+        );
         return updated;
     }
 }

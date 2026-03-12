@@ -19,6 +19,7 @@ import {GroupEmitService} from "./services/groupEmit.service";
 import {PresenceEmitService} from "./services/presenceEmit.service";
 import {Types} from "mongoose";
 import {gatewayRooms} from "./gateway.rooms";
+import {UsersModule} from "../module/user/user.module";
 
 @WebSocketGateway({
     cors: {origin: "*", credentials: true},
@@ -34,6 +35,7 @@ export class ChatGateway
         private readonly jwtService: JwtService,
         @Inject(forwardRef(() => ConversationService))
         private readonly conversationService: ConversationService,
+        @Inject(forwardRef(() => UserService))
         private readonly userService: UserService,
         private readonly messageEmit: MessageEmitService,
         private readonly groupEmit: GroupEmitService,
@@ -226,6 +228,15 @@ export class ChatGateway
 
     emitHandelRequestJoinRoom(cid: string, uid: string, p: any) {
         this.groupEmit.requestHandled(cid, uid, p);
+    }
+
+    emitStatusChanged(
+        userId: string,
+        status: "online" | "away" | "busy" | "offline",
+        customStatusMessage: string | null,
+        lastSeen: Date | null,
+    ) {
+        this.presenceEmit.statusChanged(userId, status, customStatusMessage, lastSeen);
     }
 
     emitToUser(uid: string, event: string, p: any) {

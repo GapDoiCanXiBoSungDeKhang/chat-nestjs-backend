@@ -30,7 +30,9 @@ export class ConversationService {
     constructor(
         @InjectModel(Conversation.name)
         private readonly conversationModel: Model<ConversationDocument>,
+        @Inject(forwardRef(() => ChatGateway))
         private readonly chatGateway: ChatGateway,
+        @Inject(forwardRef(() => UserService))
         private readonly userService: UserService,
         @Inject(forwardRef(() => MessageService))
         private readonly messageService: MessageService,

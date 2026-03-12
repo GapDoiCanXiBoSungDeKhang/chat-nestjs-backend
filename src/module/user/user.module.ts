@@ -1,4 +1,4 @@
-import {Module} from "@nestjs/common";
+import {forwardRef, Module} from "@nestjs/common";
 import {MongooseModule} from "@nestjs/mongoose";
 
 import {UserController} from "./user.controller";
@@ -8,10 +8,12 @@ import {User, UserSchema} from "./schema/user.schema";
 import {BlockedUser, BlockedUserSchema} from "./schema/blockedUser.schema";
 import {BlockGuard} from "./guard/block.guard";
 import {ConversationModule} from "../conversation/conversation.module";
+import {ChatModule} from "../../gateway/chat.module";
 
 @Module({
     imports: [
         ConversationModule,
+        forwardRef(() => ChatModule),
         MongooseModule.forFeature([
             {
                 name: User.name,

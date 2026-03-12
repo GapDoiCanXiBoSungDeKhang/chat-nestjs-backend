@@ -28,7 +28,9 @@ export class MessageService {
         private readonly conversationService: ConversationService,
         private readonly attachmentService: AttachmentService,
         private readonly linkPreviewService: LinkPreviewService,
+        @Inject(forwardRef(() => UserService))
         private readonly userService: UserService,
+        @Inject(forwardRef(() => ChatGateway))
         private readonly chatGateway: ChatGateway,
     ) {
     }
