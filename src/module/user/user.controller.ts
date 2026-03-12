@@ -61,4 +61,9 @@ export class UserController {
     ) {
         return this.userService.updatePrivacy(user.userId, dto);
     }
+
+    @Get("privacy")
+    public async getPrivacy(@JwtDecode() user: JwtType) {
+        return this.userService.getPrivacy(user.userId);
+    }
 }

@@ -196,4 +196,13 @@ export class UserService {
 
         return updated;
     }
+
+    public async getPrivacy(userId: string) {
+        const findPrivacy = await this.userModel.findById(
+            convertStringToObjectId(userId),
+            {privacy: 1}
+        );
+        if (!findPrivacy) throw new NotFoundException("User not found");
+        return findPrivacy;
+    }
 }
