@@ -1,4 +1,4 @@
-import {Controller, Delete, Get, HttpCode, Param, Post, UseGuards} from "@nestjs/common";
+import {Body, Controller, Delete, Get, Param, Patch, Post, UseGuards} from "@nestjs/common";
 
 import {UserService} from "./user.service";
 
@@ -6,6 +6,7 @@ import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
 import {JwtDecode} from "../../common/decorators/jwt.decorator";
 import {JwtType} from "../../common/types/jwtTypes.type";
 import {BlockedUser} from "./dto/paramUserId.dto";
+import {UpdateStatusDto} from "./dto/updateStatus.dto";
 
 @Controller("users")
 @UseGuards(JwtAuthGuard)
@@ -42,5 +43,13 @@ export class UserController {
         @JwtDecode() user: JwtType
     ) {
         return this.userService.getBlocked(user.userId);
+    }
+
+    @Patch("status")
+    public async updateStatus(
+        @JwtDecode() user: JwtType,
+        @Body() dto: UpdateStatusDto,
+    ) {
+        return this.userService.updateCustomStatus(user.userId, dto);
     }
 }

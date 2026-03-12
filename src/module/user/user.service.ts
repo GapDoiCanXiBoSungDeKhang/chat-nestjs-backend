@@ -6,6 +6,7 @@ import {User, UserDocument} from "./schema/user.schema";
 import {registerDto} from "../auth/dto/register.dto";
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 import {BlockedUser, BlockedUserDocument} from "./schema/blockedUser.schema";
+import {UpdateStatusDto} from "./dto/updateStatus.dto";
 
 @Injectable()
 export class UserService {
@@ -146,5 +147,25 @@ export class UserService {
             ],
         });
         return !!record;
+    }
+
+    public async updateCustomStatus(userId: string, dto: UpdateStatusDto) {
+        const updated = await this.userModel.findByIdAndUpdate(
+            convertStringToObjectId(userId),
+            {
+                status: dto.status,
+                customStatusMessage: dto.customStatusMessage ?? null,
+                ...(dto.status === "offline" ? { lastSeen: new Date() } : { lastSeen: null }),
+            },
+            { new: true, select: "status customStatusMessage lastSeen" }
+        );
+        if (!updated) throw new NotFoundException("User not found");
+        // this.chatGateway.emitStatusChanged(
+        //     user.userId,
+        //     updated.status,
+        //     updated.customStatusMessage ?? null,
+        //     updated.lastSeen ?? null,
+        // );
+        return updated;
     }
 }

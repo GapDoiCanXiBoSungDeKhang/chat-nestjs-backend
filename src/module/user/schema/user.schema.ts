@@ -39,6 +39,7 @@ export class User {
 
     @Prop({
         type: {
+            _id: false,
             lastSeenVisibility: {
                 type: String,
                 enum: ["everyone", "friends", "nobody"],
@@ -47,6 +48,11 @@ export class User {
             showReadReceipts: { type: Boolean, default: true },
             showTypingIndicator: { type: Boolean, default: true },
         },
+        default: () => ({
+            lastSeenVisibility: "everyone",
+            showReadReceipts: true,
+            showTypingIndicator: true,
+        }),
     })
     privacy!: {
         lastSeenVisibility: "everyone" | "friends" | "nobody";
