@@ -5,7 +5,7 @@ import {UserService} from "./user.service";
 import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
 import {JwtDecode} from "../../common/decorators/jwt.decorator";
 import {JwtType} from "../../common/types/jwtTypes.type";
-import {BlockedUser} from "./dto/paramUserId.dto";
+import {BlockedUser, ProfileDto} from "./dto/paramUserId.dto";
 import {UpdateStatusDto} from "./dto/updateStatus.dto";
 import {UpdatePrivacyDto} from "./dto/updatePrivacy.dto";
 
@@ -65,5 +65,13 @@ export class UserController {
     @Get("privacy")
     public async getPrivacy(@JwtDecode() user: JwtType) {
         return this.userService.getPrivacy(user.userId);
+    }
+
+    @Get(":userId/profile")
+    public async getProfile(
+        @JwtDecode() viewer: JwtType,
+        @Param() param: ProfileDto,
+    ) {
+        return this.userService.getProfileWithPrivacy(param.userId, viewer.userId);
     }
 }

@@ -9,10 +9,12 @@ import {BlockedUser, BlockedUserSchema} from "./schema/blockedUser.schema";
 import {BlockGuard} from "./guard/block.guard";
 import {ConversationModule} from "../conversation/conversation.module";
 import {ChatModule} from "../../gateway/chat.module";
+import {FriendModule} from "../friend/friend.module";
 
 @Module({
     imports: [
         ConversationModule,
+        FriendModule,
         forwardRef(() => ChatModule),
         MongooseModule.forFeature([
             {

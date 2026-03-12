@@ -22,6 +22,7 @@ export class FriendService {
         @Inject(forwardRef(() => ConversationService))
         private readonly conversationService: ConversationService,
         private readonly chatGateway: ChatGateway,
+        @Inject(forwardRef(() => UserService))
         private readonly userService: UserService,
     ) {
     }
@@ -162,5 +163,19 @@ export class FriendService {
         }
         await relation.deleteOne();
         return {success: true}
+    }
+
+    public async isFriend(myUserId: string, userId: string) {
+        const from = convertStringToObjectId(myUserId);
+        const to = convertStringToObjectId(userId);
+
+        const friend = await this.friendRequestModel.findOne({
+            status: "accepted",
+            $or: [
+                {from: from, to: to},
+                {from: to, to: from},
+            ]
+        });
+        return !!friend;
     }
 }

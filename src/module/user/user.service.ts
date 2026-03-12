@@ -9,6 +9,7 @@ import {BlockedUser, BlockedUserDocument} from "./schema/blockedUser.schema";
 import {UpdateStatusDto} from "./dto/updateStatus.dto";
 import {ChatGateway} from "../../gateway/chat.gateway";
 import {UpdatePrivacyDto} from "./dto/updatePrivacy.dto";
+import {FriendService} from "../friend/friend.service";
 
 @Injectable()
 export class UserService {
@@ -18,6 +19,7 @@ export class UserService {
         @InjectModel(BlockedUser.name)
         private readonly blockUserModel: Model<BlockedUserDocument>,
         private readonly chatGateway: ChatGateway,
+        private readonly friendService: FriendService,
     ) {
     }
 
@@ -201,8 +203,28 @@ export class UserService {
         const findPrivacy = await this.userModel.findById(
             convertStringToObjectId(userId),
             {privacy: 1}
-        );
+        ).lean();
         if (!findPrivacy) throw new NotFoundException("User not found");
         return findPrivacy;
+    }
+
+    public async getProfileWithPrivacy(targetUserId: string, viewerUserId: string) {
+        const user = await this.userModel.findById(
+            convertStringToObjectId(targetUserId),
+            {password: 0, phoneNumber: 0, refreshToken: 0}
+        ).lean();
+        if (!user) throw new NotFoundException("User not found");
+
+        const visibility = user.privacy.lastSeenVisibility;
+        let showLastSeen = false;
+
+        if (visibility === "everyone") showLastSeen = true;
+        else if (visibility === "friends" && targetUserId !== viewerUserId)
+            showLastSeen = await this.friendService.isFriend(viewerUserId, targetUserId);
+        else if (visibility === "friends" && targetUserId === viewerUserId)
+            showLastSeen = true;
+
+        if (!showLastSeen) user.lastSeen = null as any;
+        return user;
     }
 }

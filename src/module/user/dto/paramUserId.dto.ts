@@ -4,3 +4,8 @@ export class BlockedUser {
     @IsMongoId()
     userId!: string;
 }
+
+export class ProfileDto {
+    @IsMongoId()
+    userId!: string;
+}
