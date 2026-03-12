@@ -7,6 +7,7 @@ import {JwtDecode} from "../../common/decorators/jwt.decorator";
 import {JwtType} from "../../common/types/jwtTypes.type";
 import {BlockedUser} from "./dto/paramUserId.dto";
 import {UpdateStatusDto} from "./dto/updateStatus.dto";
+import {UpdatePrivacyDto} from "./dto/updatePrivacy.dto";
 
 @Controller("users")
 @UseGuards(JwtAuthGuard)
@@ -51,5 +52,13 @@ export class UserController {
         @Body() dto: UpdateStatusDto,
     ) {
         return this.userService.updateCustomStatus(user.userId, dto);
+    }
+
+    @Patch("privacy")
+    public async updatePrivacy(
+        @JwtDecode() user: JwtType,
+        @Body() dto: UpdatePrivacyDto,
+    ) {
+        return this.userService.updatePrivacy(user.userId, dto);
     }
 }

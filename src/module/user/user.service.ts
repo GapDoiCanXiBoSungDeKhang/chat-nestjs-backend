@@ -8,6 +8,7 @@ import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.help
 import {BlockedUser, BlockedUserDocument} from "./schema/blockedUser.schema";
 import {UpdateStatusDto} from "./dto/updateStatus.dto";
 import {ChatGateway} from "../../gateway/chat.gateway";
+import {UpdatePrivacyDto} from "./dto/updatePrivacy.dto";
 
 @Injectable()
 export class UserService {
@@ -175,6 +176,24 @@ export class UserService {
             updated.customStatusMessage ?? null,
             updated.lastSeen ?? null,
         );
+        return updated;
+    }
+
+    public async updatePrivacy(userId: string, dto: UpdatePrivacyDto) {
+        const updateFields: Record<string, any> = {}
+        if (dto.lastSeenVisibility  !== undefined)
+            updateFields["privacy.lastSeenVisibility"] = dto.lastSeenVisibility;
+        if (dto.showReadReceipts !== undefined)
+            updateFields["privacy.showReadReceipts"] = dto.showReadReceipts;
+        if (dto.showTypingIndicator !== undefined)
+            updateFields["privacy.showTypingIndicator"] = dto.showTypingIndicator;
+        const updated = await this.userModel.findByIdAndUpdate(
+            convertStringToObjectId(userId),
+            {$set: updateFields},
+            {new: true, select: "privacy"},
+        );
+        if (!updated) throw new NotFoundException("User not found");
+
         return updated;
     }
 }

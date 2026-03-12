@@ -19,7 +19,6 @@ import {GroupEmitService} from "./services/groupEmit.service";
 import {PresenceEmitService} from "./services/presenceEmit.service";
 import {Types} from "mongoose";
 import {gatewayRooms} from "./gateway.rooms";
-import {UsersModule} from "../module/user/user.module";
 
 @WebSocketGateway({
     cors: {origin: "*", credentials: true},
