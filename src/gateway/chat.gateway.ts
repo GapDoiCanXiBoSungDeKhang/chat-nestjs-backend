@@ -115,6 +115,10 @@ export class ChatGateway
         @MessageBody() data: { conversationId: string },
     ) {
         const userId: string = client.data.userId;
+
+        const getPrivacy = await this.userService.getPrivacy(userId);
+        if (getPrivacy && !getPrivacy.privacy.showTypingIndicator) return;
+
         const ok = await this.conversationService.findUserParticipants(
             userId,
             data.conversationId,
