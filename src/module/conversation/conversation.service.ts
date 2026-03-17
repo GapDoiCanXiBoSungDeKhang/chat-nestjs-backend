@@ -354,6 +354,21 @@ export class ConversationService {
         return conversation;
     }
 
+    public async disbandGroup(userId: string, conversationId: string) {
+        const conversation = await this.findConversation(conversationId);
+        const user = this.getUserParticipant(conversation, userId);
+
+        if (user.role !== "owner") {
+            throw new ForbiddenException("You can't disband group!");
+        }
+        await Promise.all([
+            conversation.deleteOne(),
+            this.messageService.deleteManyMessagesConversationGroup(conversationId),
+            this.attachmentService.cleanDateAttachments(conversationId)
+        ]);
+        return {status: "group is deleted!"}
+    }
+
     public async listRequestJoinRoom(
         room: string,
         actorId: string

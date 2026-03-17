@@ -128,6 +128,17 @@ export class ConversationController {
         );
     }
 
+    @Delete(":id/disband")
+    public async disbandGroup(
+        @JwtDecode() user: JwtType,
+        @Param("id") room: ConversationIdDto["id"],
+    ) {
+        return this.conversationService.disbandGroup(
+            user.userId,
+            room
+        );
+    }
+
     @Get(":id/requests")
     public async listRequestJoinRoom(
         @JwtDecode() user: JwtType,
