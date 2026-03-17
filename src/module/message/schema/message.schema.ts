@@ -11,7 +11,7 @@ export class Message {
     @Prop({type: Types.ObjectId, ref: "User", required: true})
     senderId!: Types.ObjectId;
 
-    @Prop({type: String, required: true})
+    @Prop({type: String, default: null})
     content?: string;
 
     @Prop({

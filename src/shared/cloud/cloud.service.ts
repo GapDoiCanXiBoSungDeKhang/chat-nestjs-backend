@@ -21,10 +21,7 @@ export class CloudService {
     ): Promise<CloudUpload> {
         try {
             const resourceType = type === "image"
-                ? "image"
-                : type === "video" || type === "voice"
-                    ? "video"
-                    : "raw"
+                ? "image" : type === "video" || type === "voice" ? "video" : "raw"
             const res = await cloudinary.uploader.upload(
                 file.path,
                 {
@@ -34,16 +31,12 @@ export class CloudService {
                     unique_filename: true,
                 }
             );
-
             return {
                 url: res.secure_url,
                 size: res.bytes,
                 publicId: res.public_id,
                 thumbnail: res.resource_type === "image"
-                    ? res.secure_url.replace(
-                        "upload",
-                        "upload/w_300"
-                    )
+                    ? res.secure_url.replace("upload", "upload/w_300")
                     : undefined,
                 mimeType: res.mimetype,
                 originalName: res.original_filename,
@@ -87,6 +80,7 @@ export class CloudService {
                 size: upload.size,
                 mimeType: upload.mimeType,
                 duration: upload.duration,
+                publicId: upload.publicId
             }
         });
     }

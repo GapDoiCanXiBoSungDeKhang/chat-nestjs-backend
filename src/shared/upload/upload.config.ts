@@ -7,6 +7,7 @@ import {createFileFilter} from "./file-filter";
 import {MAX_FILE_SIZE} from "./upload.constants";
 
 export const createMulterOptions = (type: CloudUploadType) => {
+    console.log(1);
     return {
         storage: diskStorage({
             destination: (req, file, cb) => {
