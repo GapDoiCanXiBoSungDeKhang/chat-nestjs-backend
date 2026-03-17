@@ -324,9 +324,11 @@ export class ConversationService {
             if (newOwner) {
                 newOwner.role = "owner";
             } else {
-                await conversation.deleteOne();
-                await this.messageService.deleteManyMessagesConversationGroup(room);
-
+                await Promise.all([
+                    conversation.deleteOne(),
+                    this.messageService.deleteManyMessagesConversationGroup(room),
+                    this.attachmentService.cleanDateAttachments(room)
+                ]);
                 return {status: "group is deleted!"}
             }
         }

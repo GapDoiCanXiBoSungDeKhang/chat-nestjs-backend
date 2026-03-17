@@ -102,4 +102,13 @@ export class AttachmentService {
         })
             .lean();
     }
+
+    public async cleanDateAttachments(conversationId: string) {
+        const convObjectId = convertStringToObjectId(conversationId);
+        const attachments = await this.attachmentModel.find({
+            conversationId: convObjectId,
+        });
+        if (!attachments.length) return;
+        await this.cloudService.cleanDataFile(attachments);
+    }
 }

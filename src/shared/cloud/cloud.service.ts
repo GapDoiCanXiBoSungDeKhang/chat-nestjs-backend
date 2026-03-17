@@ -4,6 +4,7 @@ import * as fs from "node:fs";
 
 import {CloudUpload, UploadFileType} from "./cloud.types";
 import {convertStringToObjectId} from "../helpers/convertObjectId.helpers";
+import {AttachmentDocument} from "../../module/attachment/schema/attachment.schema";
 
 @Injectable()
 export class CloudService {
@@ -53,11 +54,11 @@ export class CloudService {
     public async uploadMultiple(
         files: Express.Multer.File[],
         messageId: string,
-        conversationId: string,
+        itemersationId: string,
         uploaderId: string,
     ) {
         const messageObjectId = convertStringToObjectId(messageId);
-        const conversationObjectId = convertStringToObjectId(conversationId);
+        const convObjectId = convertStringToObjectId(itemersationId);
         const uploaderObjectId = convertStringToObjectId(uploaderId);
 
         const uploads = await Promise.all(
@@ -70,7 +71,7 @@ export class CloudService {
             const detected = this.detectType(files[i].mimetype);
             return {
                 messageId: messageObjectId,
-                conversationId: conversationObjectId,
+                conversationId: convObjectId,
                 uploaderId: uploaderObjectId,
                 type: detected,
                 url: upload.url,
@@ -89,5 +90,29 @@ export class CloudService {
         if (mime.startsWith("image/")) return "image";
         if (mime.startsWith("video/")) return "video";
         return "file";
+    }
+
+    public async cleanDataFile(attachments: AttachmentDocument[]) {
+        const filesToDelete = {
+            image: [],
+            video: [],
+            raw: []
+        };
+        attachments.forEach((item) => {
+            if (item.type === 'image') filesToDelete.image.push(item.publicId);
+            else if (item.type === 'video') filesToDelete.video.push(item.publicId);
+            else if (item.type === 'file') filesToDelete.raw.push(item.publicId);
+        });
+        const deletePromises = [];
+        if (filesToDelete.image.length > 0) {
+            deletePromises.push(cloudinary.api.delete_resources(filesToDelete.image, { resource_type: 'image' }));
+        }
+        if (filesToDelete.video.length > 0) {
+            deletePromises.push(cloudinary.api.delete_resources(filesToDelete.video, { resource_type: 'video' }));
+        }
+        if (filesToDelete.raw.length > 0) {
+            deletePromises.push(cloudinary.api.delete_resources(filesToDelete.raw, { resource_type: 'raw' }));
+        }
+        await Promise.all(deletePromises);
     }
 }
