@@ -62,6 +62,7 @@ export class AttachmentService {
             uploaderId: uploaderObjectId,
             type: "voice",
             url: upload.url,
+            publicId: upload.publicId,
             thumbnail: upload.thumbnail,
             filename: file.filename,
             originalName: file.originalname,

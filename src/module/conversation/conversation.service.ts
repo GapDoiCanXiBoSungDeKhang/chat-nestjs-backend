@@ -501,9 +501,8 @@ export class ConversationService {
         const user = this.getUserParticipant(conversation, userId);
 
         conversation.deletedUser = conversation.deletedUser || [];
-        const convertSet = new Set(conversation.deletedUser);
-        console.log(convertSet)
-        if (convertSet.has(user.userId))
+        const convertSet = new Set(conversation.deletedUser.map(uid => uid.toString()));
+        if (convertSet.has(user.userId.toString()))
             throw new ForbiddenException("User already remove conversation, please recovery!");
 
         conversation.deletedUser.push(user.userId);

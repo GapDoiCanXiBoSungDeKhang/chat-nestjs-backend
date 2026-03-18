@@ -54,11 +54,11 @@ export class CloudService {
     public async uploadMultiple(
         files: Express.Multer.File[],
         messageId: string,
-        itemersationId: string,
+        conversationId: string,
         uploaderId: string,
     ) {
         const messageObjectId = convertStringToObjectId(messageId);
-        const convObjectId = convertStringToObjectId(itemersationId);
+        const convObjectId = convertStringToObjectId(conversationId);
         const uploaderObjectId = convertStringToObjectId(uploaderId);
 
         const uploads = await Promise.all(
@@ -96,11 +96,11 @@ export class CloudService {
         const filesToDelete = {
             image: [],
             video: [],
-            raw: []
+            raw: [],
         };
         attachments.forEach((item) => {
             if (item.type === 'image') filesToDelete.image.push(item.publicId);
-            else if (item.type === 'video') filesToDelete.video.push(item.publicId);
+            else if (['video', 'voice'].includes(item.type)) filesToDelete.video.push(item.publicId);
             else if (item.type === 'file') filesToDelete.raw.push(item.publicId);
         });
         const deletePromises = [];
