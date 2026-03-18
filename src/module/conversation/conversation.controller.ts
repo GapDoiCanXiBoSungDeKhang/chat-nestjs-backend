@@ -15,6 +15,7 @@ import {HandleRequestDto} from "./dto/handleRequest.dto";
 import {AnnouncementDto} from "./dto/announcement.dto";
 import {IsArchived} from "./dto/isArchived.dto";
 import {MuteDurationDto} from "./dto/muteDuration.dto";
+import {ConversationParticipantGuard} from "./guard/conversationParticipant.guard";
 
 @Controller("conversations")
 @UseGuards(JwtAuthGuard)
@@ -70,6 +71,14 @@ export class ConversationController {
             dto.name,
             dto.groupIds
         );
+    }
+
+    @Delete("remove")
+    public async removePrivate(
+        @JwtDecode() user: JwtType,
+        @Param() params: ConversationIdDto
+    ) {
+        return this.conversationService.removePrivate(user.userId, params.id);
     }
 
     @Patch(":id/members/add")

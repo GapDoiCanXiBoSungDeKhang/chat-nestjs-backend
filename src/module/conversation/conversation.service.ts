@@ -496,6 +496,25 @@ export class ConversationService {
         return group;
     }
 
+    public async removePrivate(userId: string, conversationId: string) {
+        const conversation = await this.findConversation(conversationId);
+        const user = this.getUserParticipant(conversation, userId);
+
+        conversation.deletedUser = conversation.deletedUser || [];
+        conversation.deletedUser.push(user.userId);
+
+        if (conversation.participants.length === conversation.deletedUser.length) {
+            await Promise.all([
+                conversation.deleteOne(),
+                this.messageService.deleteManyMessagesConversationGroup(conversationId),
+                this.attachmentService.cleanDateAttachments(conversationId)
+            ]);
+            return {status: "group is deleted!"}
+        }
+        await conversation.save();
+        return conversation;
+    }
+
     private arrayPopulate() {
         return [
             {path: "participants.userId", select: "name avatar status"},

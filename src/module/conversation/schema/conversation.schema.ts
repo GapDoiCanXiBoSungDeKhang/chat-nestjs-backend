@@ -41,6 +41,17 @@ export class Conversation {
         mutedUntil: Date | null,
     }[];
 
+    @Prop({
+        type: [
+            {
+                type: Types.ObjectId,
+                ref: "User"
+            }
+        ],
+        default: []
+    })
+    deletedUser?: Types.ObjectId[];
+
     @Prop({type: Types.ObjectId, ref: "Message"})
     lastMessage!: Types.ObjectId;
 }
