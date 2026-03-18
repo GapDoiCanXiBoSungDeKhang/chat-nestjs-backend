@@ -501,8 +501,12 @@ export class ConversationService {
         const user = this.getUserParticipant(conversation, userId);
 
         conversation.deletedUser = conversation.deletedUser || [];
-        conversation.deletedUser.push(user.userId);
+        const convertSet = new Set(conversation.deletedUser);
+        console.log(convertSet)
+        if (convertSet.has(user.userId))
+            throw new ForbiddenException("User already remove conversation, please recovery!");
 
+        conversation.deletedUser.push(user.userId);
         if (conversation.participants.length === conversation.deletedUser.length) {
             await Promise.all([
                 conversation.deleteOne(),

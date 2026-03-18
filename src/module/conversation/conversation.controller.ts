@@ -73,7 +73,7 @@ export class ConversationController {
         );
     }
 
-    @Delete("remove")
+    @Delete(":id/remove")
     public async removePrivate(
         @JwtDecode() user: JwtType,
         @Param() params: ConversationIdDto

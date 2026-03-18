@@ -108,7 +108,12 @@ export class AttachmentService {
         const attachments = await this.attachmentModel.find({
             conversationId: convObjectId,
         });
+        const mapIds = attachments.map(att => att._id);
         if (!attachments.length) return;
-        await this.cloudService.cleanDataFile(attachments);
+
+        await Promise.all([
+            this.cloudService.cleanDataFile(attachments),
+            this.attachmentModel.deleteMany({_id: {$in: mapIds}})
+        ]);
     }
 }
