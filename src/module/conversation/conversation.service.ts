@@ -52,17 +52,24 @@ export class ConversationService {
     }
 
     public async create(myUserId: string, userId: string) {
-        const uniqueIds = Array.from(new Set([userId, myUserId]))
+        if (myUserId === userId) 
+            throw new ForbiddenException("User can't create conversion my self!");
+        const uniqueIds = [myUserId, userId];
         const ok = await this.checkListUser(uniqueIds);
         if (!ok) throw new ForbiddenException("Owner or user not found!");
 
         const existConversation = await this.conversationModel.findOne({
             type: "private",
-            participants: {
-                $all: this.convertMapCheckElement(uniqueIds)
-            }
+            participants: {$all: this.convertMapCheckElement(uniqueIds)}
         });
         if (existConversation) {
+            existConversation.deletedUser = existConversation.deletedUser || [];
+            const newSet = new Set(existConversation.deletedUser.map(uid => uid.toString()));
+            if (newSet.has(myUserId)) {
+                existConversation.deletedUser = existConversation.deletedUser
+                    .filter(uid => uid.toString() !== myUserId);
+                await existConversation.save();
+            }
             return existConversation;
         }
         return this.conversationModel.create({
@@ -470,14 +477,10 @@ export class ConversationService {
     ) {
         const uniqueIds = Array.from(new Set([userId, ...groupIds]));
         const ok = await this.checkListUser(uniqueIds);
-        if (!ok) throw new ForbiddenException("Some user not found.");
-        if (uniqueIds.length < 3) throw new ForbiddenException("Group must be at least 3 members");
-        const existGroup = await this.conversationModel.findOne({
-            name,
-            type: "group",
-            participants: {$all: this.convertMapCheckElement(uniqueIds)}
-        });
-        if (existGroup) return existGroup;
+        if (!ok)
+            throw new ForbiddenException("Some user not found.");
+        if (uniqueIds.length < 3)
+            throw new ForbiddenException("Group must be at least 3 members");
         const group = await this.conversationModel.create({
             createdBy: convertStringToObjectId(userId),
             participants: this.groupParticipants(uniqueIds, userId),

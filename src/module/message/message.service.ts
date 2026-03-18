@@ -67,10 +67,8 @@ export class MessageService {
         const senderId = convertStringToObjectId(userId);
 
         const replyToObjectId = await this.buildReplyTo(replyTo);
-
         const validateMentions = await this.conversationService.validateMentions(
-            conversationId,
-            mentions
+            conversationId, mentions
         );
 
         const message = await this.messageModel.create({
@@ -82,24 +80,18 @@ export class MessageService {
             mentions: validateMentions,
             ...(replyToObjectId && {replyTo: replyToObjectId}),
         });
-
         await message.populate(this.getArrayPopulate());
-
         this.chatGateway.emitNewMessage(conversationId, message);
 
         const urls = extractValidUrls(content);
         if (urls.length) {
             const getLinks = (await Promise.all(
-                urls.map(url =>
-                    this.linkPreviewService.fetchLink(url, message.id, conversationId, userId)
-                ),
+                urls.map(url => this.linkPreviewService.fetchLink(url, message.id, conversationId, userId)),
             )).filter(Boolean);
-
             if (getLinks.length) {
                 this.chatGateway.emitNewMessageLinkPreview(conversationId, getLinks);
             }
         }
-
         if (mentions?.length) {
             this.chatGateway.emitMentions(validateMentions, {
                 message,
@@ -107,9 +99,7 @@ export class MessageService {
                 mentions: mentions || [],
             });
         }
-
         await this.conversationService.updateConversation(conversationId, message.id);
-
         return {message};
     }
 
