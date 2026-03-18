@@ -78,7 +78,7 @@ export class ConversationController {
         @JwtDecode() user: JwtType,
         @Param() params: ConversationIdDto
     ) {
-        return this.conversationService.removePrivate(user.userId, params.id);
+        return this.conversationService.removeConversation(user.userId, params.id);
     }
 
     @Patch(":id/members/add")

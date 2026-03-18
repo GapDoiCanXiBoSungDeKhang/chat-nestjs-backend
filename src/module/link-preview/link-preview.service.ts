@@ -90,4 +90,9 @@ export class LinkPreviewService {
             .limit(limit)
             .lean();
     }
+
+    public async cleanLinkPreview(conversationId: string) {
+        const convObjectId = convertStringToObjectId(conversationId);
+        await this.linkPreviewModel.deleteMany({conversationId: convObjectId});
+    }
 }

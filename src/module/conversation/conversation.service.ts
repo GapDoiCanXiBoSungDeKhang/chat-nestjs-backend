@@ -327,7 +327,8 @@ export class ConversationService {
                 await Promise.all([
                     conversation.deleteOne(),
                     this.messageService.deleteManyMessagesConversationGroup(room),
-                    this.attachmentService.cleanDateAttachments(room)
+                    this.attachmentService.cleanDateAttachments(room),
+                    this.linkPreviewService.cleanLinkPreview(room)
                 ]);
                 return {status: "group is deleted!"}
             }
@@ -496,7 +497,7 @@ export class ConversationService {
         return group;
     }
 
-    public async removePrivate(userId: string, conversationId: string) {
+    public async removeConversation(userId: string, conversationId: string) {
         const conversation = await this.findConversation(conversationId);
         const user = this.getUserParticipant(conversation, userId);
 
@@ -510,7 +511,8 @@ export class ConversationService {
             await Promise.all([
                 conversation.deleteOne(),
                 this.messageService.deleteManyMessagesConversationGroup(conversationId),
-                this.attachmentService.cleanDateAttachments(conversationId)
+                this.attachmentService.cleanDateAttachments(conversationId),
+                this.linkPreviewService.cleanLinkPreview(conversationId)
             ]);
             return {status: "group is deleted!"}
         }
