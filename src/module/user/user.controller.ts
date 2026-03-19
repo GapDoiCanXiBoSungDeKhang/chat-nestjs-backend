@@ -10,6 +10,7 @@ import {UpdateStatusDto} from "./dto/updateStatus.dto";
 import {UpdatePrivacyDto} from "./dto/updatePrivacy.dto";
 import {findUserByPhoneNumberDto} from "./dto/findUserByPhoneNumber.dto";
 import {findUserByName} from "./dto/findUserByName.dto";
+import {updateProfileDto} from "./dto/updateProfile.dto";
 
 @Controller("users")
 @UseGuards(JwtAuthGuard)
@@ -85,5 +86,10 @@ export class UserController {
     @Get("find/name")
     public async findUserByName(@Query() dto: findUserByName) {
         return this.userService.findUserByName(dto.name);
+    }
+
+    @Patch("edit/profile")
+    public async updateProfile(@JwtDecode() user: JwtType, @Body() dto: updateProfileDto) {
+        return this.userService.updateProfile(user.userId, dto);
     }
 }
