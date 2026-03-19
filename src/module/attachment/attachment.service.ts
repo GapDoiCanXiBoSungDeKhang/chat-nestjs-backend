@@ -72,6 +72,28 @@ export class AttachmentService {
         });
     }
 
+    public async uploadAvatarProfile(
+        file: Express.Multer.File,
+        uploaderId: string,
+    ) {
+        const uploaderObjectId = convertStringToObjectId(uploaderId);
+        const upload = await this.cloudService.uploadSingle(file, "image");
+        return this.attachmentModel.create({
+            messageId: null,
+            conversationId: null,
+            uploaderId: uploaderObjectId,
+            type: "voice",
+            url: upload.url,
+            publicId: upload.publicId,
+            thumbnail: upload.thumbnail,
+            filename: file.filename,
+            originalName: file.originalname,
+            size: upload.size,
+            mimeType: upload.mimeType,
+            duration: upload.duration,
+        });
+    }
+
     public async getAttachments(ids: Types.ObjectId[]) {
         return this.attachmentModel.find({messageId: {$in: ids}}).lean();
     }

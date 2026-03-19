@@ -6,10 +6,10 @@ export type AttachmentDocument = Attachment & Document;
 @Schema({timestamps: true})
 export class Attachment {
     @Prop({type: Types.ObjectId, ref: "Message", required: true})
-    messageId!: Types.ObjectId;
+    messageId!: Types.ObjectId | null;
 
     @Prop({type: Types.ObjectId, ref: "Conversation", required: true})
-    conversationId!: Types.ObjectId;
+    conversationId!: Types.ObjectId | null;
 
     @Prop({type: Types.ObjectId, ref: "User", required: true})
     uploaderId!: Types.ObjectId;

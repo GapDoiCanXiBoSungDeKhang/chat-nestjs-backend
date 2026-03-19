@@ -52,7 +52,7 @@ export class ConversationService {
     }
 
     public async create(myUserId: string, userId: string) {
-        if (myUserId === userId) 
+        if (myUserId === userId)
             throw new ForbiddenException("User can't create conversion my self!");
         const uniqueIds = [myUserId, userId];
         const ok = await this.checkListUser(uniqueIds);

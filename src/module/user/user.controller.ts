@@ -1,4 +1,16 @@
-import {Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards} from "@nestjs/common";
+import {
+    Body,
+    Controller,
+    Delete,
+    Get,
+    Param,
+    Patch,
+    Post,
+    Query,
+    UploadedFile,
+    UseGuards,
+    UseInterceptors
+} from "@nestjs/common";
 
 import {UserService} from "./user.service";
 
@@ -11,6 +23,8 @@ import {UpdatePrivacyDto} from "./dto/updatePrivacy.dto";
 import {findUserByPhoneNumberDto} from "./dto/findUserByPhoneNumber.dto";
 import {findUserByName} from "./dto/findUserByName.dto";
 import {updateProfileDto} from "./dto/updateProfile.dto";
+import {FileInterceptor} from "@nestjs/platform-express";
+import {createMulterOptions} from "../../shared/upload/upload.config";
 
 @Controller("users")
 @UseGuards(JwtAuthGuard)
@@ -89,7 +103,17 @@ export class UserController {
     }
 
     @Patch("edit/profile")
-    public async updateProfile(@JwtDecode() user: JwtType, @Body() dto: updateProfileDto) {
-        return this.userService.updateProfile(user.userId, dto);
+    @UseInterceptors(
+        FileInterceptor(
+            "file",
+            createMulterOptions("media")
+        )
+    )
+    public async updateProfile(
+        @UploadedFile() file: Express.Multer.File,
+        @JwtDecode() user: JwtType,
+        @Body() dto: updateProfileDto
+    ) {
+        return this.userService.updateProfile(user.userId, dto, file);
     }
 }

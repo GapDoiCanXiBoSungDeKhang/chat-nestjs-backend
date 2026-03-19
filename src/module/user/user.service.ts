@@ -1,4 +1,4 @@
-import {BadRequestException, Injectable, NotFoundException} from "@nestjs/common";
+import {BadRequestException, ForbiddenException, Injectable, NotFoundException} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
 import {Model} from "mongoose";
 
@@ -12,6 +12,8 @@ import {UpdatePrivacyDto} from "./dto/updatePrivacy.dto";
 import {FriendService} from "../friend/friend.service";
 
 import {updateProfileDto} from "./dto/updateProfile.dto";
+import {JwtType} from "../../common/types/jwtTypes.type";
+import {AttachmentService} from "../attachment/attachment.service";
 
 @Injectable()
 export class UserService {
@@ -22,6 +24,7 @@ export class UserService {
         private readonly blockUserModel: Model<BlockedUserDocument>,
         private readonly chatGateway: ChatGateway,
         private readonly friendService: FriendService,
+        private readonly attachmentService: AttachmentService,
     ) {
     }
 
@@ -249,7 +252,20 @@ export class UserService {
         return res;
     }
 
-    public async updateProfile(userId: string, dto: updateProfileDto) {
-        
+    public async updateProfile(userId: string, dto: updateProfileDto, file?: Express.Multer.File) {
+        let upload = null;
+        if (file)
+            upload = await this.attachmentService.uploadAvatarProfile(file, userId);
+        const updated = await this.userModel.findByIdAndUpdate(
+            convertStringToObjectId(userId),
+            {
+                ...(dto.email && {email: dto.email}),
+                ...(dto.phone && {phoneNumber: dto.phone}),
+                ...(dto.name && {name: dto.name}),
+                ...(upload && {avatar: upload.url}),
+            }
+        );
+        if (!updated) throw new ForbiddenException("Data can't be updated!");
+        return updated;
     }
 }
