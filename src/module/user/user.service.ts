@@ -227,4 +227,12 @@ export class UserService {
         if (!showLastSeen) user.lastSeen = null as any;
         return user;
     }
+
+    public async findUserByPhoneNumber(context: string) {
+        const user = await this.userModel.findOne({
+            phoneNumber: context
+        });
+        if (!user) throw new NotFoundException("User not found!");
+        return user
+    }
 }

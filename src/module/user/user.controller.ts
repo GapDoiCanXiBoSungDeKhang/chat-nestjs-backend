@@ -8,6 +8,7 @@ import {JwtType} from "../../common/types/jwtTypes.type";
 import {BlockedUser, ProfileDto} from "./dto/paramUserId.dto";
 import {UpdateStatusDto} from "./dto/updateStatus.dto";
 import {UpdatePrivacyDto} from "./dto/updatePrivacy.dto";
+import {findUserByPhoneNumberDto} from "./dto/findUserByPhoneNumber.dto";
 
 @Controller("users")
 @UseGuards(JwtAuthGuard)
@@ -73,5 +74,11 @@ export class UserController {
         @Param() param: ProfileDto,
     ) {
         return this.userService.getProfileWithPrivacy(param.userId, viewer.userId);
+    }
+
+    @Get("find/phone")
+    public async findUserByPhoneNumber(@Body() dto: findUserByPhoneNumberDto) {
+        console.log(dto);
+        return this.userService.findUserByPhoneNumber(dto.phone);
     }
 }
