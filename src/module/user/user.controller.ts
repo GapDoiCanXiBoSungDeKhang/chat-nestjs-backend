@@ -1,4 +1,4 @@
-import {Body, Controller, Delete, Get, Param, Patch, Post, UseGuards} from "@nestjs/common";
+import {Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards} from "@nestjs/common";
 
 import {UserService} from "./user.service";
 
@@ -9,6 +9,7 @@ import {BlockedUser, ProfileDto} from "./dto/paramUserId.dto";
 import {UpdateStatusDto} from "./dto/updateStatus.dto";
 import {UpdatePrivacyDto} from "./dto/updatePrivacy.dto";
 import {findUserByPhoneNumberDto} from "./dto/findUserByPhoneNumber.dto";
+import {findUserByName} from "./dto/findUserByName.dto";
 
 @Controller("users")
 @UseGuards(JwtAuthGuard)
@@ -78,7 +79,11 @@ export class UserController {
 
     @Get("find/phone")
     public async findUserByPhoneNumber(@Body() dto: findUserByPhoneNumberDto) {
-        console.log(dto);
         return this.userService.findUserByPhoneNumber(dto.phone);
+    }
+
+    @Get("find/name")
+    public async findUserByName(@Query() dto: findUserByName) {
+        return this.userService.findUserByName(dto.name);
     }
 }

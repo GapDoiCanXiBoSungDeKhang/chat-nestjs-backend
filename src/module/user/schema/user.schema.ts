@@ -87,4 +87,4 @@ UserSchema.set("toJSON", {
 
 UserSchema.index({email: 1}, {unique: true});
 UserSchema.index({phoneNumber: 1}, {unique: true});
-
+UserSchema.index({name: "text"});

@@ -235,4 +235,15 @@ export class UserService {
         if (!user) throw new NotFoundException("User not found!");
         return user
     }
+
+    public async findUserByName(q: string) {
+        if (!q || !q.trim().length) return [];
+        const res = await this.userModel.find(
+            {$text: {$search: q}},
+            {score: {$meta: "textScore"}}
+        )
+            .sort({score: {$meta: "textScore"}})
+            .limit(20);
+        return res;
+    }
 }
