@@ -1,6 +1,6 @@
 import {BadRequestException, Injectable, NotFoundException} from "@nestjs/common";
 import {InjectModel} from "@nestjs/mongoose";
-import {Model, Types} from "mongoose";
+import {Model} from "mongoose";
 
 import {User, UserDocument} from "./schema/user.schema";
 import {registerDto} from "../auth/dto/register.dto";
@@ -10,6 +10,8 @@ import {UpdateStatusDto} from "./dto/updateStatus.dto";
 import {ChatGateway} from "../../gateway/chat.gateway";
 import {UpdatePrivacyDto} from "./dto/updatePrivacy.dto";
 import {FriendService} from "../friend/friend.service";
+
+import {updateProfileDto} from "./dto/updateProfile.dto";
 
 @Injectable()
 export class UserService {
@@ -245,5 +247,9 @@ export class UserService {
             .sort({score: {$meta: "textScore"}})
             .limit(20);
         return res;
+    }
+
+    public async updateProfile(userId: string, dto: updateProfileDto) {
+        
     }
 }
