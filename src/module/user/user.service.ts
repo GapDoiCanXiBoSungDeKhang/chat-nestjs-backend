@@ -263,7 +263,8 @@ export class UserService {
                 ...(dto.phone && {phoneNumber: dto.phone}),
                 ...(dto.name && {name: dto.name}),
                 ...(upload && {avatar: upload.url}),
-            }
+            },
+            {new: true}
         );
         if (!updated) throw new ForbiddenException("Data can't be updated!");
         return updated;
