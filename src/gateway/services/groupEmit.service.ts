@@ -21,11 +21,6 @@ export class GroupEmitService {
         return this.server.to(gatewayRooms.user(userId));
     }
 
-    public privateCreated(userIds: string[], payload: any) {
-        const rooms = userIds.map(uid => gatewayRooms.user(uid));
-        this.server.to(rooms).emit(SOCKET_EVENTS.PRIVATE_CREATED, payload);
-    }
-
     public groupCreated(userIds: string[], payload: any) {
         const rooms = userIds.map(uid => gatewayRooms.user(uid));
         this.server.to(rooms).emit(SOCKET_EVENTS.GROUP_CREATED, payload);
