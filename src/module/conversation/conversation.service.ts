@@ -72,11 +72,22 @@ export class ConversationService {
             }
             return existConversation;
         }
-        return this.conversationModel.create({
+        const conversation = await this.conversationModel.create({
             type: "private",
             createdBy: convertStringToObjectId(myUserId),
             participants: this.groupParticipants(uniqueIds, myUserId)
         });
+        await conversation.populate("createdBy", "name");
+
+        this.chatGateway.emitGroupCreated(uniqueIds, {
+            conversation: conversation,
+            createdBy: {
+                _id: conversation.createdBy._id.toString(),
+                name: conversation.createdBy.name,
+            }
+        });
+
+        return conversation;
     }
 
     private hashTable<T extends AttachmentDocument | LinkPreviewDocument>(
