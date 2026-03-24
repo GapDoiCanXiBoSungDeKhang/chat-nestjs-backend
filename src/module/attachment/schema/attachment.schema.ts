@@ -5,10 +5,10 @@ export type AttachmentDocument = Attachment & Document;
 
 @Schema({timestamps: true})
 export class Attachment {
-    @Prop({type: Types.ObjectId, ref: "Message", required: true})
+    @Prop({type: Types.ObjectId, ref: "Message", default: null})
     messageId!: Types.ObjectId | null;
 
-    @Prop({type: Types.ObjectId, ref: "Conversation", required: true})
+    @Prop({type: Types.ObjectId, ref: "Conversation", default: null})
     conversationId!: Types.ObjectId | null;
 
     @Prop({type: Types.ObjectId, ref: "User", required: true})

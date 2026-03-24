@@ -10,13 +10,11 @@ import {BlockGuard} from "./guard/block.guard";
 import {ConversationModule} from "../conversation/conversation.module";
 import {ChatModule} from "../../gateway/chat.module";
 import {FriendModule} from "../friend/friend.module";
-import {AttachmentModule} from "../attachment/attachment.module";
 
 @Module({
     imports: [
         ConversationModule,
         FriendModule,
-        AttachmentModule,
         forwardRef(() => ChatModule),
         MongooseModule.forFeature([
             {
