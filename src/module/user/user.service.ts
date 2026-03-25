@@ -258,7 +258,7 @@ export class UserService {
             upload.avatar = await this.attachmentService.uploadAvatarProfile(file, userId);
         if (dto.email) upload.email = dto.email;
         if (dto.name) upload.name = dto.name;
-        if (dto.phone) = upload.phone = dto.name;
+        if (dto.phone) upload.phone = dto.name;
 
         const updated = await this.userModel.findByIdAndUpdate(
             convertStringToObjectId(userId),
