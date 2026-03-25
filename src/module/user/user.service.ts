@@ -253,17 +253,16 @@ export class UserService {
     }
 
     public async updateProfile(userId: string, dto: updateProfileDto, file?: Express.Multer.File) {
-        let upload = null;
+        const upload: any = {};
         if (file)
-            upload = await this.attachmentService.uploadAvatarProfile(file, userId);
+            upload.avatar = await this.attachmentService.uploadAvatarProfile(file, userId);
+        if (dto.email) upload.email = dto.email;
+        if (dto.name) upload.name = dto.name;
+        if (dto.phone) = upload.phone = dto.name;
+
         const updated = await this.userModel.findByIdAndUpdate(
             convertStringToObjectId(userId),
-            {
-                ...(dto.email && {email: dto.email}),
-                ...(dto.phone && {phoneNumber: dto.phone}),
-                ...(dto.name && {name: dto.name}),
-                ...(upload && {avatar: upload.url}),
-            },
+            upload,
             {new: true}
         );
         if (!updated) throw new ForbiddenException("Data can't be updated!");
