@@ -11,17 +11,31 @@ import {
 import {forwardRef, Inject, Logger} from "@nestjs/common";
 import {JwtService} from "@nestjs/jwt";
 import {Socket, Server} from "socket.io";
+import {randomUUID} from "crypto";
+import {Types} from "mongoose";
+
 
 import {ConversationService} from "../module/conversation/conversation.service";
 import {UserService} from "../module/user/user.service";
 import {MessageEmitService} from "./services/messageEmit.service";
 import {GroupEmitService} from "./services/groupEmit.service";
 import {PresenceEmitService} from "./services/presenceEmit.service";
-import {Types} from "mongoose";
 import {gatewayRooms} from "./gateway.rooms";
 
+import {ActiveCall} from "../common/interface/ActiveCall.interface";
+
+
+// dictionary calls active
+const activeCalls = new Map<string, ActiveCall>();
+
+// check user has in call
+const userInCall = new Map<string, string>();
+
 @WebSocketGateway({
-    cors: {origin: "*", credentials: true},
+    cors: {
+        origin: process.env.URL_FE_CONNECT, 
+        credentials: true
+    },
 })
 export class ChatGateway
     implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
@@ -139,6 +153,33 @@ export class ChatGateway
         client
             .to(gatewayRooms.conversation(data.conversationId))
             .emit("user_stopped_typing", {conversationId: data.conversationId, userId});
+    }
+
+    @SubscribeMessage("call_initiate")
+    async onCallInitiate(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() data: {calleId: string, conversationId: string, callType: "voice" | "video"}
+    ) {
+        const callerId: string = client.data.userId;
+
+        const ok = this.conversationService.findUserParticipants(callerId, data.conversationId);
+        if (!ok) return;
+
+        if (userInCall.has(data.calleId)) return;
+        const callId = randomUUID();
+        // const callerInfor = await this.userService.findById(callerId);
+
+        activeCalls.set(callId, {
+            callId,
+            callerId,
+            calleeId: data.calleId,
+            conversationId: data.conversationId,
+            callType: data.callType,
+            isGroup: false,
+            participants: new Set([callerId])
+        });
+        userInCall.set(callerId, callId);
+        return;
     }
 
 
