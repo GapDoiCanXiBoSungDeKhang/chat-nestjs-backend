@@ -14,16 +14,16 @@ import {Socket, Server} from "socket.io";
 import {randomUUID} from "crypto";
 import {Types} from "mongoose";
 
-
 import {ConversationService} from "../module/conversation/conversation.service";
 import {UserService} from "../module/user/user.service";
 import {MessageEmitService} from "./services/messageEmit.service";
 import {GroupEmitService} from "./services/groupEmit.service";
 import {PresenceEmitService} from "./services/presenceEmit.service";
+import {CallEmitService} from "./services/callEmit.service";
+
 import {gatewayRooms} from "./gateway.rooms";
 
-import {ActiveCall} from "../common/interface/ActiveCall.interface";
-
+import {ActiveCall} from "../common/interface/activeCall.interface";
 
 // dictionary calls active
 const activeCalls = new Map<string, ActiveCall>();
@@ -53,6 +53,7 @@ export class ChatGateway
         private readonly messageEmit: MessageEmitService,
         private readonly groupEmit: GroupEmitService,
         private readonly presenceEmit: PresenceEmitService,
+        private readonly callEmit: CallEmitService,
     ) {
     }
 
@@ -60,6 +61,7 @@ export class ChatGateway
         this.messageEmit.setServer(server);
         this.groupEmit.setServer(server);
         this.presenceEmit.setServer(server);
+        this.callEmit.setServer(server);
         this.logger.log("ChatGateway initialized");
     }
 
@@ -167,7 +169,7 @@ export class ChatGateway
 
         if (userInCall.has(data.calleId)) return;
         const callId = randomUUID();
-        // const callerInfor = await this.userService.findById(callerId);
+        const callerInfor = await this.userService.findById(callerId);
 
         activeCalls.set(callId, {
             callId,
@@ -179,7 +181,13 @@ export class ChatGateway
             participants: new Set([callerId])
         });
         userInCall.set(callerId, callId);
-        return;
+        this.callEmit.callInittiated(data.calleId, {
+            callId,
+            callerId,
+            callerInfo: {name: callerInfor!.name, avatar: callerInfor?.avatar},
+            callType: data.callType,
+            conversationId: data.conversationId
+        });
     }
 
 
