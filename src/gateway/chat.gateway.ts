@@ -167,7 +167,10 @@ export class ChatGateway
         const ok = this.conversationService.findUserParticipants(callerId, data.conversationId);
         if (!ok) return;
 
-        if (userInCall.has(data.calleId)) return;
+        if (userInCall.has(data.calleId)) {
+            this.callEmit.callBusy(callerId, {callId: ""});
+            return;
+        };
         const callId = randomUUID();
         const callerInfor = await this.userService.findById(callerId);
 

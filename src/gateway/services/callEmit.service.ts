@@ -30,4 +30,8 @@ export class CallEmitService {
     }) {
         this.toUser(calleId).emit(SOCKET_EVENTS.CALL_INITIATED, payload);
     }
+
+    public callBusy(callerId: string, payload: {callId: string}) {
+        this.toUser(callerId).emit(SOCKET_EVENTS.CALL_BUSY, payload);
+    }
 }
