@@ -635,11 +635,11 @@ export class ConversationService {
         userId: string,
         conversationId: string,
     ) {
-        return !!(await this.conversationModel
+        return await this.conversationModel
             .findOne({
                 _id: convertStringToObjectId(conversationId),
                 "participants.userId": convertStringToObjectId(userId)
-            }));
+            });
     }
 
     public async conversationsIdsForUser(conversationIds: string[], userId: string) {

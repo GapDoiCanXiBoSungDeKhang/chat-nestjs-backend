@@ -8,6 +8,7 @@ import {UsersModule} from "../module/user/user.module";
 import {MessageEmitService} from "./services/messageEmit.service";
 import {GroupEmitService} from "./services/groupEmit.service";
 import {PresenceEmitService} from "./services/presenceEmit.service";
+import {CallEmitService} from "./services/callEmit.service";
 
 @Module({
     imports: [
@@ -24,7 +25,8 @@ import {PresenceEmitService} from "./services/presenceEmit.service";
         ChatGateway,
         MessageEmitService,
         GroupEmitService,
-        PresenceEmitService
+        PresenceEmitService,
+        CallEmitService,
     ],
     exports: [ChatGateway]
 })

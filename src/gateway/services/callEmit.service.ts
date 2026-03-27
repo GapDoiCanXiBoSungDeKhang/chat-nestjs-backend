@@ -3,7 +3,6 @@ import {Server} from "socket.io";
 
 import {gatewayRooms} from "../gateway.rooms";
 import {SOCKET_EVENTS} from "../gateway.constants";
-import { WebSocketServer } from "@nestjs/websockets";
 
 @Injectable()
 export class CallEmitService {

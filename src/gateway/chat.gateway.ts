@@ -108,10 +108,7 @@ export class ChatGateway
         @MessageBody() data: { conversationId: string },
     ) {
         const userId: string = client.data.userId;
-        const ok = await this.conversationService.findUserParticipants(
-            userId,
-            data.conversationId,
-        );
+        const ok = await this.conversationService.findUserParticipants(userId, data.conversationId);
         if (!ok) return;
 
         client.join(gatewayRooms.conversation(data.conversationId));
@@ -135,10 +132,7 @@ export class ChatGateway
         const getPrivacy = await this.userService.getPrivacy(userId);
         if (getPrivacy && !getPrivacy.privacy.showTypingIndicator) return;
 
-        const ok = await this.conversationService.findUserParticipants(
-            userId,
-            data.conversationId,
-        );
+        const ok = await this.conversationService.findUserParticipants(userId, data.conversationId);
         if (!ok) return;
 
         client
@@ -164,8 +158,14 @@ export class ChatGateway
     ) {
         const callerId: string = client.data.userId;
 
-        const ok = this.conversationService.findUserParticipants(callerId, data.conversationId);
+        const ok = await this.conversationService.findUserParticipants(
+            callerId, data.conversationId
+        );
         if (!ok) return;
+        const setParticipants = new Set(
+            ok.participants.map(obj => obj.userId.toString())
+        );
+        if (!setParticipants.has(data.calleId)) return;
 
         if (userInCall.has(data.calleId)) {
             this.callEmit.callBusy(callerId, {callId: ""});
