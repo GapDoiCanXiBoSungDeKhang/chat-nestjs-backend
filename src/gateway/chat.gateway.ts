@@ -24,6 +24,8 @@ import {CallEmitService} from "./services/callEmit.service";
 import {gatewayRooms} from "./gateway.rooms";
 
 import {ActiveCall} from "../common/interface/activeCall.interface";
+import { Client } from "socket.io/dist/client";
+import { ThrottlerStorageOptions } from "@nestjs/throttler/dist/throttler-storage-options.interface";
 
 // dictionary calls active
 const activeCalls = new Map<string, ActiveCall>();
@@ -193,6 +195,20 @@ export class ChatGateway
         });
     }
 
+    @SubscribeMessage("call_accept")
+    public onCallAccept(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() data: {callId: string}
+    ) {
+        const calleId: string = client.data.userId;
+        const call = activeCalls.get(data.callId);
+        if (!call || call.calleeId !== calleId) return;
+
+        userInCall.set(calleId, data.callId);
+        call.participants.add(calleId);
+
+        this.callEmit.callAccepted(call.callerId, {callId: call.callId});
+    }
 
     emitNewMessage(cid: string, p: any) {
         this.messageEmit.newMessage(cid, p);
