@@ -40,5 +40,6 @@ export const SOCKET_EVENTS = {
 
     CALL_INITIATED: "call_initiated",
     CALL_BUSY: "call_busy",
-    CALL_ACCEPTED: "call_accepted"
+    CALL_ACCEPTED: "call_accepted",
+    CALL_REJECTED: "call_rejected"
 };

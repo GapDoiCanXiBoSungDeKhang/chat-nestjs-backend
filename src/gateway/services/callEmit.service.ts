@@ -37,4 +37,8 @@ export class CallEmitService {
     public callAccepted(callerId: string, payload: {callId: string}) {
         this.toUser(callerId).emit(SOCKET_EVENTS.CALL_ACCEPTED, payload);
     }
+
+    public callRejected(callerId: string, payload: {callId: string, reasons?: string}) {
+        this.toUser(callerId).emit(SOCKET_EVENTS.CALL_REJECTED, payload);
+    }
 }

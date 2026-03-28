@@ -168,6 +168,7 @@ export class ChatGateway
             ok.participants.map(obj => obj.userId.toString())
         );
         if (!setParticipants.has(data.calleId)) return;
+        // need to add method event error
 
         if (userInCall.has(data.calleId)) {
             this.callEmit.callBusy(callerId, {callId: ""});
@@ -208,6 +209,21 @@ export class ChatGateway
         call.participants.add(calleId);
 
         this.callEmit.callAccepted(call.callerId, {callId: call.callId});
+    }
+
+    @SubscribeMessage("call_reject")
+    public onCallReject(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() data: {callId: string, reasons?: string}
+    ) {
+        const calleId: string = client.data.userId;
+        const call = activeCalls.get(data.callId);
+        if (!call || call.calleeId !== calleId) return;
+
+        userInCall.delete(call.callerId);
+        activeCalls.delete(data.callId);
+
+        this.callEmit.callRejected(call.callerId, {callId: call.callId, reasons: data?.reasons});
     }
 
     emitNewMessage(cid: string, p: any) {
