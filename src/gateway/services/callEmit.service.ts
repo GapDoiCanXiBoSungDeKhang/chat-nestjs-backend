@@ -41,4 +41,8 @@ export class CallEmitService {
     public callRejected(callerId: string, payload: {callId: string, reasons?: string}) {
         this.toUser(callerId).emit(SOCKET_EVENTS.CALL_REJECTED, payload);
     }
+
+    public callEnded(targetUserId: string, payload: {callId: string}) {
+        this.toUser(targetUserId).emit(SOCKET_EVENTS.CALL_ENDED, payload);
+    }
 }

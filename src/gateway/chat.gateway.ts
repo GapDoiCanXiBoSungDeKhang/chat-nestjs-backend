@@ -26,6 +26,7 @@ import {gatewayRooms} from "./gateway.rooms";
 import {ActiveCall} from "../common/interface/activeCall.interface";
 import { Client } from "socket.io/dist/client";
 import { ThrottlerStorageOptions } from "@nestjs/throttler/dist/throttler-storage-options.interface";
+import { data } from "cheerio/dist/commonjs/api/attributes";
 
 // dictionary calls active
 const activeCalls = new Map<string, ActiveCall>();
@@ -224,6 +225,29 @@ export class ChatGateway
         activeCalls.delete(data.callId);
 
         this.callEmit.callRejected(call.callerId, {callId: call.callId, reasons: data?.reasons});
+    }
+
+    @SubscribeMessage("call_end")
+    public onCallEnd(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() data: {callId: string}
+    ) {
+        const userId: string = client.data.userId;
+        this._handleCallClean(userId, data.callId);
+    }
+
+    private _handleCallClean(userId: string, callId: string) {
+        const call = activeCalls.get(callId);
+        if (!call) return;
+
+        if (call.isGroup) { return;
+        } else {
+            const ortherId = call.callerId === userId ? call.calleeId : call.callerId;
+            userInCall.delete(call.callerId);
+            if (call.calleeId) userInCall.delete(call.calleeId);
+            activeCalls.delete(callId);
+            this.callEmit.callEnded(ortherId!, {callId});
+        }
     }
 
     emitNewMessage(cid: string, p: any) {
