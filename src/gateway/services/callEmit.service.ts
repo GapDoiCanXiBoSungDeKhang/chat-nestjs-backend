@@ -49,4 +49,12 @@ export class CallEmitService {
     public callCancelled(calleId: string, payload: {callId: string}) {
         this.toUser(calleId).emit(SOCKET_EVENTS.CALL_CANCELLED, payload);
     }
+
+    public callOffer(targetUserId: string, payload: {
+        callId: string;
+        fromUserId: string;
+        sdp: RTCSessionDescriptionInit;
+    }) {
+        this.toUser(targetUserId).emit(SOCKET_EVENTS.CALL_OFFER, payload);
+    }
 }

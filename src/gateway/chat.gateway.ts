@@ -253,6 +253,21 @@ export class ChatGateway
         }
     }
 
+    @SubscribeMessage("call_offer")
+    onCallOffer(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() data: {callId: string; targetUserId: string; sdp: any},
+    ) {
+        const fromUserId = client.data.userId as string;
+        if (!activeCalls.has(data.callId)) return;
+ 
+        this.callEmit.callOffer(data.targetUserId, {
+            callId: data.callId,
+            fromUserId,
+            sdp: data.sdp,
+        });
+    }
+
     private _handleCallClean(userId: string, callId: string) {
         const call = activeCalls.get(callId);
         if (!call) return;
