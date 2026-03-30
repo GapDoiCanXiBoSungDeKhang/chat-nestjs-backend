@@ -689,9 +689,9 @@ export class ConversationService {
 
     public async muteConversation(conversationId: string, userId: string, duration: MuteDuration) {
         const durationMap: Record<MuteDuration, number | null> = {
-            "1h":      60 * 60 * 1000,
-            "8h":  8 * 60 * 60 * 1000,
-            "24h":24 * 60 * 60 * 1000,
+            "1h": 60 * 60 * 1000,
+            "8h": 8 * 60 * 60 * 1000,
+            "24h": 24 * 60 * 60 * 1000,
             "forever": null,
         };
         const ms = durationMap[duration];

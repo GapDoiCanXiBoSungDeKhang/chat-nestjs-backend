@@ -65,4 +65,12 @@ export class CallEmitService {
     }) {
         this.toUser(targetUserId).emit(SOCKET_EVENTS.CALL_ANSWER, payload);
     }
+    
+    public callIceCandidate(targetUserId: string, payload: {
+        callId: string;
+        fromUserId: string;
+        sdp: RTCIceCandidateInit;
+    }) {
+        this.toUser(targetUserId).emit(SOCKET_EVENTS.CALL_ICE_CANDIDATE, payload);
+    }
 }

@@ -238,7 +238,7 @@ export class ChatGateway
         @ConnectedSocket() client: Socket,
         @MessageBody() data: { callId: string },
     ) {
-        const callerId = client.data.userId as string;
+        const callerId = client.data.userId;
         const call = activeCalls.get(data.callId);
         if (!call || call.callerId !== callerId) return;
  
@@ -255,7 +255,7 @@ export class ChatGateway
         @ConnectedSocket() client: Socket,
         @MessageBody() data: {callId: string; targetUserId: string; sdp: any},
     ) {
-        const fromUserId = client.data.userId as string;
+        const fromUserId = client.data.userId;
         if (!activeCalls.has(data.callId)) return;
  
         this.callEmit.callOffer(data.targetUserId, {
@@ -270,13 +270,28 @@ export class ChatGateway
         @ConnectedSocket() client: Socket,
         @MessageBody() data: { callId: string; targetUserId: string; sdp: any },
     ) {
-        const fromUserId = client.data.userId as string;
+        const fromUserId = client.data.userId;
         if (!activeCalls.has(data.callId)) return;
  
         this.callEmit.callAnswer(data.targetUserId, {
             callId: data.callId,
             fromUserId,
             sdp: data.sdp,
+        });
+    }
+
+    @SubscribeMessage("call_ice_candidate")
+    onCallIceCandidate(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() data: {callId: string; targetUserId: string; candidate: any},
+    ) {
+        const fromUserId = client.data.userId;
+        if (!activeCalls.has(data.callId)) return;
+ 
+        this.callEmit.callIceCandidate(data.targetUserId, {
+            callId: data.callId,
+            fromUserId,
+            candidate: data.candidate,
         });
     }
 
