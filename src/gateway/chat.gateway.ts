@@ -24,9 +24,6 @@ import {CallEmitService} from "./services/callEmit.service";
 import {gatewayRooms} from "./gateway.rooms";
 
 import {ActiveCall} from "../common/interface/activeCall.interface";
-import { Client } from "socket.io/dist/client";
-import { ThrottlerStorageOptions } from "@nestjs/throttler/dist/throttler-storage-options.interface";
-import { data } from "cheerio/dist/commonjs/api/attributes";
 
 // dictionary calls active
 const activeCalls = new Map<string, ActiveCall>();
@@ -262,6 +259,21 @@ export class ChatGateway
         if (!activeCalls.has(data.callId)) return;
  
         this.callEmit.callOffer(data.targetUserId, {
+            callId: data.callId,
+            fromUserId,
+            sdp: data.sdp,
+        });
+    }
+
+    @SubscribeMessage("call_answer")
+    onCallAnswer(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() data: { callId: string; targetUserId: string; sdp: any },
+    ) {
+        const fromUserId = client.data.userId as string;
+        if (!activeCalls.has(data.callId)) return;
+ 
+        this.callEmit.callAnswer(data.targetUserId, {
             callId: data.callId,
             fromUserId,
             sdp: data.sdp,

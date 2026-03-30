@@ -57,4 +57,12 @@ export class CallEmitService {
     }) {
         this.toUser(targetUserId).emit(SOCKET_EVENTS.CALL_OFFER, payload);
     }
+    
+    public callAnswer(targetUserId: string, payload: {
+        callId: string;
+        fromUserId: string;
+        sdp: RTCSessionDescriptionInit;
+    }) {
+        this.toUser(targetUserId).emit(SOCKET_EVENTS.CALL_ANSWER, payload);
+    }
 }
