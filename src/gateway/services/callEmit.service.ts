@@ -45,4 +45,8 @@ export class CallEmitService {
     public callEnded(targetUserId: string, payload: {callId: string}) {
         this.toUser(targetUserId).emit(SOCKET_EVENTS.CALL_ENDED, payload);
     }
+
+    public callCancelled(calleId: string, payload: {callId: string}) {
+        this.toUser(calleId).emit(SOCKET_EVENTS.CALL_CANCELLED, payload);
+    }
 }

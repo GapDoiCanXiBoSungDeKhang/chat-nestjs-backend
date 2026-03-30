@@ -236,6 +236,23 @@ export class ChatGateway
         this._handleCallClean(userId, data.callId);
     }
 
+    @SubscribeMessage("call_cancel")
+    onCallCancel(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() data: { callId: string },
+    ) {
+        const callerId = client.data.userId as string;
+        const call = activeCalls.get(data.callId);
+        if (!call || call.callerId !== callerId) return;
+ 
+        activeCalls.delete(data.callId);
+        userInCall.delete(callerId);
+ 
+        if (call.calleeId) {
+            this.callEmit.callCancelled(call.calleeId, { callId: data.callId });
+        }
+    }
+
     private _handleCallClean(userId: string, callId: string) {
         const call = activeCalls.get(callId);
         if (!call) return;
