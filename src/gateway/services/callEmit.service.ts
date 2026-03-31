@@ -69,8 +69,17 @@ export class CallEmitService {
     public callIceCandidate(targetUserId: string, payload: {
         callId: string;
         fromUserId: string;
-        sdp: RTCIceCandidateInit;
+        candidate: RTCIceCandidateInit;
     }) {
         this.toUser(targetUserId).emit(SOCKET_EVENTS.CALL_ICE_CANDIDATE, payload);
+    }
+
+    public groupCallStarted(conversationId: string, payload: {
+        callId: string;
+        conversationId: string;
+        hostId: string;
+        callType: "voice" | "video";
+    }) {
+        this.toConversation(conversationId).emit(SOCKET_EVENTS.GROUP_CALL_STARTED, payload);
     }
 }

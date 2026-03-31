@@ -295,6 +295,34 @@ export class ChatGateway
         });
     }
 
+    @SubscribeMessage("group_call_start")
+    async onGroupCallStart(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() data: { conversationId: string; callType: "voice" | "video" },
+    ) {
+        const hostId = client.data.userId as string;
+        const ok = await this.conversationService.findUserParticipants(hostId, data.conversationId);
+        if (!ok) return;
+ 
+        const callId = randomUUID();
+        activeCalls.set(callId, {
+            callId,
+            callerId: hostId,
+            conversationId: data.conversationId,
+            participants: new Set([hostId]),
+            callType: data.callType,
+            isGroup: true,
+        });
+        userInCall.set(hostId, callId);
+ 
+        this.callEmit.groupCallStarted(data.conversationId, {
+            callId,
+            conversationId: data.conversationId,
+            hostId,
+            callType: data.callType,
+        });
+    }
+
     private _handleCallClean(userId: string, callId: string) {
         const call = activeCalls.get(callId);
         if (!call) return;

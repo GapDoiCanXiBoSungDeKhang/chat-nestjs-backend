@@ -47,5 +47,7 @@ export const SOCKET_EVENTS = {
 
     CALL_OFFER: "call_offer",
     CALL_ANSWER: "call_answer",
-    CALL_ICE_CANDIDATE: "call_ice_candidate"
+    CALL_ICE_CANDIDATE: "call_ice_candidate",
+
+    GROUP_CALL_STARTED: "group_call_started"
 };
