@@ -82,4 +82,12 @@ export class CallEmitService {
     }) {
         this.toConversation(conversationId).emit(SOCKET_EVENTS.GROUP_CALL_STARTED, payload);
     }
+
+    public groupCallJoined(conversationId: string, payload: {
+        callId: string;
+        userId: string;
+        userInfo: {name: string; avatar?: string};
+    }) {
+        this.toConversation(conversationId).emit(SOCKET_EVENTS.GROUP_CALL_JOINED, payload);
+    }
 }

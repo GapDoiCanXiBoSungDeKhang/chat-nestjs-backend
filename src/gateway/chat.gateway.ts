@@ -298,9 +298,9 @@ export class ChatGateway
     @SubscribeMessage("group_call_start")
     async onGroupCallStart(
         @ConnectedSocket() client: Socket,
-        @MessageBody() data: { conversationId: string; callType: "voice" | "video" },
+        @MessageBody() data: {conversationId: string; callType: "voice" | "video"},
     ) {
-        const hostId = client.data.userId as string;
+        const hostId = client.data.userId;
         const ok = await this.conversationService.findUserParticipants(hostId, data.conversationId);
         if (!ok) return;
  
@@ -320,6 +320,26 @@ export class ChatGateway
             conversationId: data.conversationId,
             hostId,
             callType: data.callType,
+        });
+    }
+
+    @SubscribeMessage("group_call_join")
+    async onGroupCallJoin(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() data: {callId: string},
+    ) {
+        const userId = client.data.userId;
+        const call = activeCalls.get(data.callId);
+        if (!call || !call.isGroup) return;
+ 
+        call.participants.add(userId);
+        userInCall.set(userId, data.callId);
+ 
+        const userInfo = await this.userService.getInfoById(userId);
+        this.callEmit.groupCallJoined(call.conversationId!, {
+            callId: data.callId,
+            userId,
+            userInfo: {name: userInfo.name, avatar: userInfo.avatar},
         });
     }
 
