@@ -376,6 +376,23 @@ export class ChatGateway
         }
     }
 
+    @SubscribeMessage("group_call_end")
+    onGroupCallEnd(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() data: {callId: string},
+    ) {
+        const hostId = client.data.userId;
+        const call = activeCalls.get(data.callId);
+        if (!call || !call.isGroup || call.callerId !== hostId) return;
+ 
+        call.participants.forEach(uid => userInCall.delete(uid));
+        activeCalls.delete(data.callId);
+ 
+        this.callEmit.groupCallEnded(call.conversationId!, {
+            callId: data.callId,
+            conversationId: call.conversationId!,
+        });
+    }
 
     emitNewMessage(cid: string, p: any) {
         this.messageEmit.newMessage(cid, p);
