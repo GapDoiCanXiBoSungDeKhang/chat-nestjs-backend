@@ -90,4 +90,18 @@ export class CallEmitService {
     }) {
         this.toConversation(conversationId).emit(SOCKET_EVENTS.GROUP_CALL_JOINED, payload);
     }
+
+    public groupCallLeft(conversationId: string, payload: {
+        callId: string;
+        userId: string;
+    }) {
+        this.toConversation(conversationId).emit(SOCKET_EVENTS.GROUP_CALL_LEFT, payload);
+    }
+
+    public groupCallEnded(conversationId: string, payload: {
+        callId: string;
+        conversationId: string;
+    }) {
+        this.toConversation(conversationId).emit(SOCKET_EVENTS.GROUP_CALL_ENDED, payload);
+    }
 }

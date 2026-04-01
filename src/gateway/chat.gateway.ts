@@ -230,7 +230,14 @@ export class ChatGateway
         @MessageBody() data: {callId: string}
     ) {
         const userId: string = client.data.userId;
-        this._handleCallClean(userId, data.callId);
+        const call = activeCalls.get(data.callId);
+        if (!call) return;
+
+        const ortherId = call.callerId === userId ? call.calleeId : call.callerId;
+        userInCall.delete(call.callerId);
+        if (call.calleeId) userInCall.delete(call.calleeId);
+        activeCalls.delete(data.callId);
+        this.callEmit.callEnded(ortherId!, {callId: data.callId});
     }
 
     @SubscribeMessage("call_cancel")
@@ -343,19 +350,32 @@ export class ChatGateway
         });
     }
 
-    private _handleCallClean(userId: string, callId: string) {
-        const call = activeCalls.get(callId);
-        if (!call) return;
-
-        if (call.isGroup) { return;
-        } else {
-            const ortherId = call.callerId === userId ? call.calleeId : call.callerId;
-            userInCall.delete(call.callerId);
-            if (call.calleeId) userInCall.delete(call.calleeId);
-            activeCalls.delete(callId);
-            this.callEmit.callEnded(ortherId!, {callId});
+    @SubscribeMessage("group_call_leave")
+    onGroupCallLeave(
+        @ConnectedSocket() client: Socket,
+        @MessageBody() data: {callId: string},
+    ) {
+        const userId = client.data.userId;
+        const call = activeCalls.get(data.callId);
+        if (!call || !call.isGroup) return;
+ 
+        call.participants.delete(userId);
+        userInCall.delete(userId);
+ 
+        this.callEmit.groupCallLeft(call.conversationId!, {
+            callId: data.callId,
+            userId,
+        });
+ 
+        if (call.participants.size === 0) {
+            activeCalls.delete(data.callId);
+            this.callEmit.groupCallEnded(call.conversationId!, {
+                callId: data.callId,
+                conversationId: call.conversationId!,
+            });
         }
     }
+
 
     emitNewMessage(cid: string, p: any) {
         this.messageEmit.newMessage(cid, p);
