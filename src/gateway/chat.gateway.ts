@@ -95,11 +95,55 @@ export class ChatGateway
         const userId: string = client.data.userId;
         if (!userId) return;
 
+         // Cleanup call nếu user đang trong cuộc gọi lúc disconnect
+        const callId = userInCall.get(userId);
+        if (callId) {
+            this._handleCallCleanup(userId, callId);
+        }
+
         await this.userService.setOffline(userId);
         const lastSeen = new Date();
         this.presenceEmit.userOffline(userId, lastSeen);
 
         this.logger.debug(`Client disconnected: ${userId}`);
+    }
+
+    /**
+     * Helper dùng nội bộ để cleanup state khi call kết thúc hoặc user disconnect.
+     * Notify phía còn lại nếu cuộc gọi bị gián đoạn.
+     */
+    private _handleCallCleanup(userId: string, callId: string) {
+        const call = activeCalls.get(callId);
+        if (!call) return;
+
+        if (call.isGroup) {
+            // Group call: xóa participant, notify group, xóa call nếu hết người
+            call.participants.delete(userId);
+            userInCall.delete(userId);
+
+            this.callEmit.groupCallLeft(call.conversationId!, {
+                callId,
+                userId,
+            });
+
+            if (call.participants.size === 0) {
+                activeCalls.delete(callId);
+                this.callEmit.groupCallEnded(call.conversationId!, {
+                    callId,
+                    conversationId: call.conversationId!,
+                });
+            }
+        } else {
+            // 1-1 call: thông báo cho phía còn lại rồi dọn dẹp
+            const otherId = call.callerId === userId ? call.calleeId : call.callerId;
+            userInCall.delete(call.callerId);
+            if (call.calleeId) userInCall.delete(call.calleeId);
+            activeCalls.delete(callId);
+
+            if (otherId) {
+                this.callEmit.callEnded(otherId, {callId});
+            }
+        }
     }
 
     @SubscribeMessage("join_conversation")
@@ -257,13 +301,19 @@ export class ChatGateway
         }
     }
 
+    // FIX [SECURITY CRITICAL]: Verify participant trước khi relay SDP.
+    // Trước đây chỉ check activeCalls.has(callId) nhưng không verify fromUserId có phải
+    // participant hợp lệ không → attacker biết callId có thể inject SDP tùy ý.
     @SubscribeMessage("call_offer")
     onCallOffer(
         @ConnectedSocket() client: Socket,
         @MessageBody() data: {callId: string; targetUserId: string; sdp: any},
     ) {
         const fromUserId = client.data.userId;
-        if (!activeCalls.has(data.callId)) return;
+        const call = activeCalls.get(data.callId); 
+        
+        // Verify fromUserId là participant hợp lệ của call này
+        if (!call || !call.participants.has(fromUserId)) return;
  
         this.callEmit.callOffer(data.targetUserId, {
             callId: data.callId,
@@ -272,13 +322,17 @@ export class ChatGateway
         });
     }
 
+    // FIX [SECURITY CRITICAL]: Tương tự call_offer — verify participant
     @SubscribeMessage("call_answer")
     onCallAnswer(
         @ConnectedSocket() client: Socket,
         @MessageBody() data: { callId: string; targetUserId: string; sdp: any },
     ) {
         const fromUserId = client.data.userId;
-        if (!activeCalls.has(data.callId)) return;
+        const call = activeCalls.get(data.callId); 
+        
+        // Verify fromUserId là participant hợp lệ của call này
+        if (!call || !call.participants.has(fromUserId)) return;
  
         this.callEmit.callAnswer(data.targetUserId, {
             callId: data.callId,
@@ -287,13 +341,17 @@ export class ChatGateway
         });
     }
 
+    // FIX [SECURITY CRITICAL]: Tương tự — verify participant trước khi relay ICE candidate
     @SubscribeMessage("call_ice_candidate")
     onCallIceCandidate(
         @ConnectedSocket() client: Socket,
         @MessageBody() data: {callId: string; targetUserId: string; candidate: any},
     ) {
-        const fromUserId = client.data.userId;
-        if (!activeCalls.has(data.callId)) return;
+         const fromUserId = client.data.userId;
+        const call = activeCalls.get(data.callId);
+
+        // Verify fromUserId là participant hợp lệ
+        if (!call || !call.participants.has(fromUserId)) return;
  
         this.callEmit.callIceCandidate(data.targetUserId, {
             callId: data.callId,
