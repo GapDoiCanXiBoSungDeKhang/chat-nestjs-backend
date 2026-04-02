@@ -33,6 +33,9 @@ export class ConversationController {
         return this.conversationService.create(user.userId, dto.userId);
     }
 
+    // FIX [SECURITY CRITICAL]: Thêm ConversationParticipantGuard vào tất cả GET info routes
+    // Trước đây bất kỳ authenticated user nào cũng có thể GET info của conversation bất kỳ
+    @UseGuards(ConversationParticipantGuard)
     @Get(":id/info")
     public async getInfoPrivate(
         @Param("id") room: ConversationIdDto["id"]
@@ -40,6 +43,8 @@ export class ConversationController {
         return this.conversationService.infoConversation(room);
     }
 
+    // FIX [SECURITY CRITICAL]: Thêm ConversationParticipantGuard
+    @UseGuards(ConversationParticipantGuard)
     @Get(":id/info/media")
     public async getInfoMedia(
         @Param("id") room: ConversationIdDto["id"]
@@ -47,6 +52,8 @@ export class ConversationController {
         return this.conversationService.infoMediaConversation(room);
     }
 
+    // FIX [SECURITY CRITICAL]: Thêm ConversationParticipantGuard
+    @UseGuards(ConversationParticipantGuard)
     @Get(":id/info/file")
     public async getInfoFile(
         @Param("id") room: ConversationIdDto["id"]
@@ -54,6 +61,8 @@ export class ConversationController {
         return this.conversationService.infoFileConversation(room);
     }
 
+    // FIX [SECURITY CRITICAL]: Thêm ConversationParticipantGuard
+    @UseGuards(ConversationParticipantGuard)
     @Get(":id/info/link-preview")
     public async getInfoLinkPreview(
         @Param("id") room: ConversationIdDto["id"]

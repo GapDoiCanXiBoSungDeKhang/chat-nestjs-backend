@@ -66,8 +66,9 @@ export class ConversationService {
             existConversation.deletedUser = existConversation.deletedUser || [];
             const newSet = new Set(existConversation.deletedUser.map(uid => uid.toString()));
             if (newSet.has(myUserId)) {
-                existConversation.deletedUser = existConversation.deletedUser
-                    .filter(uid => uid.toString() !== myUserId);
+                existConversation.deletedUser = existConversation.deletedUser.filter(
+                    uid => uid.toString() !== myUserId
+                );
                 await existConversation.save();
             }
             return existConversation;
@@ -558,12 +559,17 @@ export class ConversationService {
             return includeArchived ? me?.isArchived === true : !me?.isArchived;
         });
         const conversationIds = filteredConversations.map(conv => conv._id);
-        const mgsIds = await this.messageService.filterMessageConversationNotSeen(conversationIds, myUserId);
 
+        // FIX [PERFORMANCE]: Thay filterMessageConversationNotSeen (N+1 / full scan) bằng
+        // aggregation pipeline — 1 query trả về {conversationId, count} thay vì load toàn bộ message IDs
+        const unreadCounts = await this.messageService.getUnreadCountsPerConversation(
+            conversationIds, myUserId
+        );
+
+        // Build hashmap: conversationId → unreadCount
         const hashMap = new Map<string, number>();
-        for (const convMgs of mgsIds) {
-            const id = convMgs.toString();
-            hashMap.set(id, (hashMap.get(id) || 0) + 1);
+        for (const item of unreadCounts) {
+            hashMap.set(item._id.toString(), item.count);
         }
 
         return filteredConversations.map(conv => ({
@@ -587,10 +593,6 @@ export class ConversationService {
     }
 
     public async users(userId: string) {
-        // const listIds = await this.friendService.friends(userId);
-        // return this.userService.listUser(
-        //     listIds.map(uid => uid._id.toString())
-        // );
         return this.userService.listUser(userId);
     }
 

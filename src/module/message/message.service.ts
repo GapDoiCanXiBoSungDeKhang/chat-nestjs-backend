@@ -400,15 +400,31 @@ export class MessageService {
         return message;
     }
 
-    public async filterMessageConversationNotSeen(
+    /**
+     * FIX [PERFORMANCE - N+1]: Thay thế filterMessageConversationNotSeen bằng aggregation pipeline.
+     * Hàm cũ load toàn bộ message IDs rồi đếm phía app — với 50 groups x 10k messages = 500k documents.
+     * Hàm mới dùng $group trong MongoDB, chỉ trả về [{_id: conversationId, count: number}].
+     */
+    public async getUnreadCountsPerConversation(
         conversationIds: Types.ObjectId[],
         userId: string,
-    ) {
-        const filter = await this.messageModel.find({
-            conversationId: {$in: conversationIds},
-            seenBy: {$ne: convertStringToObjectId(userId)}
-        }, {conversationId: 1}).lean();
-        return filter.map(mgs => mgs.conversationId);
+    ): Promise<{_id: Types.ObjectId; count: number}[]> {
+        const userObjId = convertStringToObjectId(userId);
+        return this.messageModel.aggregate([
+            {
+                $match: {
+                    conversationId: {$in: conversationIds},
+                    seenBy: {$ne: userObjId},
+                    isDeleted: false,
+                }
+            },
+            {
+                $group: {
+                    _id: "$conversationId",
+                    count: {$sum: 1}
+                }
+            }
+        ]);
     }
 
     public async markAsSeen(
