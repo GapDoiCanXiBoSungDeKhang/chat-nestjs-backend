@@ -66,10 +66,10 @@ export class AuthService {
             }
         );
 
-        await this.userService.updateRefreshToken(
-            payload.sub,
-            refreshToken
-        );
+        // FIX [SECURITY CRITICAL]: Hash refresh token trước khi lưu vào DB
+        // Nếu DB bị leak, token plain text sẽ bị lộ hoàn toàn
+        const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+        await this.userService.updateRefreshToken(payload.sub, hashedRefreshToken);
         return {
             accessToken,
             refreshToken,
@@ -87,8 +87,12 @@ export class AuthService {
             if (!user || !user.refreshToken) {
                 throw new UnauthorizedException();
             }
-            if (refreshToken !== user.refreshToken) {
-                throw new UnauthorizedException("Refresh token reused");
+
+            // FIX [SECURITY CRITICAL]: So sánh bằng bcrypt.compare thay vì === plain text
+            // Trước đây: refreshToken !== user.refreshToken (plain text comparison)
+            const isValid = await bcrypt.compare(refreshToken, user.refreshToken);
+            if (!isValid) {
+                throw new UnauthorizedException("Refresh token reused or invalid");
             }
 
             const newPayload = {
@@ -106,11 +110,10 @@ export class AuthService {
                     expiresIn: "7d",
                 }
             );
-
-            await this.userService.updateRefreshToken(
-                newPayload.sub,
-                newRefreshToken
-            );
+            
+            // Hash token mới trước khi lưu
+            const hashedNewRefreshToken = await bcrypt.hash(newRefreshToken, 10);
+            await this.userService.updateRefreshToken(newPayload.sub, hashedNewRefreshToken);
             return {
                 accessToken: newAccessToken,
                 refreshToken: newRefreshToken,
