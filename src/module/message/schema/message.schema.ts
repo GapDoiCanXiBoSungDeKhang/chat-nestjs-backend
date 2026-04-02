@@ -86,3 +86,8 @@ MessageSchema.index({conversationId: 1, seenBy: 1});
 MessageSchema.index({"reactions.userId": 1});
 MessageSchema.index({content: "text"});
 
+// FIX [PERFORMANCE]: Thêm compound index cho isDeleted — nhiều query filter theo isDeleted
+// nhưng trước đây không có index, gây full collection scan với conversation có hàng nghìn messages.
+// Index này phục vụ tốt cho getUnreadCountsPerConversation aggregation và messages() pagination.
+MessageSchema.index({conversationId: 1, isDeleted: 1, createdAt: -1});
+
