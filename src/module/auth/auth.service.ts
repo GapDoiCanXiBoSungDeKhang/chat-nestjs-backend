@@ -44,6 +44,7 @@ export class AuthService {
         if (!user) return null;
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) return null;
+        delete user.password;
         return user;
     }
 
@@ -110,7 +111,7 @@ export class AuthService {
                     expiresIn: "7d",
                 }
             );
-            
+
             // Hash token mới trước khi lưu
             const hashedNewRefreshToken = await bcrypt.hash(newRefreshToken, 10);
             await this.userService.updateRefreshToken(newPayload.sub, hashedNewRefreshToken);

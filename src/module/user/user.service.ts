@@ -46,7 +46,7 @@ export class UserService {
     }
 
     public async getInfoByEmail(email: string) {
-        return this.userModel.findOne({email}).lean();
+        return this.userModel.findOne({email}).select("-refreshToken").lean();
     }
 
     public async findByPhoneNumber(phoneNumber: string) {
