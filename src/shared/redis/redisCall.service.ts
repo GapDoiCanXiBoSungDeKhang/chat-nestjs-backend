@@ -111,4 +111,14 @@ export class RedisCallService {
         }
         await pipeline.exec();
     }
+
+    // ─── Kiểm tra user có đang trong call không ───────────────────────────────
+ 
+    async getUserCallId(userId: string): Promise<string | null> {
+        return this.redis.get(`user:${userId}:callId`);
+    }
+ 
+    async isUserInCall(userId: string): Promise<boolean> {
+        return !!(await this.redis.exists(`user:${userId}:callId`));
+    }
 }
