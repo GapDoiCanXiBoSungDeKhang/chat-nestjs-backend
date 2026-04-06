@@ -51,4 +51,31 @@ export class RedisCallService {
 
         await pipeline.exec();
     }
+
+    async getCall(callId: string): Promise<{
+        callId: string;
+        callerId: string;
+        calleeId?: string;
+        conversationId?: string;
+        callType: "voice" | "video";
+        isGroup: boolean;
+        participants: Set<string>;
+    } | null> {
+        const [raw, members] = await Promise.all([
+            this.redis.hgetall(`call:${callId}`),
+            this.redis.smembers(`call:${callId}:members`),
+        ]);
+ 
+        if (!raw || !raw.callId) return null;
+ 
+        return {
+            callId: raw.callId,
+            callerId: raw.callerId,
+            calleeId: raw.calleeId || undefined,
+            conversationId: raw.conversationId || undefined,
+            callType: raw.callType as "voice" | "video",
+            isGroup: raw.isGroup === "1",
+            participants: new Set(members),
+        };
+    }
 }
