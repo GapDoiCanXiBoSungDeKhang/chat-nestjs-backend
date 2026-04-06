@@ -257,18 +257,20 @@ export class ChatGateway
     }
 
     @SubscribeMessage("call_reject")
-    public onCallReject(
+    async onCallReject(
         @ConnectedSocket() client: Socket,
-        @MessageBody() data: {callId: string, reasons?: string}
+        @MessageBody() data: {callId: string; reasons?: string},
     ) {
-        const calleId: string = client.data.userId;
-        const call = activeCalls.get(data.callId);
-        if (!call || call.calleeId !== calleId) return;
-
-        userInCall.delete(call.callerId);
-        activeCalls.delete(data.callId);
-
-        this.callEmit.callRejected(call.callerId, {callId: call.callId, reasons: data?.reasons});
+        const calleeId: string = client.data.userId;
+        const call = await this.redisCallService.getCall(data.callId);
+        if (!call || call.calleeId !== calleeId) return;
+ 
+        // [REDIS] Xoá call khỏi Redis
+        await this.redisCallService.deleteCall(data.callId, [call.callerId]);
+        this.callEmit.callRejected(call.callerId, {
+            callId: call.callId,
+            reasons: data?.reasons,
+        });
     }
 
     @SubscribeMessage("call_end")
