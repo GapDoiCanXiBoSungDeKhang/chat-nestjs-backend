@@ -274,19 +274,23 @@ export class ChatGateway
     }
 
     @SubscribeMessage("call_end")
-    public onCallEnd(
+    async onCallEnd(
         @ConnectedSocket() client: Socket,
-        @MessageBody() data: {callId: string}
+        @MessageBody() data: {callId: string},
     ) {
         const userId: string = client.data.userId;
-        const call = activeCalls.get(data.callId);
+        const call = await this.redisCallService.getCall(data.callId);
         if (!call) return;
-
-        const ortherId = call.callerId === userId ? call.calleeId : call.callerId;
-        userInCall.delete(call.callerId);
-        if (call.calleeId) userInCall.delete(call.calleeId);
-        activeCalls.delete(data.callId);
-        this.callEmit.callEnded(ortherId!, {callId: data.callId});
+ 
+        const otherId = call.callerId === userId ? call.calleeId : call.callerId;
+        const participants = await this.redisCallService.getParticipants(data.callId);
+ 
+        // [REDIS] Xoá toàn bộ call state
+        await this.redisCallService.deleteCall(data.callId, participants);
+ 
+        if (otherId) {
+            this.callEmit.callEnded(otherId, {callId: data.callId});
+        }
     }
 
     @SubscribeMessage("call_cancel")
