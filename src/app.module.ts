@@ -12,6 +12,7 @@ import {MessageModule} from "./module/message/message.module";
 import {ChatModule} from "./gateway/chat.module";
 import {FriendModule} from "./module/friend/friend.module";
 import {AttachmentModule} from "./module/attachment/attachment.module";
+import { RedisModule } from "./shared/redis/redis.module";
 
 @Module({
     imports: [
@@ -27,6 +28,7 @@ import {AttachmentModule} from "./module/attachment/attachment.module";
                 ttl: 60000
             },
         ]),
+        RedisModule,
         AuthModule,
         UsersModule,
         ConversationModule,
