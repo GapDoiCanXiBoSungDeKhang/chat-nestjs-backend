@@ -95,8 +95,20 @@ export class RedisCallService {
         const pipeline = this.redis.pipeline();
         pipeline.srem(`call:${callId}:members`, userId);
         pipeline.del(`user:${userId}:callId`);
-        const results = await pipeline.exec();
+        await pipeline.exec();
         // Trả về số member còn lại sau khi xoá
         return await this.redis.scard(`call:${callId}:members`);
+    }
+
+    // ─── Xoá toàn bộ call ────────────────────────────────────────────────────
+ 
+    async deleteCall(callId: string, participantIds: string[]): Promise<void> {
+        const pipeline = this.redis.pipeline();
+        pipeline.del(`call:${callId}`);
+        pipeline.del(`call:${callId}:members`);
+        for (const uid of participantIds) {
+            pipeline.del(`user:${uid}:callId`);
+        }
+        await pipeline.exec();
     }
 }
