@@ -195,6 +195,8 @@ export class ChatGateway
             .emit("user_stopped_typing", {conversationId: data.conversationId, userId});
     }
 
+    // ─── 1-1 Call ─────────────────────────────────────────────────────────────
+
     @SubscribeMessage("call_initiate")
     async onCallInitiate(
         @ConnectedSocket() client: Socket,
@@ -206,35 +208,37 @@ export class ChatGateway
             callerId, data.conversationId
         );
         if (!ok) return;
-        const setParticipants = new Set(
-            ok.participants.map(obj => obj.userId.toString())
-        );
-        if (!setParticipants.has(data.calleId)) return;
+        const isCalleeExistInCall = ok.participants.find(
+            obj => obj.userId.toString() === data.calleId
+        )
+        if (!isCalleeExistInCall) return;
         // need to add method event error
 
-        if (userInCall.has(data.calleId)) {
+        // [REDIS] Kiểm tra busy từ Redis thay Map
+        const calleeInCall = await this.redisCallService.isUserInCall(data.calleId);
+        if (calleeInCall) {
             this.callEmit.callBusy(callerId, {callId: ""});
             return;
-        };
+        }
         const callId = randomUUID();
-        const callerInfor = await this.userService.findById(callerId);
+        const callerInfo = await this.userService.findById(callerId);
 
-        activeCalls.set(callId, {
+        // [REDIS] Lưu call state vào Redis
+        await this.redisCallService.createCall({
             callId,
             callerId,
             calleeId: data.calleId,
             conversationId: data.conversationId,
             callType: data.callType,
             isGroup: false,
-            participants: new Set([callerId])
         });
-        userInCall.set(callerId, callId);
+
         this.callEmit.callInittiated(data.calleId, {
             callId,
             callerId,
-            callerInfo: {name: callerInfor!.name, avatar: callerInfor?.avatar},
+            callerInfo: {name: callerInfo!.name, avatar: callerInfo?.avatar},
             callType: data.callType,
-            conversationId: data.conversationId
+            conversationId: data.conversationId,
         });
     }
 
