@@ -78,4 +78,14 @@ export class RedisCallService {
             participants: new Set(members),
         };
     }
+
+    // ─── Thêm participant ─────────────────────────────────────────────────────
+ 
+    async addParticipant(callId: string, userId: string): Promise<void> {
+        const pipeline = this.redis.pipeline();
+        pipeline.sadd(`call:${callId}:members`, userId); // thêm thành viên mới.
+        pipeline.expire(`call:${callId}:members`, this.CALL_TTL); // tự động giải phóng dữ liệu, rác, ..., tránh tồn dữ liệu đã sử dụng hoặc không mong muốn.
+        pipeline.set(`user:${userId}:callId`, callId, "EX", this.CALL_TTL); // set biết user đang ở phòng nào.
+        await pipeline.exec();
+    }
 }
