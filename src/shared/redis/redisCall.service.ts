@@ -121,4 +121,14 @@ export class RedisCallService {
     async isUserInCall(userId: string): Promise<boolean> {
         return !!(await this.redis.exists(`user:${userId}:callId`));
     }
+
+     // ─── Lấy danh sách participants ───────────────────────────────────────────
+ 
+    async getParticipants(callId: string): Promise<string[]> {
+        return this.redis.smembers(`call:${callId}:members`);
+    }
+ 
+    async getParticipantCount(callId: string): Promise<number> {
+        return this.redis.scard(`call:${callId}:members`);
+    }
 }
