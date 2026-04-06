@@ -9,6 +9,7 @@ import {MessageEmitService} from "./services/messageEmit.service";
 import {GroupEmitService} from "./services/groupEmit.service";
 import {PresenceEmitService} from "./services/presenceEmit.service";
 import {CallEmitService} from "./services/callEmit.service";
+import { RedisCallService } from "../shared/redis/redisCall.service";
 
 @Module({
     imports: [
@@ -26,6 +27,7 @@ import {CallEmitService} from "./services/callEmit.service";
         MessageEmitService,
         GroupEmitService,
         PresenceEmitService,
+        RedisCallService,
         CallEmitService,
     ],
     exports: [ChatGateway]

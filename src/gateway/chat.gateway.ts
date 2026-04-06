@@ -309,18 +309,17 @@ export class ChatGateway
         }
     }
 
-    // FIX [SECURITY CRITICAL]: Verify participant trước khi relay SDP.
-    // Trước đây chỉ check activeCalls.has(callId) nhưng không verify fromUserId có phải
-    // participant hợp lệ không → attacker biết callId có thể inject SDP tùy ý.
+    // ─── WebRTC Signaling (call_offer / call_answer / call_ice_candidate) ─────
+ 
     @SubscribeMessage("call_offer")
-    onCallOffer(
+    async onCallOffer(
         @ConnectedSocket() client: Socket,
         @MessageBody() data: {callId: string; targetUserId: string; sdp: any},
     ) {
         const fromUserId = client.data.userId;
-        const call = activeCalls.get(data.callId); 
-        
-        // Verify fromUserId là participant hợp lệ của call này
+        const call = await this.redisCallService.getCall(data.callId);
+ 
+        // [SECURITY] Verify participant từ Redis
         if (!call || !call.participants.has(fromUserId)) return;
  
         this.callEmit.callOffer(data.targetUserId, {
@@ -329,17 +328,15 @@ export class ChatGateway
             sdp: data.sdp,
         });
     }
-
-    // FIX [SECURITY CRITICAL]: Tương tự call_offer — verify participant
+ 
     @SubscribeMessage("call_answer")
-    onCallAnswer(
+    async onCallAnswer(
         @ConnectedSocket() client: Socket,
-        @MessageBody() data: { callId: string; targetUserId: string; sdp: any },
+        @MessageBody() data: {callId: string; targetUserId: string; sdp: any},
     ) {
         const fromUserId = client.data.userId;
-        const call = activeCalls.get(data.callId); 
-        
-        // Verify fromUserId là participant hợp lệ của call này
+        const call = await this.redisCallService.getCall(data.callId);
+ 
         if (!call || !call.participants.has(fromUserId)) return;
  
         this.callEmit.callAnswer(data.targetUserId, {
@@ -348,17 +345,15 @@ export class ChatGateway
             sdp: data.sdp,
         });
     }
-
-    // FIX [SECURITY CRITICAL]: Tương tự — verify participant trước khi relay ICE candidate
+ 
     @SubscribeMessage("call_ice_candidate")
-    onCallIceCandidate(
+    async onCallIceCandidate(
         @ConnectedSocket() client: Socket,
         @MessageBody() data: {callId: string; targetUserId: string; candidate: any},
     ) {
-         const fromUserId = client.data.userId;
-        const call = activeCalls.get(data.callId);
-
-        // Verify fromUserId là participant hợp lệ
+        const fromUserId = client.data.userId;
+        const call = await this.redisCallService.getCall(data.callId);
+ 
         if (!call || !call.participants.has(fromUserId)) return;
  
         this.callEmit.callIceCandidate(data.targetUserId, {
