@@ -122,7 +122,7 @@ export class RedisCallService {
         return !!(await this.redis.exists(`user:${userId}:callId`));
     }
 
-     // ─── Lấy danh sách participants ───────────────────────────────────────────
+    // ─── Lấy danh sách participants ───────────────────────────────────────────
  
     async getParticipants(callId: string): Promise<string[]> {
         return this.redis.smembers(`call:${callId}:members`);

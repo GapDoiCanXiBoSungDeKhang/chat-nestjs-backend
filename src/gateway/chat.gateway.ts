@@ -25,6 +25,9 @@ import {gatewayRooms} from "./gateway.rooms";
 
 import {ActiveCall} from "../common/interface/activeCall.interface";
 
+// [Redis] memory ram redis
+import { RedisCallService } from "../shared/redis/redisCall.service";
+
 // dictionary calls active
 const activeCalls = new Map<string, ActiveCall>();
 
@@ -54,6 +57,9 @@ export class ChatGateway
         private readonly groupEmit: GroupEmitService,
         private readonly presenceEmit: PresenceEmitService,
         private readonly callEmit: CallEmitService,
+
+        // [REDIS] Inject RedisCallService thay thế in-memory Maps
+        private readonly redisCallService: RedisCallService,
     ) {
     }
 
@@ -95,10 +101,10 @@ export class ChatGateway
         const userId: string = client.data.userId;
         if (!userId) return;
 
-         // Cleanup call nếu user đang trong cuộc gọi lúc disconnect
-        const callId = userInCall.get(userId);
+        // Cleanup call state trên Redis nếu user đang trong cuộc gọi
+        const callId = await this.redisCallService.getUserCallId(userId);
         if (callId) {
-            this._handleCallCleanup(userId, callId);
+            await this._handleCallCleanup(userId, callId);
         }
 
         await this.userService.setOffline(userId);
@@ -109,37 +115,31 @@ export class ChatGateway
     }
 
     /**
-     * Helper dùng nội bộ để cleanup state khi call kết thúc hoặc user disconnect.
-     * Notify phía còn lại nếu cuộc gọi bị gián đoạn.
+     * [REDIS] Cleanup call state trên Redis.
+     * Dùng chung cho handleDisconnect và các event call_end/call_cancel.
      */
-    private _handleCallCleanup(userId: string, callId: string) {
-        const call = activeCalls.get(callId);
+    private async _handleCallCleanup(userId: string, callId: string): Promise<void> {
+        const call = await this.redisCallService.getCall(callId);
         if (!call) return;
-
+ 
         if (call.isGroup) {
-            // Group call: xóa participant, notify group, xóa call nếu hết người
-            call.participants.delete(userId);
-            userInCall.delete(userId);
-
-            this.callEmit.groupCallLeft(call.conversationId!, {
-                callId,
-                userId,
-            });
-
-            if (call.participants.size === 0) {
-                activeCalls.delete(callId);
+            const remaining = await this.redisCallService.removeParticipant(callId, userId);
+ 
+            this.callEmit.groupCallLeft(call.conversationId!, {callId, userId});
+ 
+            if (remaining === 0) {
+                await this.redisCallService.deleteCall(callId, []);
                 this.callEmit.groupCallEnded(call.conversationId!, {
                     callId,
                     conversationId: call.conversationId!,
                 });
             }
         } else {
-            // 1-1 call: thông báo cho phía còn lại rồi dọn dẹp
+            const participants = await this.redisCallService.getParticipants(callId);
             const otherId = call.callerId === userId ? call.calleeId : call.callerId;
-            userInCall.delete(call.callerId);
-            if (call.calleeId) userInCall.delete(call.calleeId);
-            activeCalls.delete(callId);
-
+ 
+            await this.redisCallService.deleteCall(callId, participants);
+ 
             if (otherId) {
                 this.callEmit.callEnded(otherId, {callId});
             }
