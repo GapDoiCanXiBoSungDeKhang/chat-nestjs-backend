@@ -294,19 +294,18 @@ export class ChatGateway
     }
 
     @SubscribeMessage("call_cancel")
-    onCallCancel(
+    async onCallCancel(
         @ConnectedSocket() client: Socket,
-        @MessageBody() data: { callId: string },
+        @MessageBody() data: {callId: string},
     ) {
         const callerId = client.data.userId;
-        const call = activeCalls.get(data.callId);
+        const call = await this.redisCallService.getCall(data.callId);
         if (!call || call.callerId !== callerId) return;
  
-        activeCalls.delete(data.callId);
-        userInCall.delete(callerId);
+        await this.redisCallService.deleteCall(data.callId, [callerId]);
  
         if (call.calleeId) {
-            this.callEmit.callCancelled(call.calleeId, { callId: data.callId });
+            this.callEmit.callCancelled(call.calleeId, {callId: data.callId});
         }
     }
 
