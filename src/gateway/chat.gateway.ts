@@ -243,17 +243,16 @@ export class ChatGateway
     }
 
     @SubscribeMessage("call_accept")
-    public onCallAccept(
+    public async onCallAccept(
         @ConnectedSocket() client: Socket,
         @MessageBody() data: {callId: string}
     ) {
-        const calleId: string = client.data.userId;
-        const call = activeCalls.get(data.callId);
+        const calleId = client.data.userId;
+        const call = await this.redisCallService.getCall(data.callId);
         if (!call || call.calleeId !== calleId) return;
 
-        userInCall.set(calleId, data.callId);
-        call.participants.add(calleId);
-
+        // [REDIS] Thêm callee vào participants set trên Redis
+        await this.redisCallService.addParticipant(data.callId, calleId);
         this.callEmit.callAccepted(call.callerId, {callId: call.callId});
     }
 
