@@ -88,4 +88,15 @@ export class RedisCallService {
         pipeline.set(`user:${userId}:callId`, callId, "EX", this.CALL_TTL); // set biết user đang ở phòng nào.
         await pipeline.exec();
     }
+
+    // ─── Xoá participant ──────────────────────────────────────────────────────
+ 
+    async removeParticipant(callId: string, userId: string): Promise<number> {
+        const pipeline = this.redis.pipeline();
+        pipeline.srem(`call:${callId}:members`, userId);
+        pipeline.del(`user:${userId}:callId`);
+        const results = await pipeline.exec();
+        // Trả về số member còn lại sau khi xoá
+        return await this.redis.scard(`call:${callId}:members`);
+    }
 }
