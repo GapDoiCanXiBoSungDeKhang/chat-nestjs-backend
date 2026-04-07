@@ -438,22 +438,24 @@ export class ChatGateway
     }
 
     @SubscribeMessage("group_call_end")
-    onGroupCallEnd(
+    async onGroupCallEnd(
         @ConnectedSocket() client: Socket,
         @MessageBody() data: {callId: string},
     ) {
         const hostId = client.data.userId;
-        const call = activeCalls.get(data.callId);
+        const call = await this.redisCallService.getCall(data.callId);
         if (!call || !call.isGroup || call.callerId !== hostId) return;
  
-        call.participants.forEach(uid => userInCall.delete(uid));
-        activeCalls.delete(data.callId);
+        const participants = await this.redisCallService.getParticipants(data.callId);
+        await this.redisCallService.deleteCall(data.callId, participants);
  
         this.callEmit.groupCallEnded(call.conversationId!, {
             callId: data.callId,
             conversationId: call.conversationId!,
         });
     }
+
+    // ─── Emit helpers ─────────────────────────────────────────────
 
     emitNewMessage(cid: string, p: any) {
         this.messageEmit.newMessage(cid, p);
