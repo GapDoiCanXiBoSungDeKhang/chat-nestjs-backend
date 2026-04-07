@@ -414,24 +414,22 @@ export class ChatGateway
     }
 
     @SubscribeMessage("group_call_leave")
-    onGroupCallLeave(
+    async onGroupCallLeave(
         @ConnectedSocket() client: Socket,
         @MessageBody() data: {callId: string},
     ) {
         const userId = client.data.userId;
-        const call = activeCalls.get(data.callId);
+        const call = await this.redisCallService.getCall(data.callId);
         if (!call || !call.isGroup) return;
  
-        call.participants.delete(userId);
-        userInCall.delete(userId);
- 
-        this.callEmit.groupCallLeft(call.conversationId!, {
-            callId: data.callId,
-            userId,
-        });
- 
-        if (call.participants.size === 0) {
-            activeCalls.delete(data.callId);
+        const remaining = await this.redisCallService.removeParticipant(
+            data.callId, userId,
+        );
+        
+        this.callEmit.groupCallLeft(call.conversationId!, {callId: data.callId, userId});
+
+        if (remaining === 0) {
+            await this.redisCallService.deleteCall(data.callId, []);
             this.callEmit.groupCallEnded(call.conversationId!, {
                 callId: data.callId,
                 conversationId: call.conversationId!,
