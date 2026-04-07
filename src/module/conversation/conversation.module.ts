@@ -16,6 +16,7 @@ import {RequestJoinRoomModule} from "../requestJoinRoom/requestJoinRoom.module";
 import {FriendModule} from "../friend/friend.module";
 import {ChatModule} from "../../gateway/chat.module";
 import {AnnouncementModule} from "../announcements/announcement.module";
+import { RedisCacheService } from "../../shared/redis/redisCache.service";
 
 @Module({
     imports: [
@@ -35,7 +36,8 @@ import {AnnouncementModule} from "../announcements/announcement.module";
     ],
     providers: [
         ConversationService,
-        ConversationParticipantGuard
+        ConversationParticipantGuard,
+        RedisCacheService
     ],
     controllers: [ConversationController],
     exports: [

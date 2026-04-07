@@ -18,12 +18,13 @@ import {LinkPreviewService} from "../link-preview/link-preview.service";
 import {LinkPreviewDocument} from "../link-preview/schema/link-preview.schema";
 import {RequestJoinRoomService} from "../requestJoinRoom/requestJoinRoom.service";
 import {AnnouncementService} from "../announcements/announcement.service";
+import {RedisCacheService} from "../../shared/redis/redisCache.service";
 
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 
-import {ChatGateway} from "../../gateway/chat.gateway";
-
 import {MuteDuration} from "./dto/muteDuration.dto";
+
+import {ChatGateway} from "../../gateway/chat.gateway";
 
 @Injectable()
 export class ConversationService {
@@ -39,7 +40,8 @@ export class ConversationService {
         private readonly attachmentService: AttachmentService,
         private readonly linkPreviewService: LinkPreviewService,
         private readonly announcementService: AnnouncementService,
-        private readonly requestJoinRoomService: RequestJoinRoomService
+        private readonly requestJoinRoomService: RequestJoinRoomService,
+        private readonly redisCacheService: RedisCacheService,
     ) {
     }
 
@@ -79,6 +81,9 @@ export class ConversationService {
             participants: this.groupParticipants(uniqueIds, myUserId)
         });
         await conversation.populate("createdBy", "name");
+
+        // [REDIS] Invalidate cache của cả 2 user khi tạo conversation mới
+        await this.redisCacheService.invalidateConversationsMany(uniqueIds);
 
         this.chatGateway.emitGroupCreated(uniqueIds, {
             conversation: conversation,
@@ -192,18 +197,23 @@ export class ConversationService {
                     {path: "userId", select: "name avatar status"},
                     {path: "actor", select: "name"}
                 ]);
-
                 this.chatGateway.emitNewRequestJoinRoom(conversation.participants, {
-                    conversationId: room,
+                    conversationId: room, 
                     request,
                 });
             }
-
             return newRequests;
         }
         const newMembers = this.groupParticipants(userIds, actorId);
         conversation.participants.push(...newMembers);
         await conversation.save();
+
+        // [REDIS] Invalidate cache của tất cả members (cũ + mới)
+        const allAffectedIds = [
+            ...conversation.participants.map((p) => p.userId.toString()),
+            ...uniqueIds,
+        ];
+        await this.redisCacheService.invalidateConversationsMany(allAffectedIds);
 
         const addedBy = {_id: actorId, name: nameUser};
         const content = `${nameUser} đã thêm vào nhóm,`;
@@ -251,10 +261,14 @@ export class ConversationService {
             throw new ForbiddenException("Can't remove member for this conversation!");
         }
         const uniqueIds = new Set(userIds);
-        const newParticipants = conversation.participants
-            .filter(obj => !uniqueIds.has(obj.userId.toString()));
+        const newParticipants = conversation.participants.filter(
+            obj => !uniqueIds.has(obj.userId.toString())
+        );
         conversation.participants = newParticipants;
         await conversation.save();
+
+        // [REDIS] Invalidate cache của members bị xoá
+        await this.redisCacheService.invalidateConversationsMany(userIds);
 
         const removedBy = {_id: actorId, name: userName};
         const content = `${userName} đã xóa khỏi nhóm,`;
@@ -358,6 +372,9 @@ export class ConversationService {
         conversation.participants = newParticipants;
         await conversation.save();
 
+        // [REDIS] Invalidate cache của user rời nhóm
+        await this.redisCacheService.invalidateConversations(userId);
+
         const leftUser = {_id: userId, name: userName};
         const content = `người đã rời khỏi nhóm,`;
 
@@ -381,6 +398,11 @@ export class ConversationService {
         if (user.role !== "owner") {
             throw new ForbiddenException("You can't disband group!");
         }
+
+        // [REDIS] Invalidate cache của tất cả members
+        const memberIds = conversation.participants.map((p) => p.userId.toString());
+        await this.redisCacheService.invalidateConversationsMany(memberIds);
+        
         await Promise.all([
             conversation.deleteOne(),
             this.messageService.deleteManyMessagesConversationGroup(conversationId),
@@ -419,6 +441,9 @@ export class ConversationService {
             const participant = this.groupParticipants([userId], actorId);
             conversation.participants.push(...participant);
             await conversation.save();
+
+            // [REDIS] Invalidate cache của user mới được thêm vào
+            await this.redisCacheService.invalidateConversations(userId);
 
             const handledBy = {_id: actorId, name: userName};
             const content = `${userName} chấp nhận yêu cầu thêm mới,`;
@@ -501,6 +526,9 @@ export class ConversationService {
         });
         await group.populate("createdBy", "name");
 
+         // [REDIS] Invalidate cache của tất cả members mới
+        await this.redisCacheService.invalidateConversationsMany(uniqueIds);
+
         this.chatGateway.emitGroupCreated(uniqueIds, {
             conversation: group,
             createdBy: {
@@ -532,6 +560,10 @@ export class ConversationService {
             return {status: "group is deleted!"}
         }
         await conversation.save();
+
+        // [REDIS] Invalidate cache của user vừa xoá conversation
+        await this.redisCacheService.invalidateConversations(userId);
+
         return conversation;
     }
 
@@ -546,12 +578,26 @@ export class ConversationService {
         ];
     }
 
+    /**
+     * [REDIS] getAllConversations — Cache-aside pattern.
+     * 1. Thử lấy từ Redis cache (TTL 30s)
+     * 2. Miss → query MongoDB + tính unread bằng aggregation
+     * 3. Lưu kết quả vào cache
+     */
     public async getAllConversations(myUserId: string, includeArchived = false) {
+         // 1. Cache hit
+        const cached = await this.redisCacheService.getConversations(
+            myUserId,
+            includeArchived,
+        );
+        if (cached) return cached;
+
         const conversations = await this.conversationModel
             .find({ "participants.userId": convertStringToObjectId(myUserId) })
             .populate(this.arrayPopulate())
             .sort({updatedAt: -1})
             .lean();
+
         const filteredConversations = conversations.filter(conv => {
             const me = conv.participants.find(
                 p => p.userId._id.toString() === myUserId
@@ -572,10 +618,15 @@ export class ConversationService {
             hashMap.set(item._id.toString(), item.count);
         }
 
-        return filteredConversations.map(conv => ({
+        const result = filteredConversations.map((conv) => ({
             ...conv,
             unreadCount: hashMap.get(conv._id.toString()) || 0,
         }));
+ 
+        // 3. Lưu vào cache 30 giây
+        await this.redisCacheService.setConversations(myUserId, includeArchived, result);
+        
+        return result;
     }
 
     public async archiveConversation(conversationId: string, userId: string, archive: boolean) {
@@ -589,6 +640,10 @@ export class ConversationService {
         if (!result.matchedCount) {
             throw new NotFoundException("Conversation not found or you are not a member!");
         }
+
+        // [REDIS] Invalidate cache vì archived status thay đổi
+        await this.redisCacheService.invalidateConversations(userId);
+
         return {success: true, archived: archive};
     }
 

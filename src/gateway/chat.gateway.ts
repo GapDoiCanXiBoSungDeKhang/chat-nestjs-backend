@@ -23,16 +23,8 @@ import {CallEmitService} from "./services/callEmit.service";
 
 import {gatewayRooms} from "./gateway.rooms";
 
-import {ActiveCall} from "../common/interface/activeCall.interface";
-
 // [Redis] memory ram redis
-import { RedisCallService } from "../shared/redis/redisCall.service";
-
-// dictionary calls active
-const activeCalls = new Map<string, ActiveCall>();
-
-// check user has in call
-const userInCall = new Map<string, string>();
+import {RedisCallService} from "../shared/redis/redisCall.service";
 
 @WebSocketGateway({
     cors: {
