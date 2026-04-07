@@ -399,11 +399,11 @@ export class ChatGateway
         @MessageBody() data: {callId: string},
     ) {
         const userId = client.data.userId;
-        const call = activeCalls.get(data.callId);
+        const call = await this.redisCallService.getCall(data.callId);
         if (!call || !call.isGroup) return;
  
-        call.participants.add(userId);
-        userInCall.set(userId, data.callId);
+        // [REDIS] Thêm participant vào Redis
+        await this.redisCallService.addParticipant(data.callId, userId);
  
         const userInfo = await this.userService.getInfoById(userId);
         this.callEmit.groupCallJoined(call.conversationId!, {
