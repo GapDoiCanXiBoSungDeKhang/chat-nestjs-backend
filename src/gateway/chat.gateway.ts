@@ -363,6 +363,8 @@ export class ChatGateway
         });
     }
 
+    // ─── Group Call ───────────────────────────────────────────────────────────
+
     @SubscribeMessage("group_call_start")
     async onGroupCallStart(
         @ConnectedSocket() client: Socket,
@@ -373,16 +375,16 @@ export class ChatGateway
         if (!ok) return;
  
         const callId = randomUUID();
-        activeCalls.set(callId, {
+       
+        // [REDIS] Lưu group call vào Redis
+        await this.redisCallService.createCall({
             callId,
             callerId: hostId,
             conversationId: data.conversationId,
-            participants: new Set([hostId]),
             callType: data.callType,
             isGroup: true,
         });
-        userInCall.set(hostId, callId);
- 
+
         this.callEmit.groupCallStarted(data.conversationId, {
             callId,
             conversationId: data.conversationId,
