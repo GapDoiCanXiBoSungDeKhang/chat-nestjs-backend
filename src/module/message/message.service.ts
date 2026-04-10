@@ -19,6 +19,8 @@ import {UserService} from "../user/user.service";
 import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
 import {extractValidUrls} from "../../shared/utils/extractUrl.util";
 
+import {RedisCacheService} from "../../shared/redis/redisCache.service";
+
 @Injectable()
 export class MessageService {
     constructor(
@@ -32,6 +34,7 @@ export class MessageService {
         private readonly userService: UserService,
         @Inject(forwardRef(() => ChatGateway))
         private readonly chatGateway: ChatGateway,
+        private readonly redisCacheService: RedisCacheService,
     ) {
     }
 
@@ -44,6 +47,29 @@ export class MessageService {
         if (!message) throw new NotFoundException("Reply message not found");
         return convertStringToObjectId(replyTo);
     }
+
+    /**
+     * Invalidate toàn bộ cache liên quan đến conversation:
+     * - Message pages của conversation
+     * - Conversation list của tất cả participants
+     *
+     * Tất cả lỗi cache đều bị nuốt — không để ảnh hưởng flow chính.
+     */
+    private async invalidateAll(conversationId: string): Promise<void> {
+        try {
+            // 1. Xoá tất cả message pages của conversation này
+            await this.redisCacheService.invalidateMessages(conversationId);
+ 
+            // 2. Xoá conversation list cache của tất cả participants
+            const conversation = await this.conversationService.findConversation(conversationId);
+            const participantIds = conversation.participants.map((p) => p.userId.toString());
+            await this.redisCacheService.invalidateConversationsMany(participantIds);
+        } catch {
+            // Không để lỗi cache làm hỏng flow chính
+        }
+    }
+ 
+    // ─── Gửi message text ────────────────────────────────────────────────────
 
     private getArrayPopulate() {
         return [
