@@ -24,6 +24,7 @@ export class RedisCacheService {
     private readonly logger = new Logger(RedisCacheService.name);
  
     private readonly CONVERSATIONS_TTL = 30;   // 30 giây
+    private readonly MESSAGES_TTL = 60;   // 60 giây
 
     constructor(
         @Inject(REDIS_CLIENT) private readonly redis: Redis
@@ -88,4 +89,104 @@ export class RedisCacheService {
         }
     }
 
+    // ═══════════════════════════════════════════════════════════════════════════
+    // MESSAGE PAGE CACHE
+    // ═══════════════════════════════════════════════════════════════════════════
+ 
+    /**
+     * Tạo cache key cho một page messages.
+     * cursor = "first" khi không có before (trang đầu tiên).
+     * cursor = before ObjectId khi load thêm (infinite scroll).
+     */
+    private messagePageKey(
+        conversationId: string,
+        cursor: string,
+        limit: number,
+    ): string {
+        return `messages:${conversationId}:page:${cursor}:${limit}`;
+    }
+ 
+    /**
+     * Lấy một page messages từ cache.
+     * Trả về null nếu không có (cache miss).
+     */
+    async getMessages(
+        conversationId: string,
+        limit: number,
+        before?: string,
+    ): Promise<any | null> {
+        try {
+            const cursor = before ?? "first";
+            const key = this.messagePageKey(conversationId, cursor, limit);
+            const cached = await this.redis.get(key);
+            if (!cached) return null;
+            this.logger.debug(`[Cache] HIT messages ${conversationId} cursor=${cursor}`);
+            return JSON.parse(cached);
+        } catch (err) {
+            this.logger.warn(`[Cache] getMessages error: ${err}`);
+            return null;
+        }
+    }
+ 
+    /**
+     * Lưu một page messages vào cache.
+     * Đồng thời đăng ký key vào set theo dõi của conversation
+     * để có thể invalidate tất cả pages khi cần.
+     */
+    async setMessages(
+        conversationId: string,
+        limit: number,
+        data: any,
+        before?: string,
+    ): Promise<void> {
+        try {
+            const cursor = before ?? "first";
+            const key = this.messagePageKey(conversationId, cursor, limit);
+            const trackingKey = `messages:${conversationId}:keys`;
+ 
+            const pipeline = this.redis.pipeline();
+            // Lưu page data
+            pipeline.setex(key, this.MESSAGES_TTL, JSON.stringify(data));
+            // Đăng ký key vào tracking set (để invalidate sau)
+            pipeline.sadd(trackingKey, key);
+            // Tracking set có TTL dài hơn một chút để không bị xoá trước các pages
+            pipeline.expire(trackingKey, this.MESSAGES_TTL + 60);
+            await pipeline.exec();
+        } catch (err) {
+            this.logger.warn(`[Cache] setMessages error: ${err}`);
+        }
+    }
+ 
+    /**
+     * Invalidate TẤT CẢ cached pages của một conversation.
+     *
+     * Gọi khi:
+     * - Có message mới gửi vào conversation
+     * - Message bị edit (nội dung thay đổi)
+     * - Message bị delete (isDeleted = true hoặc deletedFor)
+     * - React/unreact (reactions array thay đổi)
+     * - markAsSeen (seenBy array thay đổi)
+     */
+    async invalidateMessages(conversationId: string): Promise<void> {
+        try {
+            const trackingKey = `messages:${conversationId}:keys`;
+            const keys = await this.redis.smembers(trackingKey);
+ 
+            if (keys.length > 0) {
+                const pipeline = this.redis.pipeline();
+                // Xoá tất cả page keys đã đăng ký
+                for (const k of keys) {
+                    pipeline.del(k);
+                }
+                // Xoá tracking set
+                pipeline.del(trackingKey);
+                await pipeline.exec();
+                this.logger.debug(
+                    `[Cache] Invalidated ${keys.length} message pages for conversation ${conversationId}`,
+                );
+            }
+        } catch (err) {
+            this.logger.warn(`[Cache] invalidateMessages error: ${err}`);
+        }
+    }
 }
