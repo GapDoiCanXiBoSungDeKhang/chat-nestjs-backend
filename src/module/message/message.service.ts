@@ -126,6 +126,8 @@ export class MessageService {
             });
         }
         await this.conversationService.updateConversation(conversationId, message.id);
+        // [CACHE] Invalidate message pages + conversation list vì có message mới
+        await this.invalidateAll(conversationId);
         return {message};
     }
 
@@ -167,7 +169,10 @@ export class MessageService {
             isPinned: true,
             pinByUser: mgs.pinByUser,
             pinnedAt: mgs.pinnedAt.toISOString(),
-        })
+        });
+
+        // [CACHE] Invalidate vì isPinned của message thay đổi
+        await this.redisCacheService.invalidateMessages(conversationId);
         return mgs;
     }
 
@@ -192,7 +197,10 @@ export class MessageService {
             isPinned: false,
             pinByUser: null,
             pinnedAt: null,
-        })
+        });
+
+        // [CACHE] Invalidate vì isPinned của message thay đổi
+        await this.redisCacheService.invalidateMessages(conversationId);
         return mgs;
     }
 
@@ -225,6 +233,8 @@ export class MessageService {
         this.chatGateway.emitNewMessageFiles(conversationId, {message, attachments});
         await this.conversationService.updateConversation(conversationId, message.id);
 
+        // [CACHE] Invalidate
+        await this.invalidateAll(conversationId);
         return {message, attachments};
     }
 
@@ -253,6 +263,8 @@ export class MessageService {
         this.chatGateway.emitNewMessageMedias(conversationId, {message, attachments});
         await this.conversationService.updateConversation(conversationId, message.id);
 
+        // [CACHE] Invalidate
+        await this.invalidateAll(conversationId);
         return {message, attachments};
     }
 
@@ -282,6 +294,8 @@ export class MessageService {
         this.chatGateway.emitNewMessageVoice(conversationId, {message, attachments});
         await this.conversationService.updateConversation(conversationId, message.id);
 
+        // [CACHE] Invalidate
+        await this.invalidateAll(conversationId);
         return {message, attachments};
     }
 
@@ -314,14 +328,40 @@ export class MessageService {
             ]);
 
         this.chatGateway.emitMessageEdited(message.conversationId.toString(), populated);
+
+        // [CACHE] Invalidate vì nội dung message đã thay đổi
+        await this.redisCacheService.invalidateMessages(message.conversationId.toString());
         return populated;
     }
 
+     // ─── GET messages — CACHE-ASIDE ──────────────────────────────────────────
+ 
+    /**
+     * [CACHE] Cache-aside pattern cho message pagination.
+     *
+     * Flow:
+     *   1. Tạo cache key theo (conversationId, limit, before)
+     *   2. Cache HIT  → trả về ngay, không query MongoDB
+     *   3. Cache MISS → query MongoDB + enrich attachments/links → lưu cache → trả về
+     *
+     * TTL: 60 giây.
+     * Invalidate: bất cứ khi nào có write trong conversation (gửi, edit, delete, react, seen).
+     *
+     * Tại sao cursor-based key?
+     *   Mỗi "page" có cursor khác nhau (before = ObjectId của message cuối page trước).
+     *   Cache theo cursor để các page cũ (đã load xong) vẫn hit cache dù có message mới ở trang 1.
+     *   Khi có write → invalidate tất cả pages → client tự refresh trang 1.
+     */
     public async messages(
         conversationId: string,
         limit: number = 20,
         before?: string
     ) {
+        // 1. Thử lấy từ cache
+        const cached = await this.redisCacheService.getMessages(conversationId, limit, before);
+        if (cached) return cached;
+ 
+        // 2. Cache miss — query MongoDB
         const query: any = {conversationId: convertStringToObjectId(conversationId)};
         if (before) query._id = {$lt: convertStringToObjectId(before)};
         const messages = await this.messageModel
@@ -354,21 +394,21 @@ export class MessageService {
             const id = m._id.toString();
             if (groupAttachments[id]) {
                 m.attachments =
-                    m.type === "voice"
-                        ? [groupAttachments[id][0]]
-                        : groupAttachments[id];
+                    m.type === "voice" ? [groupAttachments[id][0]]: groupAttachments[id];
             }
-            if (groupLinks[id]) {
-                m.linkPreviews = groupLinks[id];
-            }
+            if (groupLinks[id]) m.linkPreviews = groupLinks[id];
             return m;
         });
 
-        return {
+        const result = {
             messages: enriched.reverse(),
             nextCursor: enriched.length ? enriched[0]._id : null,
-            hasMore: enriched.length === limit
+            hasMore: enriched.length === limit,
         };
+ 
+        // 3. Lưu vào cache 60 giây
+        await this.redisCacheService.setMessages(conversationId, limit, result, before);
+        return result;
     }
 
     public async findByIdCheck(messageId: string) {
@@ -404,6 +444,11 @@ export class MessageService {
         this.chatGateway.emitMessageReacted(messageEdit.conversationId.toString(), {
             messageId, userId, emoji, action: "add"
         });
+
+        // [CACHE] Invalidate vì reactions của message thay đổi
+        await this.redisCacheService.invalidateMessages(
+            messageEdit.conversationId.toString(),
+        );
         return messageEdit;
     }
 
@@ -423,6 +468,9 @@ export class MessageService {
         this.chatGateway.emitMessageReacted(message.conversationId.toString(), {
             messageId, userId, emoji: null, action: "remove"
         });
+
+        // [CACHE] Invalidate vì reactions thay đổi
+        await this.redisCacheService.invalidateMessages(message.conversationId.toString());
         return message;
     }
 
@@ -444,12 +492,7 @@ export class MessageService {
                     isDeleted: false,
                 }
             },
-            {
-                $group: {
-                    _id: "$conversationId",
-                    count: {$sum: 1}
-                }
-            }
+            {$group: {_id: "$conversationId", count: {$sum: 1}}}
         ]);
     }
 
@@ -479,6 +522,11 @@ export class MessageService {
             seenBy: userInfo,
         });
 
+        // [CACHE] seenBy thay đổi → invalidate message pages + conversation list
+        await Promise.all([
+            this.redisCacheService.invalidateMessages(conversationId),
+            this.redisCacheService.invalidateConversations(userId),
+        ]);
         return { success: true };
     }
 
@@ -516,6 +564,9 @@ export class MessageService {
                 scope: scope,
                 deletedBy: userId
             });
+
+            // [CACHE] Invalidate vì message bị xoá (isDeleted / deletedFor thay đổi)
+            await this.redisCacheService.invalidateMessages(conversationId);
             return result;
         } catch (e) {
             console.error(e);
@@ -564,9 +615,11 @@ export class MessageService {
                     {path: "seenBy", select: "name avatar"},
                 ]);
                 this.chatGateway.emitMessageForwarded(m.conversationId.toString(), m);
+
+                // [CACHE] Invalidate từng conversation đích
+                await this.invalidateAll(m.conversationId.toString());
             }),
         );
-
         return messages;
     }
 
@@ -589,14 +642,21 @@ export class MessageService {
             seenBy: [userObjectId],
         }));
 
-        return this.messageModel.insertMany(dataMap);
+        const result = await this.messageModel.insertMany(dataMap);
+ 
+        // [CACHE] System message cũng invalidate pages
+        await this.redisCacheService.invalidateMessages(conversationId);
+        return result;
     }
 
     public async deleteManyMessagesConversationGroup(
         conversationId: string,
     ) {
         const convObjectId = convertStringToObjectId(conversationId);
-        await this.messageModel.deleteMany({conversationId: convObjectId})
+        await this.messageModel.deleteMany({conversationId: convObjectId});
+        
+         // [CACHE] Xoá toàn bộ cache của conversation khi group bị xoá
+        await this.redisCacheService.invalidateMessages(conversationId);
     }
 
     public async filterMessageHavePins(conversationId: string) {
