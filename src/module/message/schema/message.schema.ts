@@ -15,10 +15,10 @@ export class Message {
     content?: string;
 
     @Prop({
-        enum: ["text", "file", "media", "voice", "forward", "system"],
+        enum: ["text", "file", "media", "voice", "forward", "system", "call"],
         default: "text",
     })
-    type!: "text" | "file" | "media" | "voice" | "forward" | "system";
+    type!: "text" | "file" | "media" | "voice" | "forward" | "system" | "call";
 
     @Prop({
         type: [
@@ -75,6 +75,33 @@ export class Message {
 
     @Prop({type: Types.ObjectId, ref: "Message", default: null})
     forwardedFrom?: Types.ObjectId;
+
+    @Prop({
+        type: {
+            callType: {type: String, enum: ["voice", "video"], required: true},
+            status: {
+                type: String,
+                enum: ["missed", "cancelled", "ended"],
+                required: true,
+            },
+            duration: {type: Number, default: null},   // giây
+            startedAt: {type: Date, default: null},
+            endedAt: {type: Date, default: null},
+            participants: {
+                type: [{type: Types.ObjectId, ref: "User"}],
+                default: [],
+            },
+        },
+        default: null,
+    })
+    callInfo?: {
+        callType: "voice" | "video";
+        status: "missed" | "cancelled" | "ended";
+        duration?: number | null;
+        startedAt?: Date | null;
+        endedAt?: Date | null;
+        participants: Types.ObjectId[];
+    } | null;
 }
 
 export const MessageSchema = SchemaFactory.createForClass(Message);
@@ -86,8 +113,10 @@ MessageSchema.index({conversationId: 1, seenBy: 1});
 MessageSchema.index({"reactions.userId": 1});
 MessageSchema.index({content: "text"});
 
-// FIX [PERFORMANCE]: Thêm compound index cho isDeleted — nhiều query filter theo isDeleted
 // nhưng trước đây không có index, gây full collection scan với conversation có hàng nghìn messages.
 // Index này phục vụ tốt cho getUnreadCountsPerConversation aggregation và messages() pagination.
 MessageSchema.index({conversationId: 1, isDeleted: 1, createdAt: -1});
+
+// [NEW] Index cho type = "call" — dùng khi query lịch sử cuộc gọi
+MessageSchema.index({conversationId: 1, type: 1, createdAt: -1});
 
