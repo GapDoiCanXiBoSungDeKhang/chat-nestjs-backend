@@ -10,7 +10,7 @@ import {JwtAuthGuard} from "./guards/jwt-auth.guard";
 import {UserDocument} from "../user/schema/user.schema";
 import {User} from "../../common/decorators/user.decorator";
 import {JwtDecode} from "../../common/decorators/jwt.decorator";
-import {JwtType} from "../../common/types/jwtTypes.type";
+import {JwtType} from "../../shared/types/jwtTypes.type";
 
 @Controller("auth")
 export class AuthController {

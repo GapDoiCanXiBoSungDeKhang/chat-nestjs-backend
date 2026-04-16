@@ -22,7 +22,7 @@ import {MessageConversationGuard} from "../conversation/guard/messageConversatio
 import {BlockGuard} from "../user/guard/block.guard";
 
 import {JwtDecode} from "../../common/decorators/jwt.decorator";
-import {JwtType} from "../../common/types/jwtTypes.type";
+import {JwtType} from "../../shared/types/jwtTypes.type";
 
 import {ConversationIdDto} from "../conversation/dto/conversationId.dto";
 import {CreateMessageDto} from "./dto/createMessage.dto";

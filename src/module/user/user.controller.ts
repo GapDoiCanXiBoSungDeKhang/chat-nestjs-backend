@@ -16,7 +16,7 @@ import {UserService} from "./user.service";
 
 import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
 import {JwtDecode} from "../../common/decorators/jwt.decorator";
-import {JwtType} from "../../common/types/jwtTypes.type";
+import {JwtType} from "../../shared/types/jwtTypes.type";
 import {BlockedUser, ProfileDto} from "./dto/paramUserId.dto";
 import {UpdateStatusDto} from "./dto/updateStatus.dto";
 import {UpdatePrivacyDto} from "./dto/updatePrivacy.dto";

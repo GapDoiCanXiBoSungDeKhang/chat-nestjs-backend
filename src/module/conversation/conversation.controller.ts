@@ -2,7 +2,7 @@ import {Controller, Post, UseGuards, Body, Get, Param, Patch, Delete, Query} fro
 import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
 
 import {JwtDecode} from "../../common/decorators/jwt.decorator";
-import {JwtType} from "../../common/types/jwtTypes.type";
+import {JwtType} from "../../shared/types/jwtTypes.type";
 import {ConversationService} from "./conversation.service";
 
 import {CreatePrivateConversationDto} from "./dto/createPrivate.dto";

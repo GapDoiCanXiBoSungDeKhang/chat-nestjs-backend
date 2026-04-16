@@ -3,7 +3,7 @@ import {Controller, Post, HttpCode, UseGuards, Body, Patch, Param, Get, Delete} 
 import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
 
 import {FriendService} from "./friend.service";
-import {JwtType} from "../../common/types/jwtTypes.type";
+import {JwtType} from "../../shared/types/jwtTypes.type";
 
 import {JwtDecode} from "../../common/decorators/jwt.decorator";
 import {SendRequestDto} from "./dto/sendRequest.dto";

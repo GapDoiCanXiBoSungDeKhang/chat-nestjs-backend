@@ -11,6 +11,7 @@ import {CloudModule} from "../../shared/cloud/cloud.module";
 import {AttachmentModule} from "../attachment/attachment.module";
 import {LinkPreviewModule} from "../link-preview/link-preview.module";
 import {UsersModule} from "../user/user.module";
+import { RedisCacheService } from "../../shared/redis/redisCache.service";
 
 @Module({
     imports: [
@@ -27,7 +28,10 @@ import {UsersModule} from "../user/user.module";
             collection: "messages",
         }])
     ],
-    providers: [MessageService],
+    providers: [
+        MessageService,
+        RedisCacheService
+    ],
     controllers: [MessageController],
     exports: [MessageService],
 })

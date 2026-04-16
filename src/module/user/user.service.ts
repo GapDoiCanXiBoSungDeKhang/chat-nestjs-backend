@@ -12,7 +12,7 @@ import {UpdatePrivacyDto} from "./dto/updatePrivacy.dto";
 import {FriendService} from "../friend/friend.service";
 
 import {updateProfileDto} from "./dto/updateProfile.dto";
-import {JwtType} from "../../common/types/jwtTypes.type";
+import {JwtType} from "../../shared/types/jwtTypes.type";
 import {AttachmentService} from "../attachment/attachment.service";
 
 @Injectable()
