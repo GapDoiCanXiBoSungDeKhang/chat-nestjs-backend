@@ -469,6 +469,10 @@ export class ChatGateway
         this.messageEmit.newMessageLinkPreview(cid, p);
     }
 
+    emitNewMessageCall(cid: string, p: any) { 
+        this.messageEmit.newMessageCall(cid, p); 
+    }
+
     emitMessageEdited(cid: string, p: any) {
         this.messageEmit.messageEdited(cid, p);
     }

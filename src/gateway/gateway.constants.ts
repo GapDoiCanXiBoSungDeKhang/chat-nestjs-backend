@@ -9,6 +9,7 @@ export const SOCKET_EVENTS = {
     NEW_MESSAGE_MEDIA: "new_message_media",
     NEW_MESSAGE_VOICE: "new_message_voice",
     NEW_MESSAGE_LINK: "new_message_linkPreview",
+    NEW_MESSAGE_CALL: "new_message_call",
     MESSAGE_EDITED: "message_edited",
     MESSAGE_DELETED: "message_deleted",
     MESSAGE_REACTED: "message_reacted",

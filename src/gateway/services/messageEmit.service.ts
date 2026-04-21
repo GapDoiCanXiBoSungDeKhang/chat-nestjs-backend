@@ -36,6 +36,10 @@ export class MessageEmitService {
         this.toConversation(conversationId).emit(SOCKET_EVENTS.NEW_MESSAGE_LINK, payload);
     }
 
+    newMessageCall(conversationId: string, payload: any) {
+        this.toConversation(conversationId).emit(SOCKET_EVENTS.NEW_MESSAGE_CALL, payload);
+    }
+
     messageEdited(conversationId: string, payload: any) {
         this.toConversation(conversationId).emit(SOCKET_EVENTS.MESSAGE_EDITED, payload);
     }
