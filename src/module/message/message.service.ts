@@ -9,6 +9,8 @@ import {
 import {InjectModel} from "@nestjs/mongoose";
 import {Model, Types} from "mongoose";
 
+import {CreateCallMessageDto} from "./dto/callMessage.dto";
+
 import {Message, MessageDocument} from "./schema/message.schema";
 import {ConversationService} from "../conversation/conversation.service";
 import {ChatGateway} from "../../gateway/chat.gateway";
@@ -111,9 +113,13 @@ export class MessageService {
 
         const urls = extractValidUrls(content);
         if (urls.length) {
-            const getLinks = (await Promise.all(
-                urls.map(url => this.linkPreviewService.fetchLink(url, message.id, conversationId, userId)),
-            )).filter(Boolean);
+            const getLinks = (
+                await Promise.all(
+                    urls.map((url) => 
+                        this.linkPreviewService.fetchLink(url, message.id, conversationId, userId)
+                    ),
+                )
+            ).filter(Boolean);
             if (getLinks.length) {
                 this.chatGateway.emitNewMessageLinkPreview(conversationId, getLinks);
             }
@@ -130,6 +136,84 @@ export class MessageService {
         await this.invalidateAll(conversationId);
         return {message};
     }
+
+    // ─── CALL MESSAGE ────────────────────────────────────────────────────────
+ 
+    /**
+     * Tạo message loại "call" để lưu lịch sử cuộc gọi vào conversation.
+     *
+     * Được gọi từ ChatGateway tại các thời điểm:
+     *   - call_end      → status "ended",     có duration
+     *   - call_reject   → status "missed"
+     *   - call_cancel   → status "cancelled"
+     *   - handleDisconnect (crash) → status "ended" nếu đang call, "missed" nếu chưa bắt máy
+     *
+     * Sau khi lưu, emit socket event "new_message_call" đến tất cả members của conversation
+     * để frontend hiển thị message trong chat list ngay lập tức.
+     */
+    public async createCallMessage(dto: CreateCallMessageDto): Promise<MessageDocument> {
+        const {
+            conversationId,
+            callerId,
+            callType,
+            status,
+            duration,
+            startedAt, 
+            endedAt,
+            participantIds = [],
+        } = dto;
+ 
+        const convObjectId = convertStringToObjectId(conversationId);
+        const senderObjectId = convertStringToObjectId(callerId);
+ 
+        // Tất cả participants đều đã seen message này (họ đã tham gia cuộc gọi)
+        const seenByIds = participantIds.map((id) => convertStringToObjectId(id));
+        if (!seenByIds.some((id) => id.equals(senderObjectId))) {
+            seenByIds.push(senderObjectId);
+        }
+ 
+        // Tạo content hiển thị dựa trên status
+        const contentMap: Record<string, string> = {
+            ended: callType === "video" ? "Cuộc gọi video" : "Cuộc gọi thoại",
+            missed: callType === "video" ? "Cuộc gọi video nhỡ" : "Cuộc gọi thoại nhỡ",
+            cancelled: callType === "video" ? "Cuộc gọi video đã huỷ" : "Cuộc gọi thoại đã huỷ",
+        };
+ 
+        const message = await this.messageModel.create({
+            conversationId: convObjectId,
+            senderId: senderObjectId,
+            type: "call",
+            content: contentMap[status],
+            seenBy: seenByIds,
+            callInfo: {
+                callType,
+                status,
+                duration: status === "ended" ? (duration ?? null) : null,
+                startedAt: status === "ended" ? (startedAt ?? null) : null,
+                endedAt: endedAt ?? new Date(),
+                participants: seenByIds,
+            },
+        });
+ 
+        // Populate senderId để frontend có name/avatar
+        await message.populate([
+            {path: "senderId", select: "name avatar"},
+            {path: "callInfo.participants", select: "name avatar"},
+        ]);
+ 
+        // Cập nhật lastMessage của conversation
+        await this.conversationService.updateConversation(conversationId, message.id);
+ 
+        // Emit socket event đến tất cả members đang online trong conversation
+        this.chatGateway.emitNewMessageCall(conversationId, message);
+ 
+        // Invalidate cache — conversation list cần refresh vì lastMessage thay đổi
+        await this.invalidateAll(conversationId);
+ 
+        return message;
+    }
+
+    // ─── Search ──────────────────────────────────────────────────────────────
 
     public async search(q: string, conversationId: string) {
         const conversationObjectId = convertStringToObjectId(conversationId);
@@ -149,6 +233,8 @@ export class MessageService {
             .limit(20);
         return res;
     }
+
+    // ─── Pin / Unpin ─────────────────────────────────────────────────────────
 
     public async pin(
         messageId: string,
@@ -203,6 +289,8 @@ export class MessageService {
         await this.redisCacheService.invalidateMessages(conversationId);
         return mgs;
     }
+
+    // ─── Upload files / media / voice ────────────────────────────────────────
 
     public async uploadFiles(
         files: Express.Multer.File[],
@@ -299,6 +387,8 @@ export class MessageService {
         return {message, attachments};
     }
 
+    // ─── Edit ────────────────────────────────────────────────────────────────
+
     public async edit(
         userId: string,
         content: string,
@@ -334,24 +424,8 @@ export class MessageService {
         return populated;
     }
 
-     // ─── GET messages — CACHE-ASIDE ──────────────────────────────────────────
- 
-    /**
-     * [CACHE] Cache-aside pattern cho message pagination.
-     *
-     * Flow:
-     *   1. Tạo cache key theo (conversationId, limit, before)
-     *   2. Cache HIT  → trả về ngay, không query MongoDB
-     *   3. Cache MISS → query MongoDB + enrich attachments/links → lưu cache → trả về
-     *
-     * TTL: 60 giây.
-     * Invalidate: bất cứ khi nào có write trong conversation (gửi, edit, delete, react, seen).
-     *
-     * Tại sao cursor-based key?
-     *   Mỗi "page" có cursor khác nhau (before = ObjectId của message cuối page trước).
-     *   Cache theo cursor để các page cũ (đã load xong) vẫn hit cache dù có message mới ở trang 1.
-     *   Khi có write → invalidate tất cả pages → client tự refresh trang 1.
-     */
+    // ─── GET messages — CACHE-ASIDE ──────────────────────────────────────────
+
     public async messages(
         conversationId: string,
         limit: number = 20,
@@ -374,7 +448,9 @@ export class MessageService {
                     populate: {path: "senderId", select: "name avatar"}
                 },
                 {path: "deletedFor", select: "name avatar"},
-                {path: "seenBy", select: "name avatar"}
+                {path: "seenBy", select: "name avatar"},
+                 // [NEW] Populate participants của callInfo
+                {path: "callInfo.participants", select: "name avatar"},
             ])
             .sort({createdAt: -1})
             .limit(limit)
@@ -411,12 +487,16 @@ export class MessageService {
         return result;
     }
 
+    // ─── findByIdCheck ───────────────────────────────────────────────────────
+
     public async findByIdCheck(messageId: string) {
         return this.messageModel.findById(
             convertStringToObjectId(messageId),
             {conversationId: 1}
         );
     }
+
+    // ─── React / Unreact ─────────────────────────────────────────────────────
 
     public async react(
         messageId: string,
@@ -474,11 +554,8 @@ export class MessageService {
         return message;
     }
 
-    /**
-     * FIX [PERFORMANCE - N+1]: Thay thế filterMessageConversationNotSeen bằng aggregation pipeline.
-     * Hàm cũ load toàn bộ message IDs rồi đếm phía app — với 50 groups x 10k messages = 500k documents.
-     * Hàm mới dùng $group trong MongoDB, chỉ trả về [{_id: conversationId, count: number}].
-     */
+    // ─── Unread counts ───────────────────────────────────────────────────────
+
     public async getUnreadCountsPerConversation(
         conversationIds: Types.ObjectId[],
         userId: string,
@@ -495,6 +572,8 @@ export class MessageService {
             {$group: {_id: "$conversationId", count: {$sum: 1}}}
         ]);
     }
+
+    // ─── Mark as seen ────────────────────────────────────────────────────────
 
     public async markAsSeen(
         conversationId: string,
@@ -529,6 +608,8 @@ export class MessageService {
         ]);
         return { success: true };
     }
+
+    // ─── Delete ──────────────────────────────────────────────────────────────
 
     public async delete(
         conversationId: string,
@@ -573,6 +654,8 @@ export class MessageService {
             throw e;
         }
     }
+
+    // ─── Forward ─────────────────────────────────────────────────────────────
 
     public async forwardMessage(
         userId: string,
@@ -623,6 +706,8 @@ export class MessageService {
         return messages;
     }
 
+    // ─── System messages ─────────────────────────────────────────────────────
+
     public async newMessageSystem(
         actorId: string,
         content: string,
@@ -658,6 +743,8 @@ export class MessageService {
          // [CACHE] Xoá toàn bộ cache của conversation khi group bị xoá
         await this.redisCacheService.invalidateMessages(conversationId);
     }
+
+    // find messages pins
 
     public async filterMessageHavePins(conversationId: string) {
         return this.messageModel.find({
