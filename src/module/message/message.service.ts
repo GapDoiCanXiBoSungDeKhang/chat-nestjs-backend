@@ -23,6 +23,8 @@ import {extractValidUrls} from "../../shared/utils/extractUrl.util";
 
 import {RedisCacheService} from "../../shared/redis/redisCache.service";
 
+import {JwtType} from "../../shared/types/jwtTypes.type";
+
 @Injectable()
 export class MessageService {
     constructor(
@@ -468,10 +470,8 @@ export class MessageService {
 
         const enriched = messages.map(m => {
             const id = m._id.toString();
-            if (groupAttachments[id]) {
-                m.attachments =
-                    m.type === "voice" ? [groupAttachments[id][0]]: groupAttachments[id];
-            }
+            if (groupAttachments[id])
+                m.attachments = m.type === "voice" ? [groupAttachments[id][0]]: groupAttachments[id];
             if (groupLinks[id]) m.linkPreviews = groupLinks[id];
             return m;
         });
@@ -577,10 +577,10 @@ export class MessageService {
 
     public async markAsSeen(
         conversationId: string,
-        userId: string,
+        user: JwtType,
     ) {
         const conObjectId = convertStringToObjectId(conversationId);
-        const userObjectId = convertStringToObjectId(userId);
+        const userObjectId = convertStringToObjectId(user.userId);
 
         await this.messageModel.updateMany(
             {conversationId: conObjectId, seenBy: { $ne: userObjectId }},
@@ -594,17 +594,20 @@ export class MessageService {
 
         if (!lastMessage) return { success: false };
 
-        const userInfo = await this.userService.getInfoById(userId);
         this.chatGateway.emitMessageSeen(conversationId, {
             conversationId,
             messageId: lastMessage._id.toString(),
-            seenBy: userInfo,
+            seenBy: {
+                _id: user.userId,
+                name: user.name,
+                avatar: user.avatar
+            },
         });
 
         // [CACHE] seenBy thay đổi → invalidate message pages + conversation list
         await Promise.all([
             this.redisCacheService.invalidateMessages(conversationId),
-            this.redisCacheService.invalidateConversations(userId),
+            this.redisCacheService.invalidateConversations(user.userId),
         ]);
         return { success: true };
     }

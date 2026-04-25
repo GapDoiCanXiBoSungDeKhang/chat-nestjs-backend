@@ -24,8 +24,8 @@ import { RedisModule } from "./shared/redis/redis.module";
         }),
         ThrottlerModule.forRoot([
             {
-                limit: 10,
-                ttl: 60000
+                limit: 15,
+                ttl: 30000
             },
         ]),
         RedisModule,

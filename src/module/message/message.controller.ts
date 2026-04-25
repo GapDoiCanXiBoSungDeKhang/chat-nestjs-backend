@@ -227,7 +227,7 @@ export class MessageController {
     ) {
         return this.messageService.markAsSeen(
             room,
-            user.userId
+            user
         );
     }
 
