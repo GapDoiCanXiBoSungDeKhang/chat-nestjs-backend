@@ -182,4 +182,8 @@ export class FriendService {
     public async findPhone(phone: string) {
         return this.userService.findUserByPhoneNumber(phone);
     }
+
+    public async findName(context: string) {
+        return this.userService.findUserByName(context);
+    }
 }

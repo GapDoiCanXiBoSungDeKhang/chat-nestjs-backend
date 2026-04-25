@@ -10,6 +10,7 @@ import {SendRequestDto} from "./dto/sendRequest.dto";
 import {ResRequestIdDto, ResResponseActionDto} from "./dto/requestRequest.dto";
 import {UnfriendDto} from "./dto/unfriend.dto";
 import {FindByPhoneDto} from "./dto/findByPhone.dto";
+import { FindByNameDto } from "./dto/FindByNameDto.dto";
 
 @Controller("friends")
 @UseGuards(JwtAuthGuard)
@@ -63,5 +64,10 @@ export class FriendController {
     @Get("find/phone")
     public async findPhone(@Query() query: FindByPhoneDto) {
         return this.friendRequestService.findPhone(query.q);
+    }
+
+    @Get("find/name")
+    public async findName(@Query() query: FindByNameDto) {
+        return this.friendRequestService.findName(query.q);
     }
 }
