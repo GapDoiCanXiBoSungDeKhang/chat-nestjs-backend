@@ -1,4 +1,4 @@
-import {Controller, Post, HttpCode, UseGuards, Body, Patch, Param, Get, Delete} from "@nestjs/common";
+import {Controller, Post, HttpCode, UseGuards, Body, Patch, Param, Get, Delete, Query} from "@nestjs/common";
 
 import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
 
@@ -9,6 +9,7 @@ import {JwtDecode} from "../../common/decorators/jwt.decorator";
 import {SendRequestDto} from "./dto/sendRequest.dto";
 import {ResRequestIdDto, ResResponseActionDto} from "./dto/requestRequest.dto";
 import {UnfriendDto} from "./dto/unfriend.dto";
+import {FindByPhoneDto} from "./dto/findByPhone.dto";
 
 @Controller("friends")
 @UseGuards(JwtAuthGuard)
@@ -57,5 +58,10 @@ export class FriendController {
         @JwtDecode() user: JwtType
     ) {
         return this.friendRequestService.unfriend(user.userId, userId);
+    }
+
+    @Get("find/phone")
+    public async findPhone(@Query() query: FindByPhoneDto) {
+        return this.friendRequestService.findPhone(query.q);
     }
 }

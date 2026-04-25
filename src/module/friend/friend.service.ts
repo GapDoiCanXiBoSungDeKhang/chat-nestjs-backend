@@ -178,4 +178,8 @@ export class FriendService {
         });
         return !!friend;
     }
+
+    public async findPhone(phone: string) {
+        return this.userService.findUserByPhoneNumber(phone);
+    }
 }
