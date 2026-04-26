@@ -55,9 +55,11 @@ export class FriendService {
         const exits = await this.friendExits(fromId, toId);
         if (exits) {
             if (exits.status === "accepted")
-                throw new BadRequestException("Already friend");
+                throw new ForbiddenException("Already friend");
             if (exits.status === "pending")
-                throw new BadRequestException("Request already pending");
+                throw new ForbiddenException("Request already pending");
+            if (exits.status === "rejected")
+                throw new ForbiddenException("User have rejected");
         }
 
         const request = await this.friendRequestModel.create({
