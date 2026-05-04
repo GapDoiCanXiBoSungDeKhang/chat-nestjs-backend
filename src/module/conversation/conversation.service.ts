@@ -593,7 +593,10 @@ export class ConversationService {
         if (cached) return cached;
 
         const conversations = await this.conversationModel
-            .find({ "participants.userId": convertStringToObjectId(myUserId) })
+            .find({ 
+                "participants.userId": convertStringToObjectId(myUserId),
+                deletedUser: {$ne: convertStringToObjectId(myUserId)}
+            })
             .populate(this.arrayPopulate())
             .sort({updatedAt: -1})
             .lean();
@@ -657,7 +660,9 @@ export class ConversationService {
     ) {
         const updatedConversation = await this.conversationModel.findByIdAndUpdate(
             convertStringToObjectId(conversationId),
-            {$set: {lastMessage: convertStringToObjectId(messageId)}},
+            {$set: {
+                lastMessage: convertStringToObjectId(messageId), deletedUser: []
+            }},
             {new: true}
         );
         if (!updatedConversation) {

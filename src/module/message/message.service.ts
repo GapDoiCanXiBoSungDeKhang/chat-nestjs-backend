@@ -118,7 +118,9 @@ export class MessageService {
             const getLinks = (
                 await Promise.all(
                     urls.map((url) => 
-                        this.linkPreviewService.fetchLink(url, message.id, conversationId, userId)
+                        this.linkPreviewService.fetchLink(
+                            url, message.id, conversationId, userId
+                        )
                     ),
                 )
             ).filter(Boolean);
