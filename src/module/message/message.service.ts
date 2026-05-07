@@ -464,17 +464,34 @@ export class MessageService {
             .filter(m => ["file", "media", "voice"].includes(m.type))
             .map(m => m._id);
         const messageIds = messages.map(m => m._id);
+        const forwardedMediaIds = messages
+            .filter(m => ["file", "media", "voice"].includes(m.type) && m.forwardedFrom)
+            .map(m => m.forwardedFrom);
 
-        const [groupAttachments, groupLinks] = await Promise.all([
+        const [groupAttachments, groupLinks, forwardedAttachments] = await Promise.all([
             this.attachmentService.groupAttachmentsById(messageIdsAttachments),
             this.linkPreviewService.groupLinkPreviewsById(messageIds),
+            forwardedMediaIds.length
+                ? this.attachmentService.groupAttachmentsById(forwardedMediaIds)
+                : Promise.resolve({}),
         ]);
 
         const enriched = messages.map(m => {
             const id = m._id.toString();
-            if (groupAttachments[id])
-                m.attachments = m.type === "voice" ? [groupAttachments[id][0]]: groupAttachments[id];
+            
+            // Attachments: ưu tiên theo m._id, fallback về forwardedFrom
+            const attachmentSource =
+                groupAttachments[id] ??
+                (m.forwardedFrom
+                    ? forwardedAttachments[m.forwardedFrom.toString()]
+                    : undefined);
+
+            if (attachmentSource) {
+                m.attachments =
+                    m.type === "voice" ? [attachmentSource[0]] : attachmentSource;
+            }
             if (groupLinks[id]) m.linkPreviews = groupLinks[id];
+
             return m;
         });
 
@@ -670,44 +687,85 @@ export class MessageService {
         const objectId = convertStringToObjectId(id);
         const originalMessage = await this.messageModel.findById(objectId);
 
-        if (!originalMessage) throw new NotFoundException("message not found!");
+        if (!originalMessage) throw new NotFoundException("Message not found!");
         if (originalMessage.isDeleted) {
             throw new ForbiddenException("Cannot forward this message!");
         }
 
+        // Resolve về root message nếu đây là tin forward của forward
+        const rootMessageId = originalMessage.forwardedFrom ?? originalMessage._id;
+        const rootMessage =
+            originalMessage.forwardedFrom
+                ? await this.messageModel.findById(rootMessageId)
+                : originalMessage;
+
+        if (!rootMessage) throw new NotFoundException("Root message not found!");
+
         const userObjectId = convertStringToObjectId(userId);
 
-        const conversations = await this.conversationService.conversationsIdsForUser(conversationIds, userId);
+        const conversations = await this.conversationService.conversationsIdsForUser(
+            conversationIds,
+            userId,
+        );
         if (!conversations.length) {
-            throw new ForbiddenException("Nothing conversation active!");
+            throw new ForbiddenException("No active conversation found!");
         }
+
+        // Lấy attachments/linkPreviews của root message 1 lần duy nhất
+        const isMediaType = ["file", "media", "voice"].includes(rootMessage.type);
+        const [rootAttachments, rootLinks] = await Promise.all([
+            isMediaType
+                ? this.attachmentService.groupAttachmentsById([rootMessage._id])
+                : Promise.resolve({}),
+            this.linkPreviewService.groupLinkPreviewsById([rootMessage._id]),
+        ]);
+        const rootIdStr = rootMessage._id.toString();
+        const attachments = rootAttachments[rootIdStr] ?? [];
+        const linkPreviews = rootLinks[rootIdStr] ?? [];
 
         const docs = conversations.map(conv => ({
             conversationId: conv._id,
             senderId: userObjectId,
-            type: "forward",
-            content: originalMessage.content,
-            forwardedFrom: originalMessage._id,
+            type: isMediaType ? rootMessage.type : "forward",
+            content: rootMessage.content,
+            forwardedFrom: rootMessage._id, // luôn trỏ về root
             seenBy: [userObjectId],
         }));
+
         const messages = await this.messageModel.insertMany(docs);
 
         await Promise.all(
             messages.map(async m => {
-                await this.conversationService.updateConversation(
-                    m.conversationId.toString(),
-                    m._id.toString(),
-                );
-                await m.populate([
-                    {path: "senderId", select: "name avatar"},
-                    {path: "seenBy", select: "name avatar"},
+                // updateConversation và populate chạy song song
+                await Promise.all([
+                    this.conversationService.updateConversation(
+                        m.conversationId.toString(),
+                        m._id.toString(),
+                    ),
+                    m.populate([
+                        { path: "senderId", select: "name avatar" },
+                        { path: "seenBy", select: "name avatar" },
+                    ]),
                 ]);
-                this.chatGateway.emitMessageForwarded(m.conversationId.toString(), m);
 
-                // [CACHE] Invalidate từng conversation đích
+                // Gán attachments/linkPreviews từ root message
+                if (isMediaType && attachments.length) {
+                    m._doc.attachments =
+                        m.type === "voice" ? [attachments[0]] : attachments;
+                }
+                if (linkPreviews.length) {
+                    m._doc.linkPreviews = linkPreviews;
+                }
+
+                this.chatGateway.emitMessageForwarded(
+                    m.conversationId.toString(),
+                    m,
+                );
+
                 await this.invalidateAll(m.conversationId.toString());
             }),
         );
+
         return messages;
     }
 
