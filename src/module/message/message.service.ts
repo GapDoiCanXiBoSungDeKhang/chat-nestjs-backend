@@ -111,6 +111,10 @@ export class MessageService {
             ...(replyToObjectId && {replyTo: replyToObjectId}),
         });
         await message.populate(this.getArrayPopulate());
+
+        await this.conversationService.updateConversation(conversationId, message.id);
+        await this.invalidateAll(conversationId);
+
         this.chatGateway.emitNewMessage(conversationId, message);
 
         const urls = extractValidUrls(content);
@@ -135,9 +139,6 @@ export class MessageService {
                 mentions: mentions || [],
             });
         }
-        await this.conversationService.updateConversation(conversationId, message.id);
-        // [CACHE] Invalidate message pages + conversation list vì có message mới
-        await this.invalidateAll(conversationId);
         return {message};
     }
 

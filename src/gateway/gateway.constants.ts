@@ -21,6 +21,7 @@ export const SOCKET_EVENTS = {
     MESSAGE_SYSTEM_ROOM: "message_system_room",
     ANNOUNCEMENT_CREATED: "announcement_created",
 
+    GROUP_UPDATED: "conversation_updated",
     GROUP_CREATED: "group_created",
     GROUP_MEMBER_ADDED: "group_member_added",
     GROUP_ADDED: "group_added",

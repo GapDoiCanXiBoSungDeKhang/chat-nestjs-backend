@@ -456,7 +456,11 @@ export class ChatGateway
             if (conversation && conversation.participants) {
                 const participantIds = conversation.participants.map(p => p.userId.toString());
                 const rooms = participantIds.map(uid => gatewayRooms.user(uid));
-                this.server.to(rooms).emit(event, payload);
+                this.server.to(rooms).emit(SOCKET_EVENTS.GROUP_UPDATED, {
+                    conversationId: cid,
+                    event,
+                    payload
+                });
             }
         } catch (err) {
             this.logger.error(`Error emitting to participants: ${err}`);
