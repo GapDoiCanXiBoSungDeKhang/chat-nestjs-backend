@@ -61,29 +61,26 @@ export class CloudService {
         const convObjectId = convertStringToObjectId(conversationId);
         const uploaderObjectId = convertStringToObjectId(uploaderId);
 
-        const uploads = await Promise.all(
-            files.map(file => {
-                const type = this.detectType(file.mimetype);
-                return this.uploadSingle(file, type);
-            })
-        );
-        return uploads.map((upload, i) => {
-            const detected = this.detectType(files[i].mimetype);
-            return {
+        const uploads = [];
+        for (const file of files) {
+            const type = this.detectType(file.mimetype);
+            const upload = await this.uploadSingle(file, type);
+            uploads.push({
                 messageId: messageObjectId,
                 conversationId: convObjectId,
                 uploaderId: uploaderObjectId,
-                type: detected,
+                type: type,
                 url: upload.url,
                 thumbnail: upload.thumbnail,
-                filename: files[i].filename,
-                originalName: files[i].originalname,
+                filename: file.filename,
+                originalName: file.originalname,
                 size: upload.size,
                 mimeType: upload.mimeType,
                 duration: upload.duration,
                 publicId: upload.publicId
-            }
-        });
+            });
+        }
+        return uploads;
     }
 
     private detectType(mime: string) {

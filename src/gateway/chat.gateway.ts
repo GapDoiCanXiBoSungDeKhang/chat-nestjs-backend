@@ -25,6 +25,7 @@ import {gatewayRooms} from "./gateway.rooms";
 
 // [Redis] memory ram redis
 import {RedisCallService} from "../shared/redis/redisCall.service";
+import { SOCKET_EVENTS } from "./gateway.constants";
 
 @WebSocketGateway({
     cors: {
@@ -449,36 +450,57 @@ export class ChatGateway
 
     // ─── Emit helpers ─────────────────────────────────────────────
 
+    private async emitToParticipants(cid: string, event: string, payload: any) {
+        try {
+            const conversation = await this.conversationService.findConversation(cid);
+            if (conversation && conversation.participants) {
+                const participantIds = conversation.participants.map(p => p.userId.toString());
+                const rooms = participantIds.map(uid => gatewayRooms.user(uid));
+                this.server.to(rooms).emit(event, payload);
+            }
+        } catch (err) {
+            this.logger.error(`Error emitting to participants: ${err}`);
+        }
+    }
+
     emitNewMessage(cid: string, p: any) {
         this.messageEmit.newMessage(cid, p);
+        this.emitToParticipants(cid, SOCKET_EVENTS.NEW_MESSAGE, p);
     }
 
     emitNewMessageFiles(cid: string, p: any) {
         this.messageEmit.newMessageFile(cid, p);
+        this.emitToParticipants(cid, SOCKET_EVENTS.NEW_MESSAGE_FILE, p);
     }
 
     emitNewMessageMedias(cid: string, p: any) {
         this.messageEmit.newMessageMedia(cid, p);
+        this.emitToParticipants(cid, SOCKET_EVENTS.NEW_MESSAGE_MEDIA, p);
     }
 
     emitNewMessageVoice(cid: string, p: any) {
         this.messageEmit.newMessageVoice(cid, p);
+        this.emitToParticipants(cid, SOCKET_EVENTS.NEW_MESSAGE_VOICE, p);
     }
 
     emitNewMessageLinkPreview(cid: string, p: any) {
         this.messageEmit.newMessageLinkPreview(cid, p);
+        this.emitToParticipants(cid, SOCKET_EVENTS.NEW_MESSAGE_LINK, p);
     }
 
     emitNewMessageCall(cid: string, p: any) { 
         this.messageEmit.newMessageCall(cid, p); 
+        this.emitToParticipants(cid, SOCKET_EVENTS.NEW_MESSAGE_CALL, p);
     }
 
     emitMessageEdited(cid: string, p: any) {
         this.messageEmit.messageEdited(cid, p);
+        this.emitToParticipants(cid, SOCKET_EVENTS.MESSAGE_EDITED, p);
     }
 
     emitMessageDeleted(cid: string, p: any) {
         this.messageEmit.messageDeleted(cid, p);
+        this.emitToParticipants(cid, SOCKET_EVENTS.MESSAGE_DELETED, p);
     }
 
     emitMessageReacted(cid: string, p: any) {
@@ -487,6 +509,7 @@ export class ChatGateway
 
     emitMessageForwarded(cid: string, p: any) {
         this.messageEmit.messageForwarded(cid, p);
+        this.emitToParticipants(cid, SOCKET_EVENTS.MESSAGE_FORWARDED, p);
     }
 
     emitMessageSeen(cid: string, p: any) {
@@ -507,6 +530,7 @@ export class ChatGateway
 
     emitSystemRoom(cid: string, p: any) {
         this.messageEmit.messageSystemRoom(cid, p);
+        this.emitToParticipants(cid, SOCKET_EVENTS.MESSAGE_SYSTEM_ROOM, p);
     }
 
     emitAnnouncement(cid: string, p: any) {
