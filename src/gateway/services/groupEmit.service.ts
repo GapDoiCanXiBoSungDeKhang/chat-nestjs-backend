@@ -54,7 +54,6 @@ export class GroupEmitService {
         payload: any
     ) {
         const rooms = participants
-            .filter(obj => obj.role !== "member")
             .map(obj => gatewayRooms.user(obj.userId.toString()));
         this.server.to(rooms).emit(SOCKET_EVENTS.GROUP_JOIN_REQUESTED, payload);
     }
