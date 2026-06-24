@@ -1,9 +1,9 @@
-import {Model} from "mongoose";
-import {ForbiddenException, Injectable} from "@nestjs/common";
-import {InjectModel} from "@nestjs/mongoose";
+import { Model } from "mongoose";
+import { ForbiddenException, Injectable, ConflictException } from "@nestjs/common";
+import { InjectModel } from "@nestjs/mongoose";
 
-import {RequestJoinRoom, RequestJoinRoomDocument} from "./schema/requestJoinRoom.schema";
-import {convertStringToObjectId} from "../../shared/helpers/convertObjectId.helpers";
+import { RequestJoinRoom, RequestJoinRoomDocument } from "./schema/requestJoinRoom.schema";
+import { convertStringToObjectId } from "../../shared/helpers/convertObjectId.helpers";
 
 @Injectable()
 export class RequestJoinRoomService {
@@ -19,13 +19,28 @@ export class RequestJoinRoomService {
         userIds: string[],
         description?: string
     ) {
+        const convIdObj = convertStringToObjectId(conversationId);
+        const userIdObjs = userIds.map(uid => convertStringToObjectId(uid));
+
+        const hasDuplicate = await this.requestJoinRoomModel.exists({
+            conversationId: convIdObj,
+            status: "pending",
+            userId: { $in: userIdObjs }
+        });
+
+        if (hasDuplicate) {
+            throw new ConflictException(
+                "Một hoặc nhiều người dùng đã có yêu cầu đang chờ duyệt trong nhóm này!"
+            );
+        }
+
         const data = userIds.map(uid => ({
             userId: convertStringToObjectId(uid),
             actor: convertStringToObjectId(ownerId),
-            conversationId: convertStringToObjectId(conversationId),
+            conversationId: convIdObj,
             description
         }));
-        return this.requestJoinRoomModel.insertMany(data);
+        return await this.requestJoinRoomModel.insertMany(data);
     }
 
     public async listRequestJoinRoom(room: string) {
@@ -34,10 +49,10 @@ export class RequestJoinRoomService {
             status: "pending"
         })
             .populate([
-                {path: "userId", select: "name avatar status"},
-                {path: "actor", select: "name avatar status"},
+                { path: "userId", select: "name avatar status" },
+                { path: "actor", select: "name avatar status" },
             ])
-            .sort({createdAt: -1})
+            .sort({ createdAt: -1 })
             .lean();
     }
 

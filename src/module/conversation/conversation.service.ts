@@ -416,10 +416,7 @@ export class ConversationService {
         actorId: string
     ) {
         const conversation = await this.findConversation(room);
-        const actor = this.getUserParticipant(conversation, actorId);
-        if (!["owner", "admin"].includes(actor.role)) {
-            throw new ForbiddenException("User role must be a owner or admin!")
-        }
+        this.getUserParticipant(conversation, actorId);        
         return this.requestJoinRoomService.listRequestJoinRoom(conversation._id.toString());
     }
 
