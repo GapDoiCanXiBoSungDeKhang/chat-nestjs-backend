@@ -399,15 +399,24 @@ export class ConversationService {
             throw new ForbiddenException("You can't disband group!");
         }
 
-        // [REDIS] Invalidate cache của tất cả members
+        // Lấy danh sách members TRƯỚC khi xóa để emit socket
         const memberIds = conversation.participants.map((p) => p.userId.toString());
+
+        // [REDIS] Invalidate cache
         await this.redisCacheService.invalidateConversationsMany(memberIds);
-        
+
         await Promise.all([
             conversation.deleteOne(),
             this.messageService.deleteManyMessagesConversationGroup(conversationId),
             this.attachmentService.cleanDateAttachments(conversationId)
         ]);
+
+        // Emit GROUP_DISSOLVED đến tất cả members SAU KHI xóa xong
+        this.chatGateway.emitGroupDissolved(memberIds, conversationId, {
+            conversationId,
+            dissolvedBy: userId,
+        });
+
         return {status: "group is deleted!"}
     }
 
@@ -416,7 +425,8 @@ export class ConversationService {
         actorId: string
     ) {
         const conversation = await this.findConversation(room);
-        this.getUserParticipant(conversation, actorId);        
+        // Tất cả member đều xem được danh sách pending requests (không chỉ owner/admin)
+        this.getUserParticipant(conversation, actorId); // vẫn verify user là participant
         return this.requestJoinRoomService.listRequestJoinRoom(conversation._id.toString());
     }
 

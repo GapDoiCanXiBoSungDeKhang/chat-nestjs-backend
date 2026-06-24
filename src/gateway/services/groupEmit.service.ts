@@ -62,4 +62,12 @@ export class GroupEmitService {
         this.toConversation(conversationId).emit(SOCKET_EVENTS.GROUP_REQUEST_HANDLED, payload);
         this.toUser(newUserId).emit(SOCKET_EVENTS.GROUP_REQUEST_ADDED, payload);
     }
+
+    public dissolved(memberIds: string[], conversationId: string, payload: any) {
+        const rooms = memberIds.map(uid => gatewayRooms.user(uid));
+        // Kick tất cả members ra khỏi conversation room trước
+        this.server.in(gatewayRooms.conversation(conversationId)).socketsLeave(gatewayRooms.conversation(conversationId));
+        // Emit đến từng user để FE navigate ra ngoài
+        this.server.to(rooms).emit(SOCKET_EVENTS.GROUP_DISSOLVED, payload);
+    }
 }

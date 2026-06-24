@@ -572,6 +572,10 @@ export class ChatGateway
         this.groupEmit.requestHandled(cid, uid, p);
     }
 
+    emitGroupDissolved(memberIds: string[], conversationId: string, p: any) {
+        this.groupEmit.dissolved(memberIds, conversationId, p);
+    }
+
     emitStatusChanged(
         userId: string,
         status: "online" | "away" | "busy" | "offline",
