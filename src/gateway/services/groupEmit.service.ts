@@ -53,13 +53,19 @@ export class GroupEmitService {
         participants: {userId: Types.ObjectId, role: "owner" | "admin" | "member"}[],
         payload: any
     ) {
+        // Emit đến TẤT CẢ participants (kể cả member) để ai cũng thấy badge thông báo
         const rooms = participants
             .map(obj => gatewayRooms.user(obj.userId.toString()));
         this.server.to(rooms).emit(SOCKET_EVENTS.GROUP_JOIN_REQUESTED, payload);
     }
 
     public requestHandled(conversationId: string, newUserId: string, payload: any) {
+        // 1. Báo cho tất cả members hiện tại biết có member mới (reload members list)
+        this.toConversation(conversationId).emit(SOCKET_EVENTS.GROUP_MEMBER_ADDED, payload);
+        // 2. Báo cho tất cả members biết request đã được xử lý (clear pending badge)
         this.toConversation(conversationId).emit(SOCKET_EVENTS.GROUP_REQUEST_HANDLED, payload);
+        // 3. Báo riêng user mới: được thêm vào nhóm (FE sẽ fetch conversation mới)
+        this.toUser(newUserId).emit(SOCKET_EVENTS.GROUP_ADDED, payload);
         this.toUser(newUserId).emit(SOCKET_EVENTS.GROUP_REQUEST_ADDED, payload);
     }
 
