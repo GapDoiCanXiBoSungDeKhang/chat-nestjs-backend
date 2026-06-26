@@ -30,6 +30,11 @@ export class CallEmitService {
         this.toUser(calleId).emit(SOCKET_EVENTS.CALL_INITIATED, payload);
     }
 
+    // Emit callId về cho caller ngay sau khi tạo call
+    public callStarted(callerId: string, payload: {callId: string; callType: string}) {
+        this.toUser(callerId).emit(SOCKET_EVENTS.CALL_STARTED, payload);
+    }
+
     public callBusy(callerId: string, payload: {callId: string}) {
         this.toUser(callerId).emit(SOCKET_EVENTS.CALL_BUSY, payload);
     }

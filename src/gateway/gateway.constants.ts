@@ -41,6 +41,7 @@ export const SOCKET_EVENTS = {
     FRIEND_REQUEST_REJECTED: "friend_request_rejected",
 
     CALL_INITIATED: "call_initiated",
+    CALL_STARTED: "call_started",  // Emit callId về caller sau khi tạo
     CALL_BUSY: "call_busy",
     CALL_ACCEPTED: "call_accepted",
     CALL_REJECTED: "call_rejected",

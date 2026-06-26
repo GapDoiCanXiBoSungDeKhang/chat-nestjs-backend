@@ -226,6 +226,9 @@ export class ChatGateway
             isGroup: false,
         });
 
+        // Thêm caller vào participants ngay để pass security check khi gửi offer
+        await this.redisCallService.addParticipant(callId, callerId);
+
         this.callEmit.callInittiated(data.calleId, {
             callId,
             callerId,
@@ -233,6 +236,9 @@ export class ChatGateway
             callType: data.callType,
             conversationId: data.conversationId,
         });
+
+        // Emit callId về cho caller để dùng cancel/end
+        this.callEmit.callStarted(callerId, { callId, callType: data.callType });
     }
 
     @SubscribeMessage("call_accept")
