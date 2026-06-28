@@ -9,12 +9,14 @@ import {MessageEmitService} from "./services/messageEmit.service";
 import {GroupEmitService} from "./services/groupEmit.service";
 import {PresenceEmitService} from "./services/presenceEmit.service";
 import {CallEmitService} from "./services/callEmit.service";
-import { RedisCallService } from "../shared/redis/redisCall.service";
+import {RedisCallService} from "../shared/redis/redisCall.service";
+import {MessageModule} from "../../src/module/message/message.module";
 
 @Module({
     imports: [
         forwardRef(() => ConversationModule),
         forwardRef(() => UsersModule),
+        forwardRef(() => MessageModule),
         JwtModule.registerAsync({
             inject: [ConfigService],
             useFactory: (config: ConfigService) => ({

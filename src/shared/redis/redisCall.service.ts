@@ -39,6 +39,7 @@ export class RedisCallService {
             conversationId: data.conversationId ?? "",
             callType: data.callType,
             isGroup: data.isGroup ? "1" : "0",
+            startedAt: "",  // set khi callee accept
         });
         pipeline.expire(key, this.CALL_TTL);
 
@@ -60,6 +61,7 @@ export class RedisCallService {
         callType: "voice" | "video";
         isGroup: boolean;
         participants: Set<string>;
+        startedAt?: Date;
     } | null> {
         const [raw, members] = await Promise.all([
             this.redis.hgetall(`call:${callId}`),
@@ -76,7 +78,14 @@ export class RedisCallService {
             callType: raw.callType as "voice" | "video",
             isGroup: raw.isGroup === "1",
             participants: new Set(members),
+            startedAt: raw.startedAt ? new Date(raw.startedAt) : undefined,
         };
+    }
+
+    // ─── Set thời điểm bắt đầu (khi callee accept) ──────────────────────────
+
+    async setStartedAt(callId: string): Promise<void> {
+        await this.redis.hset(`call:${callId}`, "startedAt", new Date().toISOString());
     }
 
     // ─── Thêm participant ─────────────────────────────────────────────────────

@@ -15,6 +15,7 @@ import {randomUUID} from "crypto";
 import {Types} from "mongoose";
 
 import {ConversationService} from "../module/conversation/conversation.service";
+import {MessageService} from "../module/message/message.service";
 import {UserService} from "../module/user/user.service";
 import {MessageEmitService} from "./services/messageEmit.service";
 import {GroupEmitService} from "./services/groupEmit.service";
@@ -53,6 +54,8 @@ export class ChatGateway
 
         // [REDIS] Inject RedisCallService thay thế in-memory Maps
         private readonly redisCallService: RedisCallService,
+        @Inject(forwardRef(() => MessageService))
+        private readonly messageService: MessageService,
     ) {
     }
 
@@ -252,6 +255,8 @@ export class ChatGateway
 
         // [REDIS] Thêm callee vào participants set trên Redis
         await this.redisCallService.addParticipant(data.callId, calleId);
+        // Lưu thời điểm bắt đầu để tính duration khi kết thúc
+        await this.redisCallService.setStartedAt(data.callId);
         this.callEmit.callAccepted(call.callerId, {callId: call.callId});
     }
 
@@ -270,6 +275,18 @@ export class ChatGateway
             callId: call.callId,
             reasons: data?.reasons,
         });
+
+        // Lưu missed call message nếu có conversationId
+        if (call.conversationId) {
+            await this.messageService.createCallMessage({
+                conversationId: call.conversationId,
+                callerId: call.callerId,
+                callType: call.callType,
+                status: "missed",
+                endedAt: new Date(),
+                participantIds: [call.callerId, calleeId],
+            }).catch(() => {});
+        }
     }
 
     @SubscribeMessage("call_end")
@@ -283,12 +300,40 @@ export class ChatGateway
  
         const otherId = call.callerId === userId ? call.calleeId : call.callerId;
         const participants = await this.redisCallService.getParticipants(data.callId);
- 
+        const endedAt = new Date();
+
+        // Tính duration nếu có startedAt
+        let duration: number | undefined;
+        if (call.startedAt) {
+            duration = Math.floor((endedAt.getTime() - call.startedAt.getTime()) / 1000);
+        }
+
         // [REDIS] Xoá toàn bộ call state
         await this.redisCallService.deleteCall(data.callId, participants);
- 
+
         if (otherId) {
             this.callEmit.callEnded(otherId, {callId: data.callId});
+        }
+
+        // Lưu call message
+        if (call.conversationId) {
+            const status = call.startedAt ? "ended" : "missed";
+            try {
+                await this.messageService.createCallMessage({
+                    conversationId: call.conversationId,
+                    callerId: call.callerId,
+                    callType: call.callType,
+                    status,
+                    duration,
+                    startedAt: call.startedAt,
+                    endedAt,
+                    participantIds: [...participants],
+                });
+            } catch (err) {
+                console.error('[call_end] createCallMessage error:', err);
+            }
+        } else {
+            console.warn('[call_end] No conversationId for callId:', data.callId, '| call:', call);
         }
     }
 
@@ -302,9 +347,27 @@ export class ChatGateway
         if (!call || call.callerId !== callerId) return;
  
         await this.redisCallService.deleteCall(data.callId, [callerId]);
- 
+
         if (call.calleeId) {
             this.callEmit.callCancelled(call.calleeId, {callId: data.callId});
+        }
+
+        // Lưu cancelled call message
+        if (call.conversationId) {
+            try {
+                await this.messageService.createCallMessage({
+                    conversationId: call.conversationId,
+                    callerId: call.callerId,
+                    callType: call.callType,
+                    status: "cancelled",
+                    endedAt: new Date(),
+                    participantIds: [call.callerId, call.calleeId ?? ""].filter(Boolean),
+                });
+            } catch (err) {
+                console.error('[call_cancel] createCallMessage error:', err);
+            }
+        } else {
+            console.warn('[call_cancel] No conversationId for callId:', data.callId, '| call:', call);
         }
     }
 
