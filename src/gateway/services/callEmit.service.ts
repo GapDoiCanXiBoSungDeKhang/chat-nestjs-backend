@@ -109,4 +109,12 @@ export class CallEmitService {
     }) {
         this.toConversation(conversationId).emit(SOCKET_EVENTS.GROUP_CALL_ENDED, payload);
     }
+
+    // Emit danh sách participants hiện tại riêng cho user mới join
+    public groupCallParticipants(userId: string, payload: {
+        callId: string;
+        existingParticipants: { userId: string; name: string; avatar?: string }[];
+    }) {
+        this.toUser(userId).emit(SOCKET_EVENTS.GROUP_CALL_PARTICIPANTS, payload);
+    }
 }

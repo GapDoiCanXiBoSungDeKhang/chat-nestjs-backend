@@ -453,6 +453,20 @@ export class ChatGateway
             hostId,
             callType: data.callType,
         });
+
+        // Lưu message "cuộc gọi nhóm bắt đầu" để members thấy và có thể join
+        try {
+            await this.messageService.createCallMessage({
+                conversationId: data.conversationId,
+                callerId: hostId,
+                callType: data.callType,
+                status: 'started',
+                startedAt: new Date(),
+                participantIds: [hostId],
+            });
+        } catch (err) {
+            console.error('[group_call_start] createCallMessage error:', err);
+        }
     }
 
     @SubscribeMessage("group_call_join")
@@ -464,14 +478,34 @@ export class ChatGateway
         const call = await this.redisCallService.getCall(data.callId);
         if (!call || !call.isGroup) return;
  
+        // Lấy danh sách participants TRƯỚC khi thêm user mới
+        const existingIds = (await this.redisCallService.getParticipants(data.callId))
+            .filter(id => id !== userId);
+
+        // Lấy thông tin (name, avatar) cho từng existing participant
+        const existingParticipants = await Promise.all(
+            existingIds.map(async (id) => {
+                const info = await this.userService.getInfoById(id);
+                return { userId: id, name: info.name, avatar: info.avatar };
+            })
+        );
+
         // [REDIS] Thêm participant vào Redis
         await this.redisCallService.addParticipant(data.callId, userId);
  
         const userInfo = await this.userService.getInfoById(userId);
+
+        // Broadcast cho tất cả: có người mới join
         this.callEmit.groupCallJoined(call.conversationId!, {
             callId: data.callId,
             userId,
             userInfo: {name: userInfo.name, avatar: userInfo.avatar},
+        });
+
+        // Emit riêng cho user mới: danh sách người đang có mặt (kèm tên) để tạo WebRTC offer
+        this.callEmit.groupCallParticipants(userId, {
+            callId: data.callId,
+            existingParticipants,
         });
     }
 
@@ -515,6 +549,28 @@ export class ChatGateway
             callId: data.callId,
             conversationId: call.conversationId!,
         });
+
+        // Lưu message kết thúc
+        if (call.conversationId) {
+            const endedAt = new Date();
+            const duration = call.startedAt
+                ? Math.floor((endedAt.getTime() - new Date(call.startedAt).getTime()) / 1000)
+                : 0;
+            try {
+                await this.messageService.createCallMessage({
+                    conversationId: call.conversationId,
+                    callerId: hostId,
+                    callType: call.callType,
+                    status: 'ended',
+                    duration,
+                    startedAt: call.startedAt,
+                    endedAt,
+                    participantIds: participants,
+                });
+            } catch (err) {
+                console.error('[group_call_end] createCallMessage error:', err);
+            }
+        }
     }
 
     // ─── Emit helpers ─────────────────────────────────────────────

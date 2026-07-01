@@ -16,8 +16,8 @@ export class CreateCallMessageDto {
     @IsEnum(["voice", "video"])
     callType!: "voice" | "video";
 
-    @IsEnum(["missed", "cancelled", "ended"])
-    status!: "missed" | "cancelled" | "ended";
+    @IsEnum(["missed", "cancelled", "ended", "started"])
+    status!: "missed" | "cancelled" | "ended" | "started";
 
     /** Thời lượng cuộc gọi (giây) — chỉ set khi status = "ended" */
     @IsOptional()

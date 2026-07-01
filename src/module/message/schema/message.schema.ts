@@ -81,7 +81,7 @@ export class Message {
             callType: {type: String, enum: ["voice", "video"], required: true},
             status: {
                 type: String,
-                enum: ["missed", "cancelled", "ended"],
+                enum: ["missed", "cancelled", "ended", "started"],
                 required: true,
             },
             duration: {type: Number, default: null},   // giây
@@ -96,7 +96,7 @@ export class Message {
     })
     callInfo?: {
         callType: "voice" | "video";
-        status: "missed" | "cancelled" | "ended";
+        status: "missed" | "cancelled" | "ended" | "started";
         duration?: number | null;
         startedAt?: Date | null;
         endedAt?: Date | null;
@@ -119,4 +119,3 @@ MessageSchema.index({conversationId: 1, isDeleted: 1, createdAt: -1});
 
 // [NEW] Index cho type = "call" — dùng khi query lịch sử cuộc gọi
 MessageSchema.index({conversationId: 1, type: 1, createdAt: -1});
-
