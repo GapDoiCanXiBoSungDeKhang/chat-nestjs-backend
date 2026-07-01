@@ -140,4 +140,25 @@ export class RedisCallService {
     async getParticipantCount(callId: string): Promise<number> {
         return this.redis.scard(`call:${callId}:members`);
     }
+
+    // ─── Active group call theo conversation ────────────────────────────────
+    // Tránh tạo call mới khi conversation đã có call đang diễn ra (fix duplicate
+    // call/message khi user rejoin hoặc bấm gọi trong lúc nhóm đang gọi)
+
+    async setActiveGroupCall(conversationId: string, callId: string): Promise<void> {
+        await this.redis.set(
+            `conversation:${conversationId}:activeGroupCall`,
+            callId,
+            "EX",
+            this.CALL_TTL,
+        );
+    }
+
+    async getActiveGroupCall(conversationId: string): Promise<string | null> {
+        return this.redis.get(`conversation:${conversationId}:activeGroupCall`);
+    }
+
+    async clearActiveGroupCall(conversationId: string): Promise<void> {
+        await this.redis.del(`conversation:${conversationId}:activeGroupCall`);
+    }
 }

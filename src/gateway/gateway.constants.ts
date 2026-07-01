@@ -56,5 +56,6 @@ export const SOCKET_EVENTS = {
     GROUP_CALL_JOINED: "group_call_joined",
     GROUP_CALL_LEFT: "group_call_left",
     GROUP_CALL_ENDED: "group_call_ended",
-    GROUP_CALL_PARTICIPANTS: "group_call_participants"
+    GROUP_CALL_PARTICIPANTS: "group_call_participants",
+    GROUP_CALL_REDIRECT: "group_call_redirect"
 } as const;

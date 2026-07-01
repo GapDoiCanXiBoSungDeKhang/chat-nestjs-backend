@@ -117,4 +117,15 @@ export class CallEmitService {
     }) {
         this.toUser(userId).emit(SOCKET_EVENTS.GROUP_CALL_PARTICIPANTS, payload);
     }
+
+    // Báo cho user biết conversation đã có call đang chạy — redirect sang call đó
+    // thay vì tạo call mới (fix trường hợp rejoin / bấm gọi trùng)
+    public groupCallRedirect(userId: string, payload: {
+        callId: string;
+        conversationId: string;
+        hostId: string;
+        callType: string;
+    }) {
+        this.toUser(userId).emit(SOCKET_EVENTS.GROUP_CALL_REDIRECT, payload);
+    }
 }

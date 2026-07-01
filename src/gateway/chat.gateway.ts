@@ -432,12 +432,35 @@ export class ChatGateway
         @ConnectedSocket() client: Socket,
         @MessageBody() data: {conversationId: string; callType: "voice" | "video"},
     ) {
-        const hostId = client.data.userId;
-        const ok = await this.conversationService.findUserParticipants(hostId, data.conversationId);
+        const userId = client.data.userId;
+        const ok = await this.conversationService.findUserParticipants(userId, data.conversationId);
         if (!ok) return;
- 
+
+        // Kiểm tra conversation đã có call đang chạy chưa — tránh tạo call trùng
+        // khi user rejoin hoặc 2 người cùng bấm gọi gần như đồng thời
+        const existingCallId = await this.redisCallService.getActiveGroupCall(data.conversationId);
+        if (existingCallId) {
+            const existingCall = await this.redisCallService.getCall(existingCallId);
+            if (existingCall) {
+                // Call vẫn còn sống → redirect user này vào call đã có (auto-join)
+                // thay vì tạo call/message mới. Emit riêng cho user này biết
+                // callId thật để FE chuyển từ "outgoing/host" sang "đã tham gia".
+                this.callEmit.groupCallRedirect(userId, {
+                    callId: existingCallId,
+                    conversationId: data.conversationId,
+                    hostId: existingCall.callerId,
+                    callType: existingCall.callType,
+                });
+                await this.onGroupCallJoin(client, { callId: existingCallId });
+                return;
+            }
+            // Call đã chết (TTL/lỗi) — dọn mapping cũ, tạo call mới bên dưới
+            await this.redisCallService.clearActiveGroupCall(data.conversationId);
+        }
+
+        const hostId = userId;
         const callId = randomUUID();
-       
+
         // [REDIS] Lưu group call vào Redis
         await this.redisCallService.createCall({
             callId,
@@ -446,6 +469,7 @@ export class ChatGateway
             callType: data.callType,
             isGroup: true,
         });
+        await this.redisCallService.setActiveGroupCall(data.conversationId, callId);
 
         this.callEmit.groupCallStarted(data.conversationId, {
             callId,
@@ -526,6 +550,7 @@ export class ChatGateway
 
         if (remaining === 0) {
             await this.redisCallService.deleteCall(data.callId, []);
+            await this.redisCallService.clearActiveGroupCall(call.conversationId!);
             this.callEmit.groupCallEnded(call.conversationId!, {
                 callId: data.callId,
                 conversationId: call.conversationId!,
@@ -544,6 +569,7 @@ export class ChatGateway
  
         const participants = await this.redisCallService.getParticipants(data.callId);
         await this.redisCallService.deleteCall(data.callId, participants);
+        await this.redisCallService.clearActiveGroupCall(call.conversationId!);
  
         this.callEmit.groupCallEnded(call.conversationId!, {
             callId: data.callId,
